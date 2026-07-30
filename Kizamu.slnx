@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Kizamu.Server/Kizamu.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kizamu.Server.Tests/Kizamu.Server.Tests.csproj" />
+  </Folder>
+</Solution>

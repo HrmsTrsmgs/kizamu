@@ -315,6 +315,18 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# React, Vite, npm, and frontend tests
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.env.*
+!.env.example
+
 # Visual Studio 6 build log
 *.plg
 
