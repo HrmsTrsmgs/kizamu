@@ -2,7 +2,7 @@
 
 作業を中断せず、プロジェクトごとの時間を素早く記録するタイムトラッカー。
 
-現在はASP.NET CoreとReactによる開発環境の足場だけを提供しています。画面には準備完了とサーバー接続状態を表示します。記録を管理から分離し、未分類のまま素早く記録できる製品構想の詳細は [docs/concept.md](docs/concept.md) を参照してください。
+現在はASP.NET CoreとReactによる開発環境の足場だけを提供しています。画面には準備完了とサーバー接続状態を表示します。記録を管理から分離し、未分類のまま素早く記録できる製品構想の詳細は [docs/concept.md](docs/concept.md)、MVPまでの暫定的な実装順序は [docs/roadmap.md](docs/roadmap.md)、具体的な作業計画は [docs/mvp-implementation-plan.md](docs/mvp-implementation-plan.md) を参照してください。
 
 ## 技術構成
 
