@@ -12,6 +12,7 @@ type AppProps = {
 
 export default function App({ health = healthApi, timeRecords = timeRecordApi }: AppProps) {
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null)
+  const [timeRecordId, setTimeRecordId] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState<string | null>(null)
   useEffect(() => {
     let active = true
@@ -36,7 +37,14 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
 
   async function startTimeRecord() {
     const record = await timeRecords.startTimeRecord()
+    setTimeRecordId(record.id)
     setStartedAt(record.startedAt)
+  }
+
+  async function endTimeRecord() {
+    if (timeRecordId !== null) {
+      await timeRecords.endTimeRecord(timeRecordId)
+    }
   }
 
   let healthStatus = '確認中'
@@ -55,7 +63,9 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
           記録を開始
         </button>
       ) : (
-        <button type="button">記録を終了</button>
+        <button type="button" onClick={() => { void endTimeRecord() }}>
+          記録を終了
+        </button>
       )}
       {startedAt !== null && (
         <time aria-label="開始時刻" dateTime={startedAt}>
