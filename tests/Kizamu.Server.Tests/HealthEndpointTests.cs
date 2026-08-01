@@ -1,12 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
+using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Kizamu.Server.Tests;
 
-public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
-    private readonly HttpClient client;
+    readonly HttpClient client;
 
     public HealthEndpointTests(WebApplicationFactory<Program> factory)
     {
@@ -14,14 +15,17 @@ public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Pr
     }
 
     [Fact]
-    public async Task GetHealthReturnsOkStatus()
+    public async Task 正常性を確認すると正常な状態が返されます()
     {
         using var response = await client.GetAsync("/api/health");
         var body = await response.Content.ReadFromJsonAsync<HealthResponse>();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("ok", body?.Status);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.Should().NotBeNull();
+        body.Status.Should().Be("ok");
     }
 
-    private sealed record HealthResponse(string Status);
+    public void Dispose() => client.Dispose();
+
+    sealed record HealthResponse(string Status);
 }
