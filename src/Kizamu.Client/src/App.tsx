@@ -50,9 +50,13 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
     <main>
       <h1>Kizamu</h1>
       <p>プロジェクトの準備が完了しました。</p>
-      <button type="button" onClick={() => { void startTimeRecord() }}>
-        記録を開始
-      </button>
+      {startedAt === null ? (
+        <button type="button" onClick={() => { void startTimeRecord() }}>
+          記録を開始
+        </button>
+      ) : (
+        <button type="button">記録を終了</button>
+      )}
       {startedAt !== null && (
         <time aria-label="開始時刻" dateTime={startedAt}>
           {startedAt}
