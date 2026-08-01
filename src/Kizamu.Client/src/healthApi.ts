@@ -1,4 +1,6 @@
-export type HealthApi = { checkHealth: () => Promise<boolean> }
+export type HealthApi = {
+  checkHealth: () => Promise<boolean>
+}
 
 export const healthApi: HealthApi = {
   async checkHealth() {
