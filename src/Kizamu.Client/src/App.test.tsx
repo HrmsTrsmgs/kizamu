@@ -32,4 +32,22 @@ describe('App', () => {
 
     expect(startTimeRecord).toHaveBeenCalledOnce()
   })
+
+  it('記録を開始すると開始時刻が表示されます', async () => {
+    const startedAt = '2026-08-01T09:00:00Z'
+    const health = { checkHealth: async () => true }
+    const timeRecords = {
+      startTimeRecord: async () => ({
+        id: '019cde5b-4c00-7000-8000-000000000001',
+        startedAt,
+      }),
+    }
+    render(<App health={health} timeRecords={timeRecords} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+
+    const startedAtDisplay = await screen.findByLabelText('開始時刻')
+    expect(startedAtDisplay).toHaveAttribute('datetime', startedAt)
+    expect(startedAtDisplay).not.toBeEmptyDOMElement()
+  })
 })

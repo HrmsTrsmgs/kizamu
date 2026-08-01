@@ -12,11 +12,53 @@ type AppProps = {
 
 export default function App({ health = healthApi, timeRecords = timeRecordApi }: AppProps) {
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null)
+  const [startedAt, setStartedAt] = useState<string | null>(null)
   useEffect(() => {
     let active = true
-    health.checkHealth().then((result) => active && setIsHealthy(result), () => active && setIsHealthy(false))
+
+    async function checkHealth() {
+      try {
+        const result = await health.checkHealth()
+        if (active) {
+          setIsHealthy(result)
+        }
+      } catch {
+        if (active) {
+          setIsHealthy(false)
+        }
+      }
+    }
+
+    void checkHealth()
+
     return () => { active = false }
   }, [health])
 
-  return <main><h1>Kizamu</h1><p>プロジェクトの準備が完了しました。</p><button type="button" onClick={() => { void timeRecords.startTimeRecord() }}>記録を開始</button><p aria-live="polite">サーバー接続: {isHealthy === null ? '確認中' : isHealthy ? '正常' : '失敗'}</p></main>
+  async function startTimeRecord() {
+    const record = await timeRecords.startTimeRecord()
+    setStartedAt(record.startedAt)
+  }
+
+  let healthStatus = '確認中'
+  if (isHealthy === true) {
+    healthStatus = '正常'
+  } else if (isHealthy === false) {
+    healthStatus = '失敗'
+  }
+
+  return (
+    <main>
+      <h1>Kizamu</h1>
+      <p>プロジェクトの準備が完了しました。</p>
+      <button type="button" onClick={() => { void startTimeRecord() }}>
+        記録を開始
+      </button>
+      {startedAt !== null && (
+        <time aria-label="開始時刻" dateTime={startedAt}>
+          {startedAt}
+        </time>
+      )}
+      <p aria-live="polite">サーバー接続: {healthStatus}</p>
+    </main>
+  )
 }
