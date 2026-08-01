@@ -6,7 +6,7 @@
 
 ## 技術構成
 
-- .NET 10 LTS / ASP.NET Core Minimal API / xUnit
+- .NET 10 LTS / ASP.NET Core Minimal API / xUnit / FluentAssertions
 - React / TypeScript（strict）/ Vite
 - Vitest / React Testing Library / ESLint / npm
 
@@ -49,6 +49,12 @@ npm run lint --prefix src/Kizamu.Client
 npm test --prefix src/Kizamu.Client
 npm run build --prefix src/Kizamu.Client
 ```
+
+## ライセンス
+
+Kizamu本体は [MIT License](LICENSE) で公開します。依存ライブラリには、それぞれのライセンス条件が適用されます。
+
+サーバーテストだけで使用するFluentAssertions 8系は、オープンソースおよび非商用利用では無料ですが、商用利用には有償ライセンスが必要です。フォーク、クローン、再公開後に商用利用する場合は、[FluentAssertions公式のライセンス案内](https://fluentassertions.com/introduction)で利用時点の条件を確認してください。
 
 ## 未実装
 
