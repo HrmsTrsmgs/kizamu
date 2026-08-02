@@ -2,11 +2,11 @@
 
 作業を中断せず、プロジェクトごとの時間を素早く記録するタイムトラッカー。
 
-現在はASP.NET CoreとReactによる開発環境の足場だけを提供しています。画面には準備完了とサーバー接続状態を表示します。記録を管理から分離し、未分類のまま素早く記録できる製品構想の詳細は [docs/concept.md](docs/concept.md) を参照してください。
+現在はASP.NET CoreとReactによる開発環境の足場だけを提供しています。画面には準備完了とサーバー接続状態を表示します。記録を管理から分離し、未分類のまま素早く記録できる製品構想の詳細は [docs/concept.md](docs/concept.md)、MVPまでの暫定的な実装順序は [docs/roadmap.md](docs/roadmap.md)、具体的な作業計画は [docs/mvp-implementation-plan.md](docs/mvp-implementation-plan.md) を参照してください。
 
 ## 技術構成
 
-- .NET 10 LTS / ASP.NET Core Minimal API / xUnit
+- .NET 10 LTS / ASP.NET Core Minimal API / xUnit / FluentAssertions
 - React / TypeScript（strict）/ Vite
 - Vitest / React Testing Library / ESLint / npm
 
@@ -49,6 +49,12 @@ npm run lint --prefix src/Kizamu.Client
 npm test --prefix src/Kizamu.Client
 npm run build --prefix src/Kizamu.Client
 ```
+
+## ライセンス
+
+Kizamu本体は [MIT License](LICENSE) で公開します。依存ライブラリには、それぞれのライセンス条件が適用されます。
+
+サーバーテストだけで使用するFluentAssertions 8系は、オープンソースおよび非商用利用では無料ですが、商用利用には有償ライセンスが必要です。フォーク、クローン、再公開後に商用利用する場合は、[FluentAssertions公式のライセンス案内](https://fluentassertions.com/introduction)で利用時点の条件を確認してください。
 
 ## 未実装
 

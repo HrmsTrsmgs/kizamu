@@ -1,5 +1,9 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Kizamu.Client/Kizamu.Client.esproj">
+      <Build />
+      <Deploy />
+    </Project>
     <Project Path="src/Kizamu.Server/Kizamu.Server.csproj" />
   </Folder>
   <Folder Name="/tests/">
