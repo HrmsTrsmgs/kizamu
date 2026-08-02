@@ -115,4 +115,26 @@ describe('App', () => {
     expect(endedAtDisplay).toHaveAttribute('datetime', endedAt)
     expect(endedAtDisplay).not.toBeEmptyDOMElement()
   })
+
+  it('記録を終了すると開始操作へ切り替わります', async () => {
+    const health = { checkHealth: async () => true }
+    const timeRecords = {
+      startTimeRecord: async () => ({
+        id: '019cde5b-4c00-7000-8000-000000000001',
+        startedAt: '2026-08-01T09:00:00Z',
+      }),
+      endTimeRecord: async () => ({
+        id: '019cde5b-4c00-7000-8000-000000000001',
+        startedAt: '2026-08-01T09:00:00Z',
+        endedAt: '2026-08-01T10:30:00Z',
+      }),
+    }
+    render(<App health={health} timeRecords={timeRecords} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+    fireEvent.click(await screen.findByRole('button', { name: '記録を終了' }))
+
+    expect(await screen.findByRole('button', { name: '記録を開始' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '記録を終了' })).not.toBeInTheDocument()
+  })
 })

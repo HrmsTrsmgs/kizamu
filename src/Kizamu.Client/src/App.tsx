@@ -46,6 +46,7 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
     if (timeRecordId !== null) {
       const record = await timeRecords.endTimeRecord(timeRecordId)
       setEndedAt(record.endedAt)
+      setTimeRecordId(null)
     }
   }
 
@@ -60,7 +61,7 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
     <main>
       <h1>Kizamu</h1>
       <p>プロジェクトの準備が完了しました。</p>
-      {startedAt === null ? (
+      {timeRecordId === null ? (
         <button type="button" onClick={() => { void startTimeRecord() }}>
           記録を開始
         </button>
