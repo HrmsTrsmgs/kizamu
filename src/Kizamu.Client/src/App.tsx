@@ -40,6 +40,7 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
     const record = await timeRecords.startTimeRecord()
     setTimeRecordId(record.id)
     setStartedAt(record.startedAt)
+    setEndedAt(null)
   }
 
   async function endTimeRecord() {

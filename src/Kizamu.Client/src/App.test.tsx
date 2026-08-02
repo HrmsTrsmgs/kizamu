@@ -137,4 +137,33 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: '記録を開始' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '記録を終了' })).not.toBeInTheDocument()
   })
+
+  it('記録を再度開始すると前回の終了時刻が表示されなくなります', async () => {
+    const health = { checkHealth: async () => true }
+    const startTimeRecord = vi.fn()
+      .mockResolvedValueOnce({
+        id: '019cde5b-4c00-7000-8000-000000000001',
+        startedAt: '2026-08-01T09:00:00Z',
+      })
+      .mockResolvedValueOnce({
+        id: '019cdeac-b600-7000-8000-000000000002',
+        startedAt: '2026-08-01T11:00:00Z',
+      })
+    const timeRecords = {
+      startTimeRecord,
+      endTimeRecord: async () => ({
+        id: '019cde5b-4c00-7000-8000-000000000001',
+        startedAt: '2026-08-01T09:00:00Z',
+        endedAt: '2026-08-01T10:30:00Z',
+      }),
+    }
+    render(<App health={health} timeRecords={timeRecords} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+    fireEvent.click(await screen.findByRole('button', { name: '記録を終了' }))
+    fireEvent.click(await screen.findByRole('button', { name: '記録を開始' }))
+    await screen.findByRole('button', { name: '記録を終了' })
+
+    expect(screen.queryByLabelText('終了時刻')).not.toBeInTheDocument()
+  })
 })
