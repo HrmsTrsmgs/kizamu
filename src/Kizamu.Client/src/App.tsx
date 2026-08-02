@@ -14,6 +14,7 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null)
   const [timeRecordId, setTimeRecordId] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState<string | null>(null)
+  const [endedAt, setEndedAt] = useState<string | null>(null)
   useEffect(() => {
     let active = true
 
@@ -43,7 +44,8 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
 
   async function endTimeRecord() {
     if (timeRecordId !== null) {
-      await timeRecords.endTimeRecord(timeRecordId)
+      const record = await timeRecords.endTimeRecord(timeRecordId)
+      setEndedAt(record.endedAt)
     }
   }
 
@@ -70,6 +72,11 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
       {startedAt !== null && (
         <time aria-label="開始時刻" dateTime={startedAt}>
           {startedAt}
+        </time>
+      )}
+      {endedAt !== null && (
+        <time aria-label="終了時刻" dateTime={endedAt}>
+          {endedAt}
         </time>
       )}
       <p aria-live="polite">サーバー接続: {healthStatus}</p>
