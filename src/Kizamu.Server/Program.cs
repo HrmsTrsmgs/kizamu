@@ -1,3 +1,8 @@
+using Kizamu.Application.TimeRecords;
+using Kizamu.Infrastructure.TimeRecords;
+using Kizamu.Server.Endpoints.Health;
+using Kizamu.Server.Endpoints.TimeRecords;
+
 var app = CreateApplication(args);
 app.Run();
 
@@ -5,26 +10,14 @@ static WebApplication CreateApplication(string[] args)
 {
     var builder = WebApplication.CreateBuilder(args);
     builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+    builder.Services.AddSingleton<StartTimeRecord>();
+    builder.Services.AddSingleton<EndTimeRecord>();
+    builder.Services.AddSingleton<ITimeRecordState, InMemoryTimeRecordState>();
 
     var app = builder.Build();
-    var startedAt = default(DateTimeOffset);
-    app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
-    app.MapPost("/api/time-records/start", (TimeProvider timeProvider) =>
-    {
-        startedAt = timeProvider.GetUtcNow();
-        return Results.Json(
-            new { Id = Guid.NewGuid(), StartedAt = startedAt },
-            statusCode: StatusCodes.Status201Created);
-    });
-    app.MapPost("/api/time-records/{id:guid}/end", (
-        Guid id,
-        TimeProvider timeProvider) =>
-        Results.Ok(new
-        {
-            Id = id,
-            StartedAt = startedAt,
-            EndedAt = timeProvider.GetUtcNow(),
-        }));
+    app.MapHealthEndpoint();
+    app.MapStartTimeRecordEndpoint();
+    app.MapEndTimeRecordEndpoint();
 
     return app;
 }

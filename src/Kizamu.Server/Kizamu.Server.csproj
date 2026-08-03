@@ -13,4 +13,9 @@
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="10.0.10" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Kizamu.Application\Kizamu.Application.csproj" />
+    <ProjectReference Include="..\Kizamu.Infrastructure\Kizamu.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
