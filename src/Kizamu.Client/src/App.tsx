@@ -1,9 +1,9 @@
 import HealthStatus from './health/HealthStatus'
-import TimeRecorder from './TimeRecorder'
+import TimeRecorder from './timeRecords/TimeRecorder'
 import type { HealthApi } from './health/healthApi'
 import { healthApi } from './health/healthApi'
-import type { TimeRecordApi } from './timeRecordApi'
-import { timeRecordApi } from './timeRecordApi'
+import type { TimeRecordApi } from './timeRecords/timeRecordApi'
+import { timeRecordApi } from './timeRecords/timeRecordApi'
 import './index.css'
 
 type AppProps = {
