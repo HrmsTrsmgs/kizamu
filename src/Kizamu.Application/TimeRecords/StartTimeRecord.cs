@@ -4,14 +4,21 @@ namespace Kizamu.Application.TimeRecords;
 /// 作業記録を開始します。
 /// </summary>
 /// <param name="timeProvider">開始時刻の取得元。</param>
-public sealed class StartTimeRecord(TimeProvider timeProvider)
+/// <param name="timeRecordState">作業記録の状態保存先。</param>
+public sealed class StartTimeRecord(
+    TimeProvider timeProvider,
+    ITimeRecordState timeRecordState)
 {
     /// <summary>
     /// 新しい作業記録の識別子と開始時刻を生成します。
     /// </summary>
     /// <returns>開始した作業記録。</returns>
-    public StartTimeRecordResult Execute() =>
-        new(Guid.NewGuid(), timeProvider.GetUtcNow());
+    public StartTimeRecordResult Execute()
+    {
+        var result = new StartTimeRecordResult(Guid.NewGuid(), timeProvider.GetUtcNow());
+        timeRecordState.StartedAt = result.StartedAt;
+        return result;
+    }
 }
 
 /// <summary>

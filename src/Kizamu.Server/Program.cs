@@ -14,12 +14,9 @@ static WebApplication CreateApplication(string[] args)
 
     var app = builder.Build();
     app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
-    app.MapPost("/api/time-records/start", (
-        StartTimeRecord startTimeRecord,
-        ITimeRecordState timeRecordState) =>
+    app.MapPost("/api/time-records/start", (StartTimeRecord startTimeRecord) =>
     {
         var record = startTimeRecord.Execute();
-        timeRecordState.StartedAt = record.StartedAt;
         return Results.Json(
             record,
             statusCode: StatusCodes.Status201Created);

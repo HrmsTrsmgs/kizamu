@@ -13,7 +13,8 @@ public sealed class StartTimeRecordTests
     {
         var startTimeRecord =
             new StartTimeRecord(
-                new FakeTimeProvider(現在時刻));
+                new FakeTimeProvider(現在時刻),
+                new FakeTimeRecordState());
 
         var result = startTimeRecord.Execute();
 
@@ -25,10 +26,30 @@ public sealed class StartTimeRecordTests
     {
         var startTimeRecord =
             new StartTimeRecord(
-                new FakeTimeProvider(現在時刻));
+                new FakeTimeProvider(現在時刻),
+                new FakeTimeRecordState());
 
         var result = startTimeRecord.Execute();
 
         result.StartedAt.Should().Be(現在時刻);
+    }
+
+    [Fact]
+    public void 記録を開始すると開始時刻が保存されます()
+    {
+        var timeRecordState = new FakeTimeRecordState();
+        var startTimeRecord =
+            new StartTimeRecord(
+                new FakeTimeProvider(現在時刻),
+                timeRecordState);
+
+        startTimeRecord.Execute();
+
+        timeRecordState.StartedAt.Should().Be(現在時刻);
+    }
+
+    sealed class FakeTimeRecordState : ITimeRecordState
+    {
+        public DateTimeOffset StartedAt { get; set; }
     }
 }
