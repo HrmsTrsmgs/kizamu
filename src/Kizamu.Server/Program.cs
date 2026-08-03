@@ -1,5 +1,6 @@
 using Kizamu.Application.TimeRecords;
 using Kizamu.Infrastructure.TimeRecords;
+using Kizamu.Server.Endpoints.Health;
 using Kizamu.Server.Endpoints.TimeRecords;
 
 var app = CreateApplication(args);
@@ -14,7 +15,7 @@ static WebApplication CreateApplication(string[] args)
     builder.Services.AddSingleton<ITimeRecordState, InMemoryTimeRecordState>();
 
     var app = builder.Build();
-    app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
+    app.MapHealthEndpoint();
     app.MapStartTimeRecordEndpoint();
     app.MapEndTimeRecordEndpoint();
 
