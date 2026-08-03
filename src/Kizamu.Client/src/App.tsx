@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import HealthStatus from './HealthStatus'
 import type { HealthApi } from './healthApi'
 import { healthApi } from './healthApi'
 import type { TimeRecordApi } from './timeRecordApi'
@@ -11,30 +12,9 @@ type AppProps = {
 }
 
 export default function App({ health = healthApi, timeRecords = timeRecordApi }: AppProps) {
-  const [isHealthy, setIsHealthy] = useState<boolean | null>(null)
   const [timeRecordId, setTimeRecordId] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState<string | null>(null)
   const [endedAt, setEndedAt] = useState<string | null>(null)
-  useEffect(() => {
-    let active = true
-
-    async function checkHealth() {
-      try {
-        const result = await health.checkHealth()
-        if (active) {
-          setIsHealthy(result)
-        }
-      } catch {
-        if (active) {
-          setIsHealthy(false)
-        }
-      }
-    }
-
-    void checkHealth()
-
-    return () => { active = false }
-  }, [health])
 
   async function startTimeRecord() {
     const record = await timeRecords.startTimeRecord()
@@ -49,13 +29,6 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
       setEndedAt(record.endedAt)
       setTimeRecordId(null)
     }
-  }
-
-  let healthStatus = '確認中'
-  if (isHealthy === true) {
-    healthStatus = '正常'
-  } else if (isHealthy === false) {
-    healthStatus = '失敗'
   }
 
   return (
@@ -81,7 +54,7 @@ export default function App({ health = healthApi, timeRecords = timeRecordApi }:
           {endedAt}
         </time>
       )}
-      <p aria-live="polite">サーバー接続: {healthStatus}</p>
+      <HealthStatus health={health} />
     </main>
   )
 }
