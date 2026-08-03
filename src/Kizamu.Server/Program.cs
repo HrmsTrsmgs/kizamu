@@ -21,11 +21,8 @@ static WebApplication CreateApplication(string[] args)
             record,
             statusCode: StatusCodes.Status201Created);
     });
-    app.MapPost("/api/time-records/{id:guid}/end", (
-        Guid id,
-        EndTimeRecord endTimeRecord,
-        ITimeRecordState timeRecordState) =>
-        Results.Ok(endTimeRecord.Execute(id, timeRecordState.StartedAt)));
+    app.MapPost("/api/time-records/{id:guid}/end", (Guid id, EndTimeRecord endTimeRecord) =>
+        Results.Ok(endTimeRecord.Execute(id)));
 
     return app;
 }

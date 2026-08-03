@@ -15,21 +15,29 @@ public sealed class EndTimeRecordTests
     {
         var endTimeRecord =
             new EndTimeRecord(
-                new FakeTimeProvider(現在時刻));
+                new FakeTimeProvider(現在時刻),
+                new FakeTimeRecordState
+                {
+                    StartedAt = 開始時刻,
+                });
 
-        var result = endTimeRecord.Execute(識別子, 開始時刻);
+        var result = endTimeRecord.Execute(識別子);
 
         result.Id.Should().Be(識別子);
     }
 
     [Fact]
-    public void 記録を終了すると指定した開始時刻が返されます()
+    public void 記録を終了すると保存されている開始時刻が返されます()
     {
         var endTimeRecord =
             new EndTimeRecord(
-                new FakeTimeProvider(現在時刻));
+                new FakeTimeProvider(現在時刻),
+                new FakeTimeRecordState
+                {
+                    StartedAt = 開始時刻,
+                });
 
-        var result = endTimeRecord.Execute(識別子, 開始時刻);
+        var result = endTimeRecord.Execute(識別子);
 
         result.StartedAt.Should().Be(開始時刻);
     }
@@ -39,10 +47,19 @@ public sealed class EndTimeRecordTests
     {
         var endTimeRecord =
             new EndTimeRecord(
-                new FakeTimeProvider(現在時刻));
+                new FakeTimeProvider(現在時刻),
+                new FakeTimeRecordState
+                {
+                    StartedAt = 開始時刻,
+                });
 
-        var result = endTimeRecord.Execute(識別子, 開始時刻);
+        var result = endTimeRecord.Execute(識別子);
 
         result.EndedAt.Should().Be(現在時刻);
+    }
+
+    sealed class FakeTimeRecordState : ITimeRecordState
+    {
+        public DateTimeOffset StartedAt { get; set; }
     }
 }
