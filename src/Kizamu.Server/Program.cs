@@ -1,5 +1,6 @@
 using Kizamu.Application.TimeRecords;
 using Kizamu.Infrastructure.TimeRecords;
+using Kizamu.Server.Endpoints.TimeRecords;
 
 var app = CreateApplication(args);
 app.Run();
@@ -18,7 +19,7 @@ static WebApplication CreateApplication(string[] args)
     {
         var record = startTimeRecord.Execute();
         return Results.Json(
-            record,
+            new StartTimeRecordResponse(record.Id, record.StartedAt),
             statusCode: StatusCodes.Status201Created);
     });
     app.MapPost("/api/time-records/{id:guid}/end", (Guid id, EndTimeRecord endTimeRecord) =>
