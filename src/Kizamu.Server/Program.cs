@@ -8,6 +8,7 @@ static WebApplication CreateApplication(string[] args)
     var builder = WebApplication.CreateBuilder(args);
     builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
     builder.Services.AddSingleton<StartTimeRecord>();
+    builder.Services.AddSingleton<EndTimeRecord>();
 
     var app = builder.Build();
     var startedAt = default(DateTimeOffset);
@@ -22,13 +23,8 @@ static WebApplication CreateApplication(string[] args)
     });
     app.MapPost("/api/time-records/{id:guid}/end", (
         Guid id,
-        TimeProvider timeProvider) =>
-        Results.Ok(new
-        {
-            Id = id,
-            StartedAt = startedAt,
-            EndedAt = timeProvider.GetUtcNow(),
-        }));
+        EndTimeRecord endTimeRecord) =>
+        Results.Ok(endTimeRecord.Execute(id, startedAt)));
 
     return app;
 }
