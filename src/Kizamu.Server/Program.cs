@@ -16,10 +16,7 @@ static WebApplication CreateApplication(string[] args)
     var app = builder.Build();
     app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
     app.MapStartTimeRecordEndpoint();
-    app.MapPost("/api/time-records/{id:guid}/end", (Guid id, EndTimeRecord endTimeRecord) =>
-        Results.Ok(
-            new EndTimeRecordResponse(
-                endTimeRecord.Execute(id))));
+    app.MapEndTimeRecordEndpoint();
 
     return app;
 }
