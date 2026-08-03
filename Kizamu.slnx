@@ -5,10 +5,12 @@
       <Build />
       <Deploy />
     </Project>
+    <Project Path="src/Kizamu.Infrastructure/Kizamu.Infrastructure.csproj" />
     <Project Path="src/Kizamu.Server/Kizamu.Server.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kizamu.Application.Tests/Kizamu.Application.Tests.csproj" />
+    <Project Path="tests/Kizamu.Infrastructure.Tests/Kizamu.Infrastructure.Tests.csproj" />
     <Project Path="tests/Kizamu.Server.Tests/Kizamu.Server.Tests.csproj" />
   </Folder>
 </Solution>
