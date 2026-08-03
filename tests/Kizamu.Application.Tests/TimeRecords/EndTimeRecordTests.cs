@@ -14,7 +14,7 @@ public sealed class EndTimeRecordTests
     [Fact]
     public void 記録を終了すると指定した識別子が返されます()
     {
-        var endTimeRecord =
+        var tested =
             new EndTimeRecord(
                 new FakeTimeProvider(現在時刻),
                 new FakeTimeRecordState
@@ -22,7 +22,7 @@ public sealed class EndTimeRecordTests
                     Current = TimeRecord.Start(開始時刻),
                 });
 
-        var result = endTimeRecord.Execute(識別子);
+        var result = tested.Execute(識別子);
 
         result.Id.Should().Be(識別子);
     }
@@ -30,7 +30,7 @@ public sealed class EndTimeRecordTests
     [Fact]
     public void 記録を終了すると保存されている開始時刻が返されます()
     {
-        var endTimeRecord =
+        var tested =
             new EndTimeRecord(
                 new FakeTimeProvider(現在時刻),
                 new FakeTimeRecordState
@@ -38,7 +38,7 @@ public sealed class EndTimeRecordTests
                     Current = TimeRecord.Start(開始時刻),
                 });
 
-        var result = endTimeRecord.Execute(識別子);
+        var result = tested.Execute(識別子);
 
         result.StartedAt.Should().Be(開始時刻);
     }
@@ -46,7 +46,7 @@ public sealed class EndTimeRecordTests
     [Fact]
     public void 記録を終了すると現在時刻が終了時刻として返されます()
     {
-        var endTimeRecord =
+        var tested =
             new EndTimeRecord(
                 new FakeTimeProvider(現在時刻),
                 new FakeTimeRecordState
@@ -54,7 +54,7 @@ public sealed class EndTimeRecordTests
                     Current = TimeRecord.Start(開始時刻),
                 });
 
-        var result = endTimeRecord.Execute(識別子);
+        var result = tested.Execute(識別子);
 
         result.EndedAt.Should().Be(現在時刻);
     }

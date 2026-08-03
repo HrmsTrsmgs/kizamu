@@ -12,11 +12,11 @@ public sealed class InMemoryTimeRecordStateTests
     public void 作業記録を保存すると同じ記録を取得できます()
     {
         var timeRecord = TimeRecord.Start(開始時刻);
-        var timeRecordState = new InMemoryTimeRecordState
+        var tested = new InMemoryTimeRecordState
         {
             Current = timeRecord,
         };
 
-        timeRecordState.Current.Should().BeSameAs(timeRecord);
+        tested.Current.Should().BeSameAs(timeRecord);
     }
 }

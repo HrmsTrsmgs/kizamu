@@ -12,12 +12,12 @@ public sealed class StartTimeRecordTests
     [Fact]
     public void 記録を開始すると空でない識別子が返されます()
     {
-        var startTimeRecord =
+        var tested =
             new StartTimeRecord(
                 new FakeTimeProvider(現在時刻),
                 new FakeTimeRecordState());
 
-        var result = startTimeRecord.Execute();
+        var result = tested.Execute();
 
         result.Id.Should().NotBeEmpty();
     }
@@ -25,12 +25,12 @@ public sealed class StartTimeRecordTests
     [Fact]
     public void 記録を開始すると現在時刻が開始時刻として返されます()
     {
-        var startTimeRecord =
+        var tested =
             new StartTimeRecord(
                 new FakeTimeProvider(現在時刻),
                 new FakeTimeRecordState());
 
-        var result = startTimeRecord.Execute();
+        var result = tested.Execute();
 
         result.StartedAt.Should().Be(現在時刻);
     }
@@ -39,12 +39,12 @@ public sealed class StartTimeRecordTests
     public void 記録を開始すると作業記録が保存されます()
     {
         var timeRecordState = new FakeTimeRecordState();
-        var startTimeRecord =
+        var tested =
             new StartTimeRecord(
                 new FakeTimeProvider(現在時刻),
                 timeRecordState);
 
-        var result = startTimeRecord.Execute();
+        var result = tested.Execute();
 
         timeRecordState.Current.Should().BeEquivalentTo(result);
     }
