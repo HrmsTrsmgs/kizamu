@@ -1,4 +1,5 @@
 using Kizamu.Application.TimeRecords;
+using Kizamu.Domain;
 
 namespace Kizamu.Infrastructure.TimeRecords;
 
@@ -8,5 +9,5 @@ namespace Kizamu.Infrastructure.TimeRecords;
 public sealed class InMemoryTimeRecordState : ITimeRecordState
 {
     /// <inheritdoc />
-    public DateTimeOffset StartedAt { get; set; }
+    public TimeRecord? Current { get; set; }
 }

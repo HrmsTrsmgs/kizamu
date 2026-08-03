@@ -18,7 +18,7 @@ public sealed class StartTimeRecord(
     public StartTimeRecordResult Execute()
     {
         var timeRecord = TimeRecord.Start(timeProvider.GetUtcNow());
-        timeRecordState.StartedAt = timeRecord.StartedAt;
+        timeRecordState.Current = timeRecord;
         return new(timeRecord);
     }
 }

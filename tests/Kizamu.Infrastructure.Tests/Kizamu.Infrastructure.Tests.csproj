@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Kizamu.Domain\Kizamu.Domain.csproj" />
     <ProjectReference Include="..\..\src\Kizamu.Infrastructure\Kizamu.Infrastructure.csproj" />
   </ItemGroup>
 

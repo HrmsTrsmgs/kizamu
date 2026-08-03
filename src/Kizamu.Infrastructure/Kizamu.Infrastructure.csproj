@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kizamu.Application\Kizamu.Application.csproj" />
+    <ProjectReference Include="..\Kizamu.Domain\Kizamu.Domain.csproj" />
   </ItemGroup>
 
 </Project>

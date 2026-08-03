@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Kizamu.Application.TimeRecords;
+using Kizamu.Domain;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kizamu.Application.Tests.TimeRecords;
@@ -18,7 +19,7 @@ public sealed class EndTimeRecordTests
                 new FakeTimeProvider(現在時刻),
                 new FakeTimeRecordState
                 {
-                    StartedAt = 開始時刻,
+                    Current = TimeRecord.Start(開始時刻),
                 });
 
         var result = endTimeRecord.Execute(識別子);
@@ -34,7 +35,7 @@ public sealed class EndTimeRecordTests
                 new FakeTimeProvider(現在時刻),
                 new FakeTimeRecordState
                 {
-                    StartedAt = 開始時刻,
+                    Current = TimeRecord.Start(開始時刻),
                 });
 
         var result = endTimeRecord.Execute(識別子);
@@ -50,7 +51,7 @@ public sealed class EndTimeRecordTests
                 new FakeTimeProvider(現在時刻),
                 new FakeTimeRecordState
                 {
-                    StartedAt = 開始時刻,
+                    Current = TimeRecord.Start(開始時刻),
                 });
 
         var result = endTimeRecord.Execute(識別子);
@@ -60,6 +61,6 @@ public sealed class EndTimeRecordTests
 
     sealed class FakeTimeRecordState : ITimeRecordState
     {
-        public DateTimeOffset StartedAt { get; set; }
+        public TimeRecord? Current { get; set; }
     }
 }

@@ -1,3 +1,5 @@
+using Kizamu.Domain;
+
 namespace Kizamu.Application.TimeRecords;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace Kizamu.Application.TimeRecords;
 public interface ITimeRecordState
 {
     /// <summary>
-    /// 保持している作業記録の開始時刻を取得または設定します。
+    /// 保持している作業記録を取得または設定します。
     /// </summary>
-    DateTimeOffset StartedAt { get; set; }
+    TimeRecord? Current { get; set; }
 }

@@ -15,7 +15,7 @@ public sealed class EndTimeRecord(
     /// <param name="id">作業記録の識別子。</param>
     /// <returns>終了した作業記録。</returns>
     public EndTimeRecordResult Execute(Guid id) =>
-        new(id, timeRecordState.StartedAt, timeProvider.GetUtcNow());
+        new(id, timeRecordState.Current?.StartedAt ?? default, timeProvider.GetUtcNow());
 }
 
 /// <summary>

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Kizamu.Application.TimeRecords;
+using Kizamu.Domain;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kizamu.Application.Tests.TimeRecords;
@@ -35,7 +36,7 @@ public sealed class StartTimeRecordTests
     }
 
     [Fact]
-    public void 記録を開始すると開始時刻が保存されます()
+    public void 記録を開始すると作業記録が保存されます()
     {
         var timeRecordState = new FakeTimeRecordState();
         var startTimeRecord =
@@ -43,13 +44,13 @@ public sealed class StartTimeRecordTests
                 new FakeTimeProvider(現在時刻),
                 timeRecordState);
 
-        startTimeRecord.Execute();
+        var result = startTimeRecord.Execute();
 
-        timeRecordState.StartedAt.Should().Be(現在時刻);
+        timeRecordState.Current.Should().BeEquivalentTo(result);
     }
 
     sealed class FakeTimeRecordState : ITimeRecordState
     {
-        public DateTimeOffset StartedAt { get; set; }
+        public TimeRecord? Current { get; set; }
     }
 }
