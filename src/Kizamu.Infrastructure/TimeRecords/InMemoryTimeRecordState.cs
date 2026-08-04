@@ -8,6 +8,8 @@ namespace Kizamu.Infrastructure.TimeRecords;
 /// </summary>
 public sealed class InMemoryTimeRecordState : ITimeRecordState
 {
+    TimeRecord? addedTimeRecord;
+
     /// <inheritdoc />
     public TimeRecord? Current { get; set; }
 
@@ -15,12 +17,15 @@ public sealed class InMemoryTimeRecordState : ITimeRecordState
     /// 作業記録を追加します。
     /// </summary>
     /// <param name="timeRecord">追加する作業記録。</param>
-    public void Add(TimeRecord timeRecord) =>
-        throw new NotImplementedException();
+    public void Add(TimeRecord timeRecord)
+    {
+        addedTimeRecord = timeRecord;
+    }
 
     /// <summary>
     /// 追加したすべての作業記録を取得します。
     /// </summary>
     /// <returns>追加した作業記録。</returns>
-    public IReadOnlyList<TimeRecord> All => [];
+    public IReadOnlyList<TimeRecord> All =>
+        addedTimeRecord is null ? [] : [addedTimeRecord];
 }
