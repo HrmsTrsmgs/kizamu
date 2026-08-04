@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Kizamu.Application.TimeRecords;
-using Kizamu.Domain;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kizamu.Application.Tests.TimeRecords;
@@ -47,10 +46,5 @@ public sealed class StartTimeRecordTests
         var result = tested.Execute();
 
         timeRecordState.Current.Should().BeEquivalentTo(result);
-    }
-
-    sealed class FakeTimeRecordState : ITimeRecordState
-    {
-        public TimeRecord? Current { get; set; }
     }
 }

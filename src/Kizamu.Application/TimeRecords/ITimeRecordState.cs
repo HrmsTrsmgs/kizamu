@@ -8,7 +8,18 @@ namespace Kizamu.Application.TimeRecords;
 public interface ITimeRecordState
 {
     /// <summary>
-    /// 保持している作業記録を取得または設定します。
+    /// 最後に追加した作業記録を取得します。
     /// </summary>
-    TimeRecord? Current { get; set; }
+    TimeRecord? Current { get; }
+
+    /// <summary>
+    /// 保持しているすべての作業記録を取得します。
+    /// </summary>
+    IReadOnlyList<TimeRecord> All { get; }
+
+    /// <summary>
+    /// 作業記録を追加します。
+    /// </summary>
+    /// <param name="timeRecord">追加する作業記録。</param>
+    void Add(TimeRecord timeRecord);
 }

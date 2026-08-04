@@ -11,7 +11,7 @@ public sealed class InMemoryTimeRecordState : ITimeRecordState
     readonly List<TimeRecord> timeRecords = [];
 
     /// <inheritdoc />
-    public TimeRecord? Current { get; set; }
+    public TimeRecord? Current => timeRecords.LastOrDefault();
 
     /// <summary>
     /// 作業記録を追加します。

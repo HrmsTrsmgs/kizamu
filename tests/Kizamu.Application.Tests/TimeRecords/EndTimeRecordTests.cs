@@ -17,10 +17,7 @@ public sealed class EndTimeRecordTests
         var tested =
             new EndTimeRecord(
                 new FakeTimeProvider(現在時刻),
-                new FakeTimeRecordState
-                {
-                    Current = TimeRecord.Start(開始時刻),
-                });
+                開始済みの記録を用意する());
 
         var result = tested.Execute(識別子);
 
@@ -33,10 +30,7 @@ public sealed class EndTimeRecordTests
         var tested =
             new EndTimeRecord(
                 new FakeTimeProvider(現在時刻),
-                new FakeTimeRecordState
-                {
-                    Current = TimeRecord.Start(開始時刻),
-                });
+                開始済みの記録を用意する());
 
         var result = tested.Execute(識別子);
 
@@ -49,18 +43,17 @@ public sealed class EndTimeRecordTests
         var tested =
             new EndTimeRecord(
                 new FakeTimeProvider(現在時刻),
-                new FakeTimeRecordState
-                {
-                    Current = TimeRecord.Start(開始時刻),
-                });
+                開始済みの記録を用意する());
 
         var result = tested.Execute(識別子);
 
         result.EndedAt.Should().Be(現在時刻);
     }
 
-    sealed class FakeTimeRecordState : ITimeRecordState
+    static FakeTimeRecordState 開始済みの記録を用意する()
     {
-        public TimeRecord? Current { get; set; }
+        var timeRecordState = new FakeTimeRecordState();
+        timeRecordState.Add(TimeRecord.Start(開始時刻));
+        return timeRecordState;
     }
 }

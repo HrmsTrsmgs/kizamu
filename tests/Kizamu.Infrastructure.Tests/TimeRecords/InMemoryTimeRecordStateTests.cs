@@ -13,10 +13,9 @@ public sealed class InMemoryTimeRecordStateTests
     public void 作業記録を保存すると同じ記録を取得できます()
     {
         var timeRecord = TimeRecord.Start(開始時刻);
-        var tested = new InMemoryTimeRecordState
-        {
-            Current = timeRecord,
-        };
+        var tested = new InMemoryTimeRecordState();
+
+        tested.Add(timeRecord);
 
         tested.Current.Should().BeSameAs(timeRecord);
     }

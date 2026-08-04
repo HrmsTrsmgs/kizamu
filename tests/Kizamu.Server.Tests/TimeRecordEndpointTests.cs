@@ -68,6 +68,31 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         body.EndedAt.Should().Be(endedAt);
     }
 
+    [Fact]
+    public async Task 記録を開始した後に一覧を取得すると開始した記録が含まれます()
+    {
+        var startedRecord = await 開始済みの記録を用意する(早い時刻);
+
+        using var response = await client.GetAsync("/api/time-records");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<StartTimeRecordResponse[]>();
+        body.Should().ContainEquivalentOf(startedRecord);
+    }
+
+    [Fact]
+    public async Task 二件の記録を開始した後に一覧を取得すると開始した順に両方が返されます()
+    {
+        var firstRecord = await 開始済みの記録を用意する(早い時刻);
+        var secondRecord = await 開始済みの記録を用意する(遅い時刻);
+
+        using var response = await client.GetAsync("/api/time-records");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<StartTimeRecordResponse[]>();
+        body.Should().Equal(firstRecord, secondRecord);
+    }
+
     async Task<StartTimeRecordResponse> 開始済みの記録を用意する(DateTimeOffset startedAt)
     {
         // 開始APIの仕様を直接読めるよう、開始テストと同じHTTP処理を意図的に共通化していない。

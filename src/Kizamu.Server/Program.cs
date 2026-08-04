@@ -18,6 +18,7 @@ static WebApplication CreateApplication(string[] args)
     app.MapHealthEndpoint();
     app.MapStartTimeRecordEndpoint();
     app.MapEndTimeRecordEndpoint();
+    app.MapGetTimeRecordsEndpoint();
 
     return app;
 }
