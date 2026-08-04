@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { createTimeRecordApiMock } from '../test/createTimeRecordApiMock'
 import TimeRecorder from './TimeRecorder'
 
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
@@ -14,10 +15,9 @@ describe('TimeRecorder', () => {
       id: 記録ID,
       startedAt: 開始時刻,
     }))
-    const timeRecords = {
+    const timeRecords = createTimeRecordApiMock({
       startTimeRecord,
-      endTimeRecord: async () => ({ id: '', startedAt: '', endedAt: '' }),
-    }
+    })
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -26,13 +26,12 @@ describe('TimeRecorder', () => {
   })
 
   it('記録を開始すると開始時刻が表示されます', async () => {
-    const timeRecords = {
+    const timeRecords = createTimeRecordApiMock({
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
       }),
-      endTimeRecord: async () => ({ id: '', startedAt: '', endedAt: '' }),
-    }
+    })
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -43,13 +42,12 @@ describe('TimeRecorder', () => {
   })
 
   it('記録を開始すると終了操作へ切り替わります', async () => {
-    const timeRecords = {
+    const timeRecords = createTimeRecordApiMock({
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
       }),
-      endTimeRecord: async () => ({ id: '', startedAt: '', endedAt: '' }),
-    }
+    })
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -60,13 +58,13 @@ describe('TimeRecorder', () => {
 
   it('終了ボタンを押すと開始した記録の終了を要求します', async () => {
     const endTimeRecord = vi.fn(async () => ({ id: 記録ID, startedAt: '', endedAt: '' }))
-    const timeRecords = {
+    const timeRecords = createTimeRecordApiMock({
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
       }),
       endTimeRecord,
-    }
+    })
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -77,7 +75,7 @@ describe('TimeRecorder', () => {
   })
 
   it('記録を終了すると終了時刻が表示されます', async () => {
-    const timeRecords = {
+    const timeRecords = createTimeRecordApiMock({
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
@@ -87,7 +85,7 @@ describe('TimeRecorder', () => {
         startedAt: 開始時刻,
         endedAt: 終了時刻,
       }),
-    }
+    })
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -99,7 +97,7 @@ describe('TimeRecorder', () => {
   })
 
   it('記録を終了すると開始操作へ切り替わります', async () => {
-    const timeRecords = {
+    const timeRecords = createTimeRecordApiMock({
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
@@ -109,7 +107,7 @@ describe('TimeRecorder', () => {
         startedAt: 開始時刻,
         endedAt: 終了時刻,
       }),
-    }
+    })
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -129,14 +127,14 @@ describe('TimeRecorder', () => {
         id: 次の記録ID,
         startedAt: 次の開始時刻,
       })
-    const timeRecords = {
+    const timeRecords = createTimeRecordApiMock({
       startTimeRecord,
       endTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
         endedAt: 終了時刻,
       }),
-    }
+    })
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))

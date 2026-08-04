@@ -11,6 +11,16 @@ describe('timeRecordApi', () => {
     vi.unstubAllGlobals()
   })
 
+  it('作業記録一覧APIへGETします', async () => {
+    const fetchMock = vi.fn(async () => response([]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await tested.getTimeRecords()
+
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(fetchMock).toHaveBeenCalledWith('/api/time-records')
+  })
+
   it('記録開始APIへPOSTします', async () => {
     const fetchMock = vi.fn(async () => response({
       id: 記録ID,
