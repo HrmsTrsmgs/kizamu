@@ -4,6 +4,7 @@ import { timeRecordApi } from './timeRecordApi'
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
 const 開始時刻 = '2026-08-01T09:00:00Z'
 const 終了時刻 = '2026-08-01T10:30:00Z'
+const tested = timeRecordApi
 
 describe('timeRecordApi', () => {
   afterEach(() => {
@@ -17,7 +18,7 @@ describe('timeRecordApi', () => {
     }))
     vi.stubGlobal('fetch', fetchMock)
 
-    await timeRecordApi.startTimeRecord()
+    await tested.startTimeRecord()
 
     expect(fetchMock).toHaveBeenCalledOnce()
     expect(fetchMock).toHaveBeenCalledWith('/api/time-records/start', { method: 'POST' })
@@ -30,9 +31,7 @@ describe('timeRecordApi', () => {
     }
     vi.stubGlobal('fetch', vi.fn(async () => response(expected)))
 
-    const result = await timeRecordApi.startTimeRecord()
-
-    expect(result).toEqual(expected)
+    expect(await tested.startTimeRecord()).toEqual(expected)
   })
 
   it('指定した記録の終了APIへPOSTします', async () => {
@@ -43,7 +42,7 @@ describe('timeRecordApi', () => {
     }))
     vi.stubGlobal('fetch', fetchMock)
 
-    await timeRecordApi.endTimeRecord(記録ID)
+    await tested.endTimeRecord(記録ID)
 
     expect(fetchMock).toHaveBeenCalledOnce()
     expect(fetchMock).toHaveBeenCalledWith(`/api/time-records/${記録ID}/end`, { method: 'POST' })
@@ -57,9 +56,7 @@ describe('timeRecordApi', () => {
     }
     vi.stubGlobal('fetch', vi.fn(async () => response(expected)))
 
-    const result = await timeRecordApi.endTimeRecord(expected.id)
-
-    expect(result).toEqual(expected)
+    expect(await tested.endTimeRecord(expected.id)).toEqual(expected)
   })
 })
 
