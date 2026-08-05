@@ -21,6 +21,7 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
 
   async function startTimeRecord() {
     const record = await timeRecords.startTimeRecord()
+    setRecords(currentRecords => [...currentRecords, record])
     setTimeRecordId(record.id)
     setStartedAt(record.startedAt)
     setEndedAt(null)

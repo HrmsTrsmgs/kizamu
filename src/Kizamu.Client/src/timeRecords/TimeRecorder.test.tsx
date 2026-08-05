@@ -66,6 +66,21 @@ describe('TimeRecorder', () => {
     expect(startedAtDisplay).not.toBeEmptyDOMElement()
   })
 
+  it('記録を開始すると開始した記録が一覧に表示されます', async () => {
+    const timeRecords = createTimeRecordApiMock({
+      startTimeRecord: async () => ({
+        id: 記録ID,
+        startedAt: 開始時刻,
+      }),
+    })
+    render(<TimeRecorder timeRecords={timeRecords} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+
+    const list = screen.getByRole('list', { name: '作業記録一覧' })
+    expect(await within(list).findByText(開始時刻)).toBeInTheDocument()
+  })
+
   it('記録を開始すると終了操作へ切り替わります', async () => {
     const timeRecords = createTimeRecordApiMock({
       startTimeRecord: async () => ({
