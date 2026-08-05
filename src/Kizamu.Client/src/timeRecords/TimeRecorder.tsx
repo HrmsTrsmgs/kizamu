@@ -1,19 +1,20 @@
-import { useEffect, useState } from 'react'
-import type { StartTimeRecordResponse, TimeRecordApi } from './timeRecordApi'
+import { useEffect, useReducer } from 'react'
+import type { TimeRecordApi } from './timeRecordApi'
+import { initialTimeRecorderState, timeRecorderReducer } from './timeRecorderState'
 
 type TimeRecorderProps = {
   timeRecords: TimeRecordApi
 }
 
 export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
-  const [records, setRecords] = useState<StartTimeRecordResponse[]>([])
-  const [timeRecordId, setTimeRecordId] = useState<string | null>(null)
-  const [startedAt, setStartedAt] = useState<string | null>(null)
-  const [endedAt, setEndedAt] = useState<string | null>(null)
+  const [state, dispatch] = useReducer(timeRecorderReducer, initialTimeRecorderState)
 
   useEffect(() => {
     async function getTimeRecords() {
-      setRecords(await timeRecords.getTimeRecords())
+      dispatch({
+        type: 'recordsLoaded',
+        records: await timeRecords.getTimeRecords(),
+      })
     }
 
     void getTimeRecords()
@@ -21,30 +22,26 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
 
   async function startTimeRecord() {
     const record = await timeRecords.startTimeRecord()
-    setRecords(currentRecords => [...currentRecords, record])
-    setTimeRecordId(record.id)
-    setStartedAt(record.startedAt)
-    setEndedAt(null)
+    dispatch({ type: 'recordStarted', record })
   }
 
   async function endTimeRecord() {
-    if (timeRecordId !== null) {
-      const record = await timeRecords.endTimeRecord(timeRecordId)
-      setEndedAt(record.endedAt)
-      setTimeRecordId(null)
+    if (state.timeRecordId !== null) {
+      const record = await timeRecords.endTimeRecord(state.timeRecordId)
+      dispatch({ type: 'recordEnded', record })
     }
   }
 
   return (
     <>
       <ul aria-label="作業記録一覧">
-        {records.map(record => (
+        {state.records.map(record => (
           <li key={record.id}>
             <time dateTime={record.startedAt}>{record.startedAt}</time>
           </li>
         ))}
       </ul>
-      {timeRecordId === null ? (
+      {state.timeRecordId === null ? (
         <button type="button" onClick={() => { void startTimeRecord() }}>
           記録を開始
         </button>
@@ -53,14 +50,14 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
           記録を終了
         </button>
       )}
-      {startedAt !== null && (
-        <time aria-label="開始時刻" dateTime={startedAt}>
-          {startedAt}
+      {state.startedAt !== null && (
+        <time aria-label="開始時刻" dateTime={state.startedAt}>
+          {state.startedAt}
         </time>
       )}
-      {endedAt !== null && (
-        <time aria-label="終了時刻" dateTime={endedAt}>
-          {endedAt}
+      {state.endedAt !== null && (
+        <time aria-label="終了時刻" dateTime={state.endedAt}>
+          {state.endedAt}
         </time>
       )}
     </>

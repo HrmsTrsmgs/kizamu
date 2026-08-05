@@ -3,7 +3,7 @@ export type StartTimeRecordResponse = {
   startedAt: string
 }
 
-type EndTimeRecordResponse = {
+export type EndTimeRecordResponse = {
   id: string
   startedAt: string
   endedAt: string
