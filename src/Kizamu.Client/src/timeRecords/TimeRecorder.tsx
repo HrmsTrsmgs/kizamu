@@ -1,51 +1,83 @@
-import { useState } from 'react'
+import { useEffect, useReducer } from 'react'
 import type { TimeRecordApi } from './timeRecordApi'
+import TimeRecordTimes from './TimeRecordTimes'
+import { initialTimeRecorderState, timeRecorderReducer } from './timeRecorderState'
 
 type TimeRecorderProps = {
   timeRecords: TimeRecordApi
 }
 
 export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
-  const [timeRecordId, setTimeRecordId] = useState<string | null>(null)
-  const [startedAt, setStartedAt] = useState<string | null>(null)
-  const [endedAt, setEndedAt] = useState<string | null>(null)
+  const [state, dispatch] = useReducer(timeRecorderReducer, initialTimeRecorderState)
+
+  useEffect(() => {
+    async function getTimeRecords() {
+      dispatch({
+        type: 'recordsLoaded',
+        records: await timeRecords.getTimeRecords(),
+      })
+    }
+
+    void getTimeRecords()
+  }, [timeRecords])
 
   async function startTimeRecord() {
     const record = await timeRecords.startTimeRecord()
-    setTimeRecordId(record.id)
-    setStartedAt(record.startedAt)
-    setEndedAt(null)
+    dispatch({ type: 'recordStarted', record })
   }
 
   async function endTimeRecord() {
-    if (timeRecordId !== null) {
-      const record = await timeRecords.endTimeRecord(timeRecordId)
-      setEndedAt(record.endedAt)
-      setTimeRecordId(null)
+    if (state.timeRecordId !== null) {
+      const record = await timeRecords.endTimeRecord(state.timeRecordId)
+      dispatch({ type: 'recordEnded', record })
     }
   }
 
   return (
-    <>
-      {timeRecordId === null ? (
-        <button type="button" onClick={() => { void startTimeRecord() }}>
-          記録を開始
-        </button>
-      ) : (
-        <button type="button" onClick={() => { void endTimeRecord() }}>
-          記録を終了
-        </button>
-      )}
-      {startedAt !== null && (
-        <time aria-label="開始時刻" dateTime={startedAt}>
-          {startedAt}
-        </time>
-      )}
-      {endedAt !== null && (
-        <time aria-label="終了時刻" dateTime={endedAt}>
-          {endedAt}
-        </time>
-      )}
-    </>
+    <div className="time-recorder">
+      <section className="recorder-panel" aria-labelledby="recorder-title">
+        <header className="panel-header">
+          <h2 id="recorder-title">プロジェクト未登録</h2>
+          <span className={`status-badge ${state.timeRecordId === null ? '' : 'is-active'}`}>
+            {state.timeRecordId === null ? '待機中' : '記録中'}
+          </span>
+        </header>
+
+        <div className="recorder-action">
+          {state.timeRecordId === null ? (
+            <button className="record-button" type="button" onClick={() => { void startTimeRecord() }}>
+              記録を開始
+            </button>
+          ) : (
+            <button className="record-button is-active" type="button" onClick={() => { void endTimeRecord() }}>
+              記録を終了
+            </button>
+          )}
+          {state.startedAt !== null && (
+            <TimeRecordTimes
+              startedAt={state.startedAt}
+              endedAt={state.endedAt}
+              labelled
+            />
+          )}
+        </div>
+      </section>
+
+      <section className="records-panel" aria-labelledby="records-title">
+        <header className="panel-header records-header">
+          <h2 id="records-title">作業記録</h2>
+          <span className="record-count">{state.records.length}件</span>
+        </header>
+
+        <ul className="records-list" aria-label="作業記録一覧">
+          {state.records.map(record => (
+            <li key={record.id}>
+              <span className={`record-status ${record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
+              <TimeRecordTimes startedAt={record.startedAt} endedAt={record.endedAt} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   )
 }

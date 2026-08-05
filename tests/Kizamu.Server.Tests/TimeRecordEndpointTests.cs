@@ -36,17 +36,19 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
 
     [Theory]
     [MemberData(nameof(開始時刻の例))]
-    public async Task 記録を開始すると識別子と開始時刻が返されます(DateTimeOffset startedAt)
+    public async Task 記録を開始すると識別子と開始時刻があり終了時刻がない作業記録が返されます(
+        DateTimeOffset startedAt)
     {
         timeProvider.SetUtcNow(startedAt);
 
         using var response = await client.PostAsync("/api/time-records/start", null);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var body = await response.Content.ReadFromJsonAsync<StartTimeRecordResponse>();
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>();
         body.Should().NotBeNull();
         body.Id.Should().NotBe(Guid.Empty);
         body.StartedAt.Should().Be(startedAt);
+        body.EndedAt.Should().BeNull();
     }
 
     [Theory]
@@ -61,20 +63,61 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         using var response = await client.PostAsync($"/api/time-records/{startedRecord.Id}/end", null);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<EndTimeRecordResponse>();
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>();
         body.Should().NotBeNull();
         body.Id.Should().Be(startedRecord.Id);
         body.StartedAt.Should().Be(startedAt);
         body.EndedAt.Should().Be(endedAt);
     }
 
-    async Task<StartTimeRecordResponse> 開始済みの記録を用意する(DateTimeOffset startedAt)
+    [Fact]
+    public async Task 記録を開始した後に一覧を取得すると開始した記録が含まれます()
+    {
+        var startedRecord = await 開始済みの記録を用意する(早い時刻);
+
+        using var response = await client.GetAsync("/api/time-records");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>();
+        body.Should().ContainEquivalentOf(startedRecord);
+    }
+
+    [Fact]
+    public async Task 二件の記録を開始した後に一覧を取得すると開始した順に両方が返されます()
+    {
+        var firstRecord = await 開始済みの記録を用意する(早い時刻);
+        var secondRecord = await 開始済みの記録を用意する(遅い時刻);
+
+        using var response = await client.GetAsync("/api/time-records");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>();
+        body.Should().Equal(firstRecord, secondRecord);
+    }
+
+    [Fact]
+    public async Task 記録を終了した後に一覧を取得すると終了時刻が含まれます()
+    {
+        var startedRecord = await 開始済みの記録を用意する(早い時刻);
+        timeProvider.SetUtcNow(遅い時刻);
+        using var endResponse = await client.PostAsync($"/api/time-records/{startedRecord.Id}/end", null);
+        endResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var response = await client.GetAsync("/api/time-records");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>();
+        body.Should().ContainEquivalentOf(
+            new TimeRecordResponse(startedRecord.Id, 早い時刻, 遅い時刻));
+    }
+
+    async Task<TimeRecordResponse> 開始済みの記録を用意する(DateTimeOffset startedAt)
     {
         // 開始APIの仕様を直接読めるよう、開始テストと同じHTTP処理を意図的に共通化していない。
         timeProvider.SetUtcNow(startedAt);
         using var response = await client.PostAsync("/api/time-records/start", null);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var body = await response.Content.ReadFromJsonAsync<StartTimeRecordResponse>();
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>();
         body.Should().NotBeNull();
         return body;
     }
@@ -85,6 +128,8 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         configuredFactory.Dispose();
     }
 
-    sealed record StartTimeRecordResponse(Guid Id, DateTimeOffset StartedAt);
-    sealed record EndTimeRecordResponse(Guid Id, DateTimeOffset StartedAt, DateTimeOffset EndedAt);
+    sealed record TimeRecordResponse(
+        Guid Id,
+        DateTimeOffset StartedAt,
+        DateTimeOffset? EndedAt);
 }

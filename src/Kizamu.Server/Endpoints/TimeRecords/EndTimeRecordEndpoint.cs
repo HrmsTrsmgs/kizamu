@@ -16,7 +16,7 @@ static class EndTimeRecordEndpoint
         {
             self.MapPost("/api/time-records/{id:guid}/end", (Guid id, EndTimeRecord endTimeRecord) =>
                 Results.Ok(
-                    new EndTimeRecordResponse(
+                    new TimeRecordResponse(
                         endTimeRecord.Execute(id))));
         }
     }

@@ -1,20 +1,20 @@
-type StartTimeRecordResponse = {
+export type TimeRecordResponse = {
   id: string
   startedAt: string
-}
-
-type EndTimeRecordResponse = {
-  id: string
-  startedAt: string
-  endedAt: string
+  endedAt: string | null
 }
 
 export type TimeRecordApi = {
-  startTimeRecord: () => Promise<StartTimeRecordResponse>
-  endTimeRecord: (id: string) => Promise<EndTimeRecordResponse>
+  getTimeRecords: () => Promise<TimeRecordResponse[]>
+  startTimeRecord: () => Promise<TimeRecordResponse>
+  endTimeRecord: (id: string) => Promise<TimeRecordResponse>
 }
 
 export const timeRecordApi: TimeRecordApi = {
+  async getTimeRecords() {
+    const response = await fetch('/api/time-records')
+    return response.json()
+  },
   async startTimeRecord() {
     const response = await fetch('/api/time-records/start', { method: 'POST' })
     return response.json()

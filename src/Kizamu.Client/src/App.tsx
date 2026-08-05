@@ -12,10 +12,14 @@ type AppProps = {
 export default function App({ health, timeRecords }: AppProps) {
   return (
     <main>
-      <h1>Kizamu</h1>
-      <p>プロジェクトの準備が完了しました。</p>
+      <header className="app-header">
+        <h1>Kizamu</h1>
+        <p className="app-description">作業時間を記録します。</p>
+      </header>
       <TimeRecorder timeRecords={timeRecords} />
-      <HealthStatus health={health} />
+      <footer className="app-footer">
+        <HealthStatus health={health} />
+      </footer>
     </main>
   )
 }
