@@ -38,6 +38,9 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
         {state.records.map(record => (
           <li key={record.id}>
             <time dateTime={record.startedAt}>{record.startedAt}</time>
+            {record.endedAt !== null && (
+              <time dateTime={record.endedAt}>{record.endedAt}</time>
+            )}
           </li>
         ))}
       </ul>

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { timeRecordApi } from './timeRecordApi'
 
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
+const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
 const 開始時刻 = '2026-08-01T09:00:00Z'
 const 終了時刻 = '2026-08-01T10:30:00Z'
 const tested = timeRecordApi
@@ -21,10 +22,21 @@ describe('timeRecordApi', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/time-records')
   })
 
+  it('作業記録一覧APIのレスポンスを返します', async () => {
+    const expected = [
+      { id: 記録ID, startedAt: 開始時刻, endedAt: null },
+      { id: 次の記録ID, startedAt: 開始時刻, endedAt: 終了時刻 },
+    ]
+    vi.stubGlobal('fetch', vi.fn(async () => response(expected)))
+
+    expect(await tested.getTimeRecords()).toEqual(expected)
+  })
+
   it('記録開始APIへPOSTします', async () => {
     const fetchMock = vi.fn(async () => response({
       id: 記録ID,
       startedAt: 開始時刻,
+      endedAt: null,
     }))
     vi.stubGlobal('fetch', fetchMock)
 
@@ -38,6 +50,7 @@ describe('timeRecordApi', () => {
     const expected = {
       id: 記録ID,
       startedAt: 開始時刻,
+      endedAt: null,
     }
     vi.stubGlobal('fetch', vi.fn(async () => response(expected)))
 

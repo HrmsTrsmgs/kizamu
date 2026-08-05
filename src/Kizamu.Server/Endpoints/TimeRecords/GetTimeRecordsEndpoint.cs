@@ -19,7 +19,7 @@ static class GetTimeRecordsEndpoint
                 (ITimeRecordState timeRecordState) =>
                     Results.Ok(
                         timeRecordState.All.Select(timeRecord =>
-                            new StartTimeRecordResponse(timeRecord.Id, timeRecord.StartedAt))));
+                            new TimeRecordResponse(timeRecord))));
         }
     }
 }

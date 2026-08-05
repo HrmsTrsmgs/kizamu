@@ -1,16 +1,16 @@
-import type { EndTimeRecordResponse, StartTimeRecordResponse } from './timeRecordApi'
+import type { TimeRecordResponse } from './timeRecordApi'
 
 export type TimeRecorderState = {
-  records: StartTimeRecordResponse[]
+  records: TimeRecordResponse[]
   timeRecordId: string | null
   startedAt: string | null
   endedAt: string | null
 }
 
 export type TimeRecorderAction =
-  | { type: 'recordsLoaded', records: StartTimeRecordResponse[] }
-  | { type: 'recordStarted', record: StartTimeRecordResponse }
-  | { type: 'recordEnded', record: EndTimeRecordResponse }
+  | { type: 'recordsLoaded', records: TimeRecordResponse[] }
+  | { type: 'recordStarted', record: TimeRecordResponse }
+  | { type: 'recordEnded', record: TimeRecordResponse }
 
 export const initialTimeRecorderState: TimeRecorderState = {
   records: [],
@@ -37,6 +37,8 @@ export function timeRecorderReducer(
     case 'recordEnded':
       return {
         ...state,
+        records: state.records.map(record =>
+          record.id === action.record.id ? action.record : record),
         timeRecordId: null,
         endedAt: action.record.endedAt,
       }

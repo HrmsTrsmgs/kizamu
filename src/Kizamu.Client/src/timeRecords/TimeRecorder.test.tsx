@@ -26,6 +26,7 @@ describe('TimeRecorder', () => {
       getTimeRecords: async () => [{
         id: 記録ID,
         startedAt: 開始時刻,
+        endedAt: null,
       }],
     })
 
@@ -35,10 +36,26 @@ describe('TimeRecorder', () => {
     expect(within(list).getByText(開始時刻)).toBeInTheDocument()
   })
 
+  it('取得した終了済み作業記録の終了時刻を一覧に表示します', async () => {
+    const timeRecords = createTimeRecordApiMock({
+      getTimeRecords: async () => [{
+        id: 記録ID,
+        startedAt: 開始時刻,
+        endedAt: 終了時刻,
+      }],
+    })
+
+    render(<TimeRecorder timeRecords={timeRecords} />)
+
+    const list = await screen.findByRole('list', { name: '作業記録一覧' })
+    expect(within(list).getByText(終了時刻)).toBeInTheDocument()
+  })
+
   it('開始ボタンを押すと記録開始を要求します', () => {
     const startTimeRecord = vi.fn(async () => ({
       id: 記録ID,
       startedAt: 開始時刻,
+      endedAt: null,
     }))
     const timeRecords = createTimeRecordApiMock({
       startTimeRecord,
@@ -55,6 +72,7 @@ describe('TimeRecorder', () => {
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
+        endedAt: null,
       }),
     })
     render(<TimeRecorder timeRecords={timeRecords} />)
@@ -71,6 +89,7 @@ describe('TimeRecorder', () => {
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
+        endedAt: null,
       }),
     })
     render(<TimeRecorder timeRecords={timeRecords} />)
@@ -86,6 +105,7 @@ describe('TimeRecorder', () => {
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
+        endedAt: null,
       }),
     })
     render(<TimeRecorder timeRecords={timeRecords} />)
@@ -102,6 +122,7 @@ describe('TimeRecorder', () => {
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
+        endedAt: null,
       }),
       endTimeRecord,
     })
@@ -119,6 +140,7 @@ describe('TimeRecorder', () => {
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
+        endedAt: null,
       }),
       endTimeRecord: async () => ({
         id: 記録ID,
@@ -141,6 +163,7 @@ describe('TimeRecorder', () => {
       startTimeRecord: async () => ({
         id: 記録ID,
         startedAt: 開始時刻,
+        endedAt: null,
       }),
       endTimeRecord: async () => ({
         id: 記録ID,
@@ -162,10 +185,12 @@ describe('TimeRecorder', () => {
       .mockResolvedValueOnce({
         id: 記録ID,
         startedAt: 開始時刻,
+        endedAt: null,
       })
       .mockResolvedValueOnce({
         id: 次の記録ID,
         startedAt: 次の開始時刻,
+        endedAt: null,
       })
     const timeRecords = createTimeRecordApiMock({
       startTimeRecord,

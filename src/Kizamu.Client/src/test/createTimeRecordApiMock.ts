@@ -5,7 +5,7 @@ export function createTimeRecordApiMock(
 ): TimeRecordApi {
   return {
     getTimeRecords: async () => [],
-    startTimeRecord: async () => ({ id: '', startedAt: '' }),
+    startTimeRecord: async () => ({ id: '', startedAt: '', endedAt: null }),
     endTimeRecord: async () => ({ id: '', startedAt: '', endedAt: '' }),
     ...overrides,
   }

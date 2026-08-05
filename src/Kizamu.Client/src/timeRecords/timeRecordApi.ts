@@ -1,18 +1,13 @@
-export type StartTimeRecordResponse = {
+export type TimeRecordResponse = {
   id: string
   startedAt: string
-}
-
-export type EndTimeRecordResponse = {
-  id: string
-  startedAt: string
-  endedAt: string
+  endedAt: string | null
 }
 
 export type TimeRecordApi = {
-  getTimeRecords: () => Promise<StartTimeRecordResponse[]>
-  startTimeRecord: () => Promise<StartTimeRecordResponse>
-  endTimeRecord: (id: string) => Promise<EndTimeRecordResponse>
+  getTimeRecords: () => Promise<TimeRecordResponse[]>
+  startTimeRecord: () => Promise<TimeRecordResponse>
+  endTimeRecord: (id: string) => Promise<TimeRecordResponse>
 }
 
 export const timeRecordApi: TimeRecordApi = {

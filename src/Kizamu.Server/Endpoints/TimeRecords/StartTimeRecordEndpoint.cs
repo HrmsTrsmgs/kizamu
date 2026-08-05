@@ -16,7 +16,7 @@ static class StartTimeRecordEndpoint
         {
             self.MapPost("/api/time-records/start", (StartTimeRecord startTimeRecord) =>
                 Results.Json(
-                    new StartTimeRecordResponse(
+                    new TimeRecordResponse(
                         startTimeRecord.Execute()),
                     statusCode: StatusCodes.Status201Created));
         }
