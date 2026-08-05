@@ -1,4 +1,4 @@
-type StartTimeRecordResponse = {
+export type StartTimeRecordResponse = {
   id: string
   startedAt: string
 }
