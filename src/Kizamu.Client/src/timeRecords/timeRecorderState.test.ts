@@ -11,7 +11,7 @@ const 終了時刻 = '2026-08-01T10:30:00Z'
 const 記録 = { id: 記録ID, startedAt: 開始時刻, endedAt: null }
 
 describe('timeRecorderReducer', () => {
-  it('作業記録一覧を取得すると一覧を保持します', () => {
+  it('記録中の作業記録一覧を取得すると一覧と現在記録を保持します', () => {
     const result = timeRecorderReducer(initialTimeRecorderState, {
       type: 'recordsLoaded',
       records: [記録],
@@ -20,7 +20,22 @@ describe('timeRecorderReducer', () => {
     expect(result).toEqual({
       ...initialTimeRecorderState,
       records: [記録],
+      timeRecordId: 記録ID,
     })
+  })
+
+  it('終了済みの作業記録一覧を取得すると現在記録を解除します', () => {
+    const state: TimeRecorderState = {
+      ...initialTimeRecorderState,
+      timeRecordId: 記録ID,
+    }
+
+    const result = timeRecorderReducer(state, {
+      type: 'recordsLoaded',
+      records: [{ ...記録, endedAt: 終了時刻 }],
+    })
+
+    expect(result.timeRecordId).toBeNull()
   })
 
   it('記録を開始すると一覧と現在の記録を更新して終了時刻を消去します', () => {

@@ -25,7 +25,12 @@ export function timeRecorderReducer(
 ): TimeRecorderState {
   switch (action.type) {
     case 'recordsLoaded':
-      return { ...state, records: action.records }
+      return {
+        ...state,
+        records: action.records,
+        timeRecordId:
+          action.records.find(record => record.endedAt === null)?.id ?? null,
+      }
     case 'recordStarted':
       return {
         ...state,
