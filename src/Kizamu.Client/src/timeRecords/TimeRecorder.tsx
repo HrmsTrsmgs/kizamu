@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'react'
 import type { TimeRecordApi } from './timeRecordApi'
+import TimeRecordTimes from './TimeRecordTimes'
 import { initialTimeRecorderState, timeRecorderReducer } from './timeRecorderState'
 
 type TimeRecorderProps = {
@@ -33,36 +34,50 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
   }
 
   return (
-    <>
-      <ul aria-label="作業記録一覧">
-        {state.records.map(record => (
-          <li key={record.id}>
-            <time dateTime={record.startedAt}>{record.startedAt}</time>
-            {record.endedAt !== null && (
-              <time dateTime={record.endedAt}>{record.endedAt}</time>
-            )}
-          </li>
-        ))}
-      </ul>
-      {state.timeRecordId === null ? (
-        <button type="button" onClick={() => { void startTimeRecord() }}>
-          記録を開始
-        </button>
-      ) : (
-        <button type="button" onClick={() => { void endTimeRecord() }}>
-          記録を終了
-        </button>
-      )}
-      {state.startedAt !== null && (
-        <time aria-label="開始時刻" dateTime={state.startedAt}>
-          {state.startedAt}
-        </time>
-      )}
-      {state.endedAt !== null && (
-        <time aria-label="終了時刻" dateTime={state.endedAt}>
-          {state.endedAt}
-        </time>
-      )}
-    </>
+    <div className="time-recorder">
+      <section className="recorder-panel" aria-labelledby="recorder-title">
+        <header className="panel-header">
+          <h2 id="recorder-title">プロジェクト未登録</h2>
+          <span className={`status-badge ${state.timeRecordId === null ? '' : 'is-active'}`}>
+            {state.timeRecordId === null ? '待機中' : '記録中'}
+          </span>
+        </header>
+
+        <div className="recorder-action">
+          {state.timeRecordId === null ? (
+            <button className="record-button" type="button" onClick={() => { void startTimeRecord() }}>
+              記録を開始
+            </button>
+          ) : (
+            <button className="record-button is-active" type="button" onClick={() => { void endTimeRecord() }}>
+              記録を終了
+            </button>
+          )}
+          {state.startedAt !== null && (
+            <TimeRecordTimes
+              startedAt={state.startedAt}
+              endedAt={state.endedAt}
+              labelled
+            />
+          )}
+        </div>
+      </section>
+
+      <section className="records-panel" aria-labelledby="records-title">
+        <header className="panel-header records-header">
+          <h2 id="records-title">作業記録</h2>
+          <span className="record-count">{state.records.length}件</span>
+        </header>
+
+        <ul className="records-list" aria-label="作業記録一覧">
+          {state.records.map(record => (
+            <li key={record.id}>
+              <span className={`record-status ${record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
+              <TimeRecordTimes startedAt={record.startedAt} endedAt={record.endedAt} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   )
 }

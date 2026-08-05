@@ -8,6 +8,17 @@ const 開始時刻 = '2026-08-01T09:00:00Z'
 const 終了時刻 = '2026-08-01T10:30:00Z'
 const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
 const 次の開始時刻 = '2026-08-01T11:00:00Z'
+const 日本時間で表示 = (dateTime: string) => new Intl.DateTimeFormat('ja-JP', {
+  timeZone: 'Asia/Tokyo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+}).format(new Date(dateTime))
+const 表示用開始時刻 = 日本時間で表示(開始時刻)
+const 表示用終了時刻 = 日本時間で表示(終了時刻)
 
 describe('TimeRecorder', () => {
   it('画面を表示すると作業記録一覧を要求します', () => {
@@ -33,7 +44,7 @@ describe('TimeRecorder', () => {
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     const list = await screen.findByRole('list', { name: '作業記録一覧' })
-    expect(within(list).getByText(開始時刻)).toBeInTheDocument()
+    expect(within(list).getByText(表示用開始時刻)).toBeInTheDocument()
   })
 
   it('取得した終了済み作業記録の終了時刻を一覧に表示します', async () => {
@@ -48,7 +59,7 @@ describe('TimeRecorder', () => {
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     const list = await screen.findByRole('list', { name: '作業記録一覧' })
-    expect(within(list).getByText(終了時刻)).toBeInTheDocument()
+    expect(within(list).getByText(表示用終了時刻)).toBeInTheDocument()
   })
 
   it('取得した一覧に記録中の作業記録があると終了操作を表示します', async () => {
@@ -96,7 +107,7 @@ describe('TimeRecorder', () => {
 
     const startedAtDisplay = await screen.findByLabelText('開始時刻')
     expect(startedAtDisplay).toHaveAttribute('datetime', 開始時刻)
-    expect(startedAtDisplay).not.toBeEmptyDOMElement()
+    expect(startedAtDisplay).toHaveTextContent(表示用開始時刻)
   })
 
   it('記録を開始すると開始した記録が一覧に表示されます', async () => {
@@ -112,7 +123,7 @@ describe('TimeRecorder', () => {
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
 
     const list = screen.getByRole('list', { name: '作業記録一覧' })
-    expect(await within(list).findByText(開始時刻)).toBeInTheDocument()
+    expect(await within(list).findByText(表示用開始時刻)).toBeInTheDocument()
   })
 
   it('記録を開始すると終了操作へ切り替わります', async () => {
@@ -170,7 +181,7 @@ describe('TimeRecorder', () => {
 
     const endedAtDisplay = await screen.findByLabelText('終了時刻')
     expect(endedAtDisplay).toHaveAttribute('datetime', 終了時刻)
-    expect(endedAtDisplay).not.toBeEmptyDOMElement()
+    expect(endedAtDisplay).toHaveTextContent(表示用終了時刻)
   })
 
   it('記録を終了すると開始操作へ切り替わります', async () => {

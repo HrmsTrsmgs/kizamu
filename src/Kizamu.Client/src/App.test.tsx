@@ -11,7 +11,7 @@ describe('App', () => {
     render(<App health={health} timeRecords={timeRecords} />)
 
     expect(screen.getByRole('heading', { name: 'Kizamu' })).toBeInTheDocument()
-    expect(screen.getByText('プロジェクトの準備が完了しました。')).toBeInTheDocument()
+    expect(screen.getByText('作業時間を記録します。')).toBeInTheDocument()
     expect(screen.queryByText(/count is/i)).not.toBeInTheDocument()
   })
 })
