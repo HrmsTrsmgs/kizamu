@@ -10,6 +10,17 @@ const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
 const 次の開始時刻 = '2026-08-01T11:00:00Z'
 
 describe('TimeRecorder', () => {
+  it('画面を表示すると作業記録一覧を要求します', () => {
+    const getTimeRecords = vi.fn(async () => [])
+    const timeRecords = createTimeRecordApiMock({
+      getTimeRecords,
+    })
+
+    render(<TimeRecorder timeRecords={timeRecords} />)
+
+    expect(getTimeRecords).toHaveBeenCalledOnce()
+  })
+
   it('開始ボタンを押すと記録開始を要求します', () => {
     const startTimeRecord = vi.fn(async () => ({
       id: 記録ID,

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { TimeRecordApi } from './timeRecordApi'
 
 type TimeRecorderProps = {
@@ -9,6 +9,10 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
   const [timeRecordId, setTimeRecordId] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState<string | null>(null)
   const [endedAt, setEndedAt] = useState<string | null>(null)
+
+  useEffect(() => {
+    void timeRecords.getTimeRecords()
+  }, [timeRecords])
 
   async function startTimeRecord() {
     const record = await timeRecords.startTimeRecord()
