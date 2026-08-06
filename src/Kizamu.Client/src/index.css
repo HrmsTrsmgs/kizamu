@@ -143,9 +143,14 @@ h1 {
 
 .time-record-times {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  width: 100%;
   min-width: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dfe6e2;
+  border-radius: 0.7rem;
+  background: #f7f9f8;
 }
 
 .records-header {
@@ -196,7 +201,8 @@ h1 {
 }
 
 .record-time time,
-.recording-label {
+.recording-label,
+.time-record-duration-value {
   overflow: hidden;
   color: #26312c;
   font-size: 0.85rem;

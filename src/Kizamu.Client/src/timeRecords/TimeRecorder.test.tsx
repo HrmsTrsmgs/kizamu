@@ -82,6 +82,7 @@ describe('TimeRecorder', () => {
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     const list = await screen.findByRole('list', { name: '作業記録一覧' })
+    expect(within(list).getByText('作業時間')).toBeInTheDocument()
     expect(within(list).getByText(expectedDuration)).toBeInTheDocument()
   })
 
@@ -226,7 +227,8 @@ describe('TimeRecorder', () => {
     fireEvent.click(await screen.findByRole('button', { name: '記録を終了' }))
 
     const recorder = screen.getByRole('heading', { name: 'プロジェクト未登録' }).closest('section')!
-    expect(await within(recorder).findByText('1時間30分')).toBeInTheDocument()
+    expect(await within(recorder).findByText('作業時間')).toBeInTheDocument()
+    expect(within(recorder).getByText('1時間30分')).toBeInTheDocument()
   })
 
   it('記録を終了すると開始操作へ切り替わります', async () => {

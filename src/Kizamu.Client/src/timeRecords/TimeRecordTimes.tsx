@@ -44,7 +44,12 @@ export default function TimeRecordTimes({
         )}
       </div>
       {duration !== null && (
-        <span>{duration.hours}時間{duration.minutes}分</span>
+        <div className="record-time">
+          <span>作業時間</span>
+          <span className="time-record-duration-value">
+            {duration.hours}時間{duration.minutes}分
+          </span>
+        </div>
       )}
     </div>
   )
