@@ -1,3 +1,5 @@
+import { calculateTimeRecordDuration } from './timeRecordDuration'
+
 type TimeRecordTimesProps = {
   startedAt: string
   endedAt: string | null
@@ -19,6 +21,10 @@ export default function TimeRecordTimes({
   endedAt,
   labelled = false,
 }: TimeRecordTimesProps) {
+  const duration = endedAt === null
+    ? null
+    : calculateTimeRecordDuration(startedAt, endedAt)
+
   return (
     <div className="time-record-times">
       <div className="record-time">
@@ -37,6 +43,14 @@ export default function TimeRecordTimes({
           <span className="recording-label">記録中</span>
         )}
       </div>
+      {duration !== null && (
+        <div className="record-time">
+          <span>作業時間</span>
+          <span className="time-record-duration-value">
+            {duration.hours}時間{duration.minutes}分
+          </span>
+        </div>
+      )}
     </div>
   )
 }
