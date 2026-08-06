@@ -86,6 +86,30 @@ describe('TimeRecorder', () => {
     expect(within(list).getByText(expectedDuration)).toBeInTheDocument()
   })
 
+  it('取得した記録中の作業記録では開始時刻から現在時刻までを作業時間として一覧に表示します', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(終了時刻)
+
+    try {
+      const timeRecords = createTimeRecordApiMock({
+        getTimeRecords: async () => [{
+          id: 記録ID,
+          startedAt: 開始時刻,
+          endedAt: null,
+        }],
+      })
+
+      render(<TimeRecorder timeRecords={timeRecords} />)
+
+      await vi.waitFor(() => {
+        const list = screen.getByRole('list', { name: '作業記録一覧' })
+        expect(within(list).getByText('1時間30分')).toBeInTheDocument()
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('取得した一覧に記録中の作業記録があると終了操作を表示します', async () => {
     const timeRecords = createTimeRecordApiMock({
       getTimeRecords: async () => [{
