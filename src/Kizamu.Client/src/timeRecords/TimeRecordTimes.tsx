@@ -1,3 +1,5 @@
+import { useEffect, useReducer } from 'react'
+import { Temporal } from 'temporal-polyfill'
 import { calculateTimeRecordDuration } from './timeRecordDuration'
 
 type TimeRecordTimesProps = {
@@ -21,9 +23,22 @@ export default function TimeRecordTimes({
   endedAt,
   labelled = false,
 }: TimeRecordTimesProps) {
-  const duration = endedAt === null
-    ? null
-    : calculateTimeRecordDuration(startedAt, endedAt)
+  const [, updateCurrentTime] = useReducer(count => count + 1, 0)
+
+  useEffect(() => {
+    if (endedAt !== null) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => updateCurrentTime(), 1_000)
+
+    return () => window.clearInterval(intervalId)
+  }, [endedAt])
+
+  const duration = calculateTimeRecordDuration(
+    Temporal.Instant.from(startedAt),
+    endedAt === null ? Temporal.Now.instant() : Temporal.Instant.from(endedAt),
+  )
 
   return (
     <div className="time-record-times">
@@ -43,14 +58,12 @@ export default function TimeRecordTimes({
           <span className="recording-label">記録中</span>
         )}
       </div>
-      {duration !== null && (
-        <div className="record-time">
-          <span>作業時間</span>
-          <span className="time-record-duration-value">
-            {duration.hours}時間{duration.minutes}分
-          </span>
-        </div>
-      )}
+      <div className="record-time">
+        <span>作業時間</span>
+        <span className="time-record-duration-value">
+          {duration.hours}時間{duration.minutes}分
+        </span>
+      </div>
     </div>
   )
 }
