@@ -6,6 +6,7 @@ import TimeRecorder from './TimeRecorder'
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
 const 開始時刻 = '2026-08-01T09:00:00Z'
 const 終了時刻 = '2026-08-01T10:30:00Z'
+const 開始から2時間15分後の終了時刻 = '2026-08-01T11:15:00Z'
 const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
 const 次の開始時刻 = '2026-08-01T11:00:00Z'
 const 日本時間で表示 = (dateTime: string) => new Intl.DateTimeFormat('ja-JP', {
@@ -62,19 +63,26 @@ describe('TimeRecorder', () => {
     expect(within(list).getByText(表示用終了時刻)).toBeInTheDocument()
   })
 
-  it('取得した終了済み作業記録の作業時間を一覧に表示します', async () => {
+  it.each([
+    { startedAt: 開始時刻, endedAt: 終了時刻, expectedDuration: '1時間30分' },
+    { startedAt: 開始時刻, endedAt: 開始から2時間15分後の終了時刻, expectedDuration: '2時間15分' },
+  ])('取得した終了済み作業記録では開始時刻から終了時刻までを作業時間として一覧に表示します: $expectedDuration', async ({
+    startedAt,
+    endedAt,
+    expectedDuration,
+  }) => {
     const timeRecords = createTimeRecordApiMock({
       getTimeRecords: async () => [{
         id: 記録ID,
-        startedAt: 開始時刻,
-        endedAt: 終了時刻,
+        startedAt,
+        endedAt,
       }],
     })
 
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     const list = await screen.findByRole('list', { name: '作業記録一覧' })
-    expect(within(list).getByText('1時間30分')).toBeInTheDocument()
+    expect(within(list).getByText(expectedDuration)).toBeInTheDocument()
   })
 
   it('取得した一覧に記録中の作業記録があると終了操作を表示します', async () => {
