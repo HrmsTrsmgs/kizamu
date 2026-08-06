@@ -62,6 +62,21 @@ describe('TimeRecorder', () => {
     expect(within(list).getByText(表示用終了時刻)).toBeInTheDocument()
   })
 
+  it('取得した終了済み作業記録の作業時間を一覧に表示します', async () => {
+    const timeRecords = createTimeRecordApiMock({
+      getTimeRecords: async () => [{
+        id: 記録ID,
+        startedAt: 開始時刻,
+        endedAt: 終了時刻,
+      }],
+    })
+
+    render(<TimeRecorder timeRecords={timeRecords} />)
+
+    const list = await screen.findByRole('list', { name: '作業記録一覧' })
+    expect(within(list).getByText('1時間30分')).toBeInTheDocument()
+  })
+
   it('取得した一覧に記録中の作業記録があると終了操作を表示します', async () => {
     const timeRecords = createTimeRecordApiMock({
       getTimeRecords: async () => [{

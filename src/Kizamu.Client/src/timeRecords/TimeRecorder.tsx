@@ -74,6 +74,7 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
             <li key={record.id}>
               <span className={`record-status ${record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
               <TimeRecordTimes startedAt={record.startedAt} endedAt={record.endedAt} />
+              {record.endedAt !== null && <span>1時間30分</span>}
             </li>
           ))}
         </ul>
