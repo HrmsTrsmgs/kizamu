@@ -1,8 +1,5 @@
 import { Temporal } from 'temporal-polyfill'
 
-export function calculateTimeRecordDuration(startedAt: string, endedAt: string): Temporal.Duration {
-  const start = Temporal.Instant.from(startedAt)
-  const end = Temporal.Instant.from(endedAt)
-
+export function calculateTimeRecordDuration(start: Temporal.Instant, end: Temporal.Instant): Temporal.Duration {
   return end.since(start, { largestUnit: 'hour' })
 }

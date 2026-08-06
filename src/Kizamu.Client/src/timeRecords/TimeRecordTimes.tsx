@@ -1,3 +1,4 @@
+import { Temporal } from 'temporal-polyfill'
 import { calculateTimeRecordDuration } from './timeRecordDuration'
 
 type TimeRecordTimesProps = {
@@ -21,9 +22,10 @@ export default function TimeRecordTimes({
   endedAt,
   labelled = false,
 }: TimeRecordTimesProps) {
-  const duration = endedAt === null
-    ? { hours: 1, minutes: 30 }
-    : calculateTimeRecordDuration(startedAt, endedAt)
+  const duration = calculateTimeRecordDuration(
+    Temporal.Instant.from(startedAt),
+    endedAt === null ? Temporal.Now.instant() : Temporal.Instant.from(endedAt),
+  )
 
   return (
     <div className="time-record-times">

@@ -86,9 +86,15 @@ describe('TimeRecorder', () => {
     expect(within(list).getByText(expectedDuration)).toBeInTheDocument()
   })
 
-  it('取得した記録中の作業記録では開始時刻から現在時刻までを作業時間として一覧に表示します', async () => {
+  it.each([
+    { currentTime: 終了時刻, expectedDuration: '1時間30分' },
+    { currentTime: 開始から2時間15分後の終了時刻, expectedDuration: '2時間15分' },
+  ])('取得した記録中の作業記録では開始時刻から現在時刻までを作業時間として一覧に表示します: $expectedDuration', async ({
+    currentTime,
+    expectedDuration,
+  }) => {
     vi.useFakeTimers()
-    vi.setSystemTime(終了時刻)
+    vi.setSystemTime(currentTime)
 
     try {
       const timeRecords = createTimeRecordApiMock({
@@ -103,7 +109,7 @@ describe('TimeRecorder', () => {
 
       await vi.waitFor(() => {
         const list = screen.getByRole('list', { name: '作業記録一覧' })
-        expect(within(list).getByText('1時間30分')).toBeInTheDocument()
+        expect(within(list).getByText(expectedDuration)).toBeInTheDocument()
       })
     } finally {
       vi.useRealTimers()
