@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { createTimeRecordApiMock } from '../test/createTimeRecordApiMock'
 import TimeRecorder from './TimeRecorder'
@@ -6,6 +6,7 @@ import TimeRecorder from './TimeRecorder'
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
 const 開始時刻 = '2026-08-01T09:00:00Z'
 const 終了時刻 = '2026-08-01T10:30:00Z'
+const 開始から1時間31分後の1秒前 = '2026-08-01T10:30:59Z'
 const 開始から2時間15分後の終了時刻 = '2026-08-01T11:15:00Z'
 const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
 const 次の開始時刻 = '2026-08-01T11:00:00Z'
@@ -111,6 +112,68 @@ describe('TimeRecorder', () => {
         const list = screen.getByRole('list', { name: '作業記録一覧' })
         expect(within(list).getByText(expectedDuration)).toBeInTheDocument()
       })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('記録中に時間が経過すると作業時間の表示を更新します', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(終了時刻)
+
+    try {
+      const timeRecords = createTimeRecordApiMock({
+        getTimeRecords: async () => [{
+          id: 記録ID,
+          startedAt: 開始時刻,
+          endedAt: null,
+        }],
+      })
+
+      render(<TimeRecorder timeRecords={timeRecords} />)
+
+      await vi.waitFor(() => {
+        const list = screen.getByRole('list', { name: '作業記録一覧' })
+        expect(within(list).getByText('1時間30分')).toBeInTheDocument()
+      })
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_000)
+      })
+
+      const list = screen.getByRole('list', { name: '作業記録一覧' })
+      expect(within(list).getByText('1時間31分')).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('記録中の作業時間が次の整数分になると表示を更新します', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(開始から1時間31分後の1秒前)
+
+    try {
+      const timeRecords = createTimeRecordApiMock({
+        getTimeRecords: async () => [{
+          id: 記録ID,
+          startedAt: 開始時刻,
+          endedAt: null,
+        }],
+      })
+
+      render(<TimeRecorder timeRecords={timeRecords} />)
+
+      await vi.waitFor(() => {
+        const list = screen.getByRole('list', { name: '作業記録一覧' })
+        expect(within(list).getByText('1時間30分')).toBeInTheDocument()
+      })
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_000)
+      })
+
+      const list = screen.getByRole('list', { name: '作業記録一覧' })
+      expect(within(list).getByText('1時間31分')).toBeInTheDocument()
     } finally {
       vi.useRealTimers()
     }

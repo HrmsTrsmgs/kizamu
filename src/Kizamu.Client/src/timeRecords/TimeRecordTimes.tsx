@@ -1,3 +1,4 @@
+import { useEffect, useReducer } from 'react'
 import { Temporal } from 'temporal-polyfill'
 import { calculateTimeRecordDuration } from './timeRecordDuration'
 
@@ -22,6 +23,18 @@ export default function TimeRecordTimes({
   endedAt,
   labelled = false,
 }: TimeRecordTimesProps) {
+  const [, updateCurrentTime] = useReducer(count => count + 1, 0)
+
+  useEffect(() => {
+    if (endedAt !== null) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => updateCurrentTime(), 1_000)
+
+    return () => window.clearInterval(intervalId)
+  }, [endedAt])
+
   const duration = calculateTimeRecordDuration(
     Temporal.Instant.from(startedAt),
     endedAt === null ? Temporal.Now.instant() : Temporal.Instant.from(endedAt),
