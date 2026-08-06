@@ -9,6 +9,7 @@
 
 * 常に適用する共通指示: `docs/ai-instructions/common.md`
 * 振る舞い追加、仕様変更、不具合修正: `docs/ai-instructions/tdd.md`
+* 複数チャットでTDDを進行、レビューする場合: `docs/ai-instructions/tdd-orchestration.md`
 * C#、.NET、xUnit、FluentAssertions、NuGet、MSBuild: `docs/ai-instructions/csharp.md`
 * TypeScript、React、Vite、Vitest、ESLint、npm: `docs/ai-instructions/typescript-react.md`
 * Kizamu固有の製品設計、README、開発環境: `docs/ai-instructions/kizamu.md`
