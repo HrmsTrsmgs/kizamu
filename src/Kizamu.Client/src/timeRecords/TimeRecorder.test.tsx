@@ -207,6 +207,28 @@ describe('TimeRecorder', () => {
     expect(endedAtDisplay).toHaveTextContent(表示用終了時刻)
   })
 
+  it('記録を終了すると開始時刻から終了時刻までを作業時間として表示します', async () => {
+    const timeRecords = createTimeRecordApiMock({
+      startTimeRecord: async () => ({
+        id: 記録ID,
+        startedAt: 開始時刻,
+        endedAt: null,
+      }),
+      endTimeRecord: async () => ({
+        id: 記録ID,
+        startedAt: 開始時刻,
+        endedAt: 終了時刻,
+      }),
+    })
+    render(<TimeRecorder timeRecords={timeRecords} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+    fireEvent.click(await screen.findByRole('button', { name: '記録を終了' }))
+
+    const recorder = screen.getByRole('heading', { name: 'プロジェクト未登録' }).closest('section')!
+    expect(await within(recorder).findByText('1時間30分')).toBeInTheDocument()
+  })
+
   it('記録を終了すると開始操作へ切り替わります', async () => {
     const timeRecords = createTimeRecordApiMock({
       startTimeRecord: async () => ({

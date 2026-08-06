@@ -1,6 +1,5 @@
 import { useEffect, useReducer } from 'react'
 import type { TimeRecordApi } from './timeRecordApi'
-import { calculateTimeRecordDuration } from './timeRecordDuration'
 import TimeRecordTimes from './TimeRecordTimes'
 import { initialTimeRecorderState, timeRecorderReducer } from './timeRecorderState'
 
@@ -71,21 +70,12 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
         </header>
 
         <ul className="records-list" aria-label="作業記録一覧">
-          {state.records.map(record => {
-            const duration = record.endedAt === null
-              ? null
-              : calculateTimeRecordDuration(record.startedAt, record.endedAt)
-
-            return (
-              <li key={record.id}>
-                <span className={`record-status ${record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
-                <TimeRecordTimes startedAt={record.startedAt} endedAt={record.endedAt} />
-                {duration !== null && (
-                  <span>{duration.hours}時間{duration.minutes}分</span>
-                )}
-              </li>
-            )
-          })}
+          {state.records.map(record => (
+            <li key={record.id}>
+              <span className={`record-status ${record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
+              <TimeRecordTimes startedAt={record.startedAt} endedAt={record.endedAt} />
+            </li>
+          ))}
         </ul>
       </section>
     </div>
