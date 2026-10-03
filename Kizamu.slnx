@@ -1,20 +1,24 @@
 <Solution>
-  <Folder Name="/clients/react/">
-    <Project Path="clients/react/Kizamu.Client.esproj">
+  <Folder Name="/React/">
+    <Project Path="src/frontends/react/Kizamu.Client.esproj">
+      <Build />
+      <Deploy />
+    </Project>
+    <Project Path="tests/frontends/react/Kizamu.Client.Tests.esproj">
       <Build />
       <Deploy />
     </Project>
   </Folder>
-  <Folder Name="/servers/aspnetcore/src/">
-    <Project Path="servers/aspnetcore/src/Kizamu.Application/Kizamu.Application.csproj" />
-    <Project Path="servers/aspnetcore/src/Kizamu.Domain/Kizamu.Domain.csproj" />
-    <Project Path="servers/aspnetcore/src/Kizamu.Infrastructure/Kizamu.Infrastructure.csproj" />
-    <Project Path="servers/aspnetcore/src/Kizamu.Server/Kizamu.Server.csproj" />
+  <Folder Name="/ASP.NET Core/">
+    <Project Path="src/backends/aspnetcore/Kizamu.Application/Kizamu.Application.csproj" />
+    <Project Path="src/backends/aspnetcore/Kizamu.Infrastructure/Kizamu.Infrastructure.csproj" />
+    <Project Path="src/backends/aspnetcore/Kizamu.Server/Kizamu.Server.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Application.Tests/Kizamu.Application.Tests.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Infrastructure.Tests/Kizamu.Infrastructure.Tests.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Server.Tests/Kizamu.Server.Tests.csproj" />
   </Folder>
-  <Folder Name="/servers/aspnetcore/tests/">
-    <Project Path="servers/aspnetcore/tests/Kizamu.Application.Tests/Kizamu.Application.Tests.csproj" />
-    <Project Path="servers/aspnetcore/tests/Kizamu.Domain.Tests/Kizamu.Domain.Tests.csproj" />
-    <Project Path="servers/aspnetcore/tests/Kizamu.Infrastructure.Tests/Kizamu.Infrastructure.Tests.csproj" />
-    <Project Path="servers/aspnetcore/tests/Kizamu.Server.Tests/Kizamu.Server.Tests.csproj" />
+  <Folder Name="/Domain/.NET/">
+    <Project Path="src/domains/dotnet/Kizamu.Domain/Kizamu.Domain.csproj" />
+    <Project Path="tests/domains/dotnet/Kizamu.Domain.Tests/Kizamu.Domain.Tests.csproj" />
   </Folder>
 </Solution>

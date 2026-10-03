@@ -1,0 +1,4 @@
+{
+  "folders": [{ "path": ".", "name": "Kizamu" }],
+  "settings": { "dotnet.defaultSolution": "Kizamu.slnx" }
+}

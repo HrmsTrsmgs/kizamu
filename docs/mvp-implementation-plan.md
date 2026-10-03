@@ -464,8 +464,8 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 当面は次の順序で進める。
 
-1. 構成整理のPRで、既存ASP.NET Core実装を `servers/aspnetcore/`、React実装を `clients/react/` へ移し、起動、ビルド、テストの参照パスと文書を更新する。
-2. 次のPRで、Blazor WebAssemblyを `clients/blazor/` に導入し、既存機能を一つずつ移す。機能の同等性とVisual Studioからの起動を確認するまで、新しい製品機能は追加しない。
+1. 構成整理のPRで、ASP.NET Coreを `src/backends/aspnetcore/`、Reactを `src/frontends/react/`、Domainを `src/domains/dotnet/` へ移し、テストを対応する最上位の `tests/` 配下へ整理する。起動、ビルド、テストの参照パスと文書を更新し、npmはルートのworkspacesで管理する。
+2. 次のPRで、Blazor WebAssemblyを `src/frontends/blazor/` に導入し、既存機能を一つずつ移す。機能の同等性とVisual Studioからの起動を確認するまで、新しい製品機能は追加しない。
 3. その後のPRで、最小限のプロジェクト登録から再開する。フェーズ1と2に残るプロジェクト指定や複数同時記録は、小さな振る舞いごとに進める。
 
-現在の構成整理では、Blazor、Node、共通契約テスト、配布処理の空プロジェクトは作らない。公開用成果物の組み立てはフェーズ6で実装する。
+現在の構成整理では、Blazor、Node、OpenAPI契約・DTO生成、TypeScriptの共用Domain、共通契約テスト、起動組み合わせプロファイル、配布処理の空プロジェクトは作らない。予定の配置と責務はREADMEの「今後追加する配置」に記載する。API呼び出しコードの生成は、生成ツールの追随性と生成結果を確認してから採否を決める。公開用成果物の組み立てはフェーズ6で実装する。

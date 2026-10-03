@@ -1,0 +1,12 @@
+{
+  "name": "kizamu-workspace",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": ["src/frontends/react", "tests/frontends/react"],
+  "scripts": {
+    "dev": "npm run dev --workspace=kizamu-client",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  }
+}
