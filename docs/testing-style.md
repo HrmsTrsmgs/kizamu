@@ -1,6 +1,7 @@
 # テストコードの変数方針
 
 この文書は、Kizamuのテストでローカル変数と一時変数を扱う方針を定義する。
+Fluentな検証句の方針はAwesomeAssertionsと既存のFluentAssertionsの両方に適用する。採用ライブラリの方針は `ai-instructions/csharp.md` を参照する。
 
 ## varの使用方針
 
@@ -31,7 +32,7 @@
 
 例外について複数の情報を確認する場合は、例外オブジェクトではなく例外アサーションを変数へ受ける。`Which` は後続の `Should()` へつなぐために使い、変数へ受けない。
 
-## FluentAssertionsとnull検証
+## Fluentなアサーションとnull検証
 
 nullableな値を検証した後に同じ値を続けて使う場合は、まず `Should().NotBeNull()` で仕様として非nullを確認する。確認後の値を使うためだけに、`!`、`?? throw`、`Which` を追加しない。
 
