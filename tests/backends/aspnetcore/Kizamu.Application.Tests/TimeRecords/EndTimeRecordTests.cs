@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Kizamu.Application.TimeRecords;
 using Kizamu.Domain;
 using Microsoft.Extensions.Time.Testing;

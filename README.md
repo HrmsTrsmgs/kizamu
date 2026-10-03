@@ -11,7 +11,7 @@ MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間�
 ## 技術構成
 
 - .NET 10 LTS / ASP.NET Core Minimal API / Blazor WebAssembly
-- xUnit / bUnit / AwesomeAssertions（Blazor）/ FluentAssertions（既存.NETテスト）
+- xUnit / bUnit / AwesomeAssertions
 - React / TypeScript（strict）/ Vite
 - Vitest / React Testing Library / ESLint / npm
 
@@ -209,9 +209,7 @@ dotnet test Kizamu.slnx --no-build --no-restore
 
 Kizamu本体は [MIT License](LICENSE) で公開します。依存ライブラリには、それぞれのライセンス条件が適用されます。
 
-Blazorテストでは、コミュニティによるオープンソースのフォーク [AwesomeAssertions](https://awesomeassertions.org/introduction)（Apache-2.0）を使用します。
-
-既存のServer、Application、Infrastructure、Domainのテストで使用するFluentAssertions 8系は、オープンソースおよび非商用利用では無料ですが、商用利用には有償ライセンスが必要です。フォーク、クローン、再公開後に商用利用する場合は、[FluentAssertions公式のライセンス案内](https://fluentassertions.com/introduction)で利用時点の条件を確認してください。
+.NETテストでは、コミュニティによるオープンソースのフォーク [AwesomeAssertions](https://awesomeassertions.org/introduction)（Apache-2.0）を使用します。Blazor、Server、Application、Infrastructure、Domainの各テストで使用しており、FluentAssertionsへの依存はありません。
 
 ## 未実装
 

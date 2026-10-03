@@ -1,7 +1,7 @@
 # テストコードの変数方針
 
 この文書は、Kizamuのテストでローカル変数と一時変数を扱う方針を定義する。
-Fluentな検証句の方針はAwesomeAssertionsと既存のFluentAssertionsの両方に適用する。採用ライブラリの方針は `ai-instructions/csharp.md` を参照する。
+Fluentな検証句はAwesomeAssertionsで記述する。FluentAssertions由来の記述方針も引き継ぎ、採用ライブラリの方針は `ai-instructions/csharp.md` を参照する。
 
 ## varの使用方針
 
@@ -36,11 +36,11 @@ Fluentな検証句の方針はAwesomeAssertionsと既存のFluentAssertionsの�
 
 nullableな値を検証した後に同じ値を続けて使う場合は、まず `Should().NotBeNull()` で仕様として非nullを確認する。確認後の値を使うためだけに、`!`、`?? throw`、`Which` を追加しない。
 
-`Which` は、例外検証や型検証などでFluentAssertionsのチェーンとしてさらに検証を続ける場合に使う。nullable解析を外すための一時変数化には使わない。
+`Which` は、例外検証や型検証などでAwesomeAssertionsのチェーンとしてさらに検証を続ける場合に使う。nullable解析を外すための一時変数化には使わない。
 
 ## Fluentな検証句の改行
 
-`Should()` と最終アサーションは原則として同じ行に置く。FluentAssertionsは英文に近い検証句として読むため、`Should()` だけを単独行にして述語を分断しない。
+`Should()` と最終アサーションは原則として同じ行に置く。AwesomeAssertionsは英文に近い検証句として読むため、`Should()` だけを単独行にして述語を分断しない。
 
 `Which`、検証対象の短いプロパティ、`ToString()` なども、一続きの句として読める場合は無理に縦へ分割しない。検証対象を作るチェーンは、声に出して読んだときの区切りや意味の切れ目で改行してよいが、`Should()` の前で改行すること自体をルールにはしない。
 

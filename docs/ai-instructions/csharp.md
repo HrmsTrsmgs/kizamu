@@ -129,16 +129,15 @@
 
 ## アサーションライブラリ
 
-* 新しい.NETテストでは、Apache-2.0のOSSフォークであるAwesomeAssertionsを使う。
-* 既存のサーバー側等で使用しているFluentAssertionsは、別の変更単位で移行する。新規テストの追加と同時に無関係な既存テストを一括置換しない。
-* 以下のFluentな検証句の方針は、AwesomeAssertionsにも適用する。
+* .NETテストでは、Apache-2.0のOSSフォークであるAwesomeAssertionsを使う。既存のFluentAssertionsからの移行は、機能追加やAI指示の取り込みとは別の変更単位にする。
+* 以下のFluentな検証句の方針はAwesomeAssertionsに適用する。FluentAssertionsの資料を参照する場合も、採用バージョンで利用できるAPIを確認する。
 
-* FluentAssertionsの `Should().NotBeNull()` はnullable解析に対応しているため、確認後の同じ変数は非nullとして扱える。
+* AwesomeAssertionsの `Should().NotBeNull()` はnullable解析に対応しているため、確認後の同じ変数は非nullとして扱える。
 * nullableな値を `Should().NotBeNull()` で検証した後、その値を続けて検証するためだけに `!`、`?? throw`、`Which` を追加しない。
-* `Which` はFluentAssertionsのチェーンで後続の `Should()` へつなぐ場合に使い、nullable回避の一時変数化には使わない。
-* FluentAssertionsの `Should()` と最終アサーションは原則として同じ行に置き、`Should()` だけを単独行にしない。
-* FluentAssertionsの `Which`、検証対象の短いプロパティ、`ToString()` なども、一続きの句として読める場合は無理に縦へ分割しない。
-* FluentAssertionsのチェーンは、声に出して読んだときの区切りや意味の切れ目で改行してよいが、`Should()` の前で改行すること自体をルールにはしない。
+* `Which` はAwesomeAssertionsのチェーンで後続の `Should()` へつなぐ場合に使い、nullable回避の一時変数化には使わない。
+* AwesomeAssertionsの `Should()` と最終アサーションは原則として同じ行に置き、`Should()` だけを単独行にしない。
+* AwesomeAssertionsの `Which`、検証対象の短いプロパティ、`ToString()` なども、一続きの句として読める場合は無理に縦へ分割しない。
+* AwesomeAssertionsのチェーンは、声に出して読んだときの区切りや意味の切れ目で改行してよいが、`Should()` の前で改行すること自体をルールにはしない。
 
 ## ビルドと検証
 

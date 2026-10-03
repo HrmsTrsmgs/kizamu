@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Kizamu.Domain;
 using Kizamu.Infrastructure.TimeRecords;
 
