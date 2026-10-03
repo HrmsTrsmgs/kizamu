@@ -47,12 +47,13 @@ Clockifyは外部連携先であり、Kizamuの内部モデル、保存形式、
 * ASP.NET Core、React、TypeScript、Viteの開発環境
 * Visual Studioからの一括起動
 * サーバー統合テスト、Reactテスト、Lint、production build
+* Blazor WebAssemblyへの既存機能の移植、bUnitとAwesomeAssertionsによるテスト
+* ASP.NET CoreからのBlazor静的ファイル配信と、Blazor/Reactの起動プロファイル
 * コンセプト、ロードマップ、AI開発指示
 
 残っている確認:
 
-* Blazorへの切り替えとVisual Studioからの起動
-* Blazor WebAssemblyの静的成果物を公開時にどのようにASP.NET Coreから配信するか
+* Visual StudioからのBlazor版の起動操作（CLI起動とブラウザ操作は確認済み）
 * 公開成果物の起動方法と対応環境
 
 ## フェーズ1: プロジェクト識別とサーバー上の複数同時記録
@@ -460,12 +461,12 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ## 現在の次作業
 
-プロジェクト未指定の記録の開始、終了、一覧、開始・終了時刻、完了した作業時間、記録中の経過時間表示まで、ASP.NET CoreとReactで実装している。プロジェクト登録は未着手である。
+プロジェクト未指定の記録の開始、終了、一覧、開始・終了時刻、完了した作業時間、記録中の経過時間表示まで、ASP.NET CoreとBlazor WebAssembly、および既存React版で実装している。プロジェクト登録は未着手である。
 
 当面は次の順序で進める。
 
-1. 構成整理のPRで、ASP.NET Coreを `src/backends/aspnetcore/`、Reactを `src/frontends/react/`、Domainを `src/domains/dotnet/` へ移し、テストを対応する最上位の `tests/` 配下へ整理する。起動、ビルド、テストの参照パスと文書を更新し、npmはルートのworkspacesで管理する。
-2. 次のPRで、Blazor WebAssemblyを `src/frontends/blazor/` に導入し、既存機能を一つずつ移す。機能の同等性とVisual Studioからの起動を確認するまで、新しい製品機能は追加しない。
+1. 構成整理は完了。ASP.NET Coreを `src/backends/aspnetcore/`、Reactを `src/frontends/react/`、Domainを `src/domains/dotnet/` へ移し、テストを対応する最上位の `tests/` 配下へ整理した。npmはルートのworkspacesで管理する。
+2. Blazor WebAssemblyを `src/frontends/blazor/` に導入し、既存機能を移植済み。CLI起動、ブラウザ操作、自動テストは確認済みであり、次はVisual Studioからの起動操作を確認する。
 3. その後のPRで、最小限のプロジェクト登録から再開する。フェーズ1と2に残るプロジェクト指定や複数同時記録は、小さな振る舞いごとに進める。
 
-現在の構成整理では、Blazor、Node、OpenAPI契約・DTO生成、TypeScriptの共用Domain、共通契約テスト、起動組み合わせプロファイル、配布処理の空プロジェクトは作らない。予定の配置と責務はREADMEの「今後追加する配置」に記載する。API呼び出しコードの生成は、生成ツールの追随性と生成結果を確認してから採否を決める。公開用成果物の組み立てはフェーズ6で実装する。
+Node、OpenAPI契約・DTO生成、TypeScriptの共用Domain、共通契約テスト、Nodeとの起動組み合わせ、配布処理の空プロジェクトは作らない。予定の配置と責務はREADMEの「今後追加する配置」に記載する。API呼び出しコードの生成は、生成ツールの追随性と生成結果を確認してから採否を決める。公開用成果物の組み立てはフェーズ6で実装する。

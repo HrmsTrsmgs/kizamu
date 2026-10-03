@@ -1,0 +1,70 @@
+@using System.Globalization
+@inject TimeProvider Clock
+@implements IDisposable
+
+<div class="time-record-times">
+    <div class="record-time">
+        <span>開始</span>
+        <time aria-label="@(Labelled ? "開始時刻" : null)" datetime="@StartedAt.ToString("O", CultureInfo.InvariantCulture)">
+            @FormatDateTime(StartedAt)
+        </time>
+    </div>
+    <div class="record-time">
+        <span>終了</span>
+        @if (EndedAt is { } endedAt)
+        {
+            <time aria-label="@(Labelled ? "終了時刻" : null)" datetime="@endedAt.ToString("O", CultureInfo.InvariantCulture)">
+                @FormatDateTime(endedAt)
+            </time>
+        }
+        else
+        {
+            <span class="recording-label">記録中</span>
+        }
+    </div>
+    <div class="record-time">
+        <span>作業時間</span>
+        <span class="time-record-duration-value">@Duration</span>
+    </div>
+</div>
+
+@code {
+    /// <summary>表示する記録の開始時刻。</summary>
+    [Parameter, EditorRequired]
+    public DateTimeOffset StartedAt { get; set; }
+
+    /// <summary>終了時刻。記録中の場合はnullを指定します。</summary>
+    [Parameter]
+    public DateTimeOffset? EndedAt { get; set; }
+
+    /// <summary>操作欄の時刻に開始時刻・終了時刻のアクセシブルな名前を付けます。</summary>
+    [Parameter]
+    public bool Labelled { get; set; }
+
+    ITimer? timer;
+    string Duration
+    {
+        get
+        {
+            var elapsed = (EndedAt ?? Clock.GetUtcNow()) - StartedAt;
+            return $"{(long)elapsed.TotalHours}時間{elapsed.Minutes}分";
+        }
+    }
+
+    static string FormatDateTime(DateTimeOffset instant) =>
+        instant.ToOffset(TimeSpan.FromHours(9)).ToString("yyyy/MM/dd HH:mm", CultureInfo.InvariantCulture);
+
+    protected override void OnParametersSet()
+    {
+        timer?.Dispose();
+        timer = null;
+        if (EndedAt is null)
+        {
+            timer = Clock.CreateTimer(_ => InvokeAsync(StateHasChanged), null,
+                TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        }
+    }
+
+    /// <summary>画面から取り除かれた際に、経過時間表示用のタイマーを解放します。</summary>
+    public void Dispose() => timer?.Dispose();
+}

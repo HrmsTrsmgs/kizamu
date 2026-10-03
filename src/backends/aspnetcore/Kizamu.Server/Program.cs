@@ -15,6 +15,9 @@ static WebApplication CreateApplication(string[] args)
     builder.Services.AddSingleton<ITimeRecordState, InMemoryTimeRecordState>();
 
     var app = builder.Build();
+    app.UseBlazorFrameworkFiles();
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
     app.MapHealthEndpoint();
     app.MapStartTimeRecordEndpoint();
     app.MapEndTimeRecordEndpoint();

@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Blazor/">
+    <Project Path="src/frontends/blazor/Kizamu.Blazor.Client/Kizamu.Blazor.Client.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Blazor.Client.Tests/Kizamu.Blazor.Client.Tests.csproj" />
+  </Folder>
   <Folder Name="/React/">
     <Project Path="src/frontends/react/Kizamu.Client.esproj">
       <Build />

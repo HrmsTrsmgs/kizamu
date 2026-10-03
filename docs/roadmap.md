@@ -28,13 +28,13 @@ MVPでは、次の一連の利用が成立することを目標にする。
 
 ## 現在の到達点と当面の順序
 
-ASP.NET CoreとReactで、プロジェクト未指定の記録の開始、終了、一覧、開始・終了時刻、完了した作業時間、記録中の経過時間表示まで実装している。保存はサーバーのメモリ上だけであり、プロジェクト登録は未着手である。
+ASP.NET CoreとBlazor WebAssembly、および既存React版で、プロジェクト未指定の記録の開始、終了、一覧、開始・終了時刻、完了した作業時間、記録中の経過時間表示まで実装している。保存はサーバーのメモリ上だけであり、プロジェクト登録は未着手である。
 
 MVPの第一実装をASP.NET CoreとBlazor WebAssemblyへ変更する。技術違いの実装を同じ製品として比較、拡張できるよう、リポジトリは一つのまま実装ごとに配置を分ける。
 
-1. 最上位の `src/` と `tests/` の下をbackends、frontends、domainsに分け、参照パスと検証手順を整理する。既存機能は変更しない。OpenAPI契約、DTO生成、別実装等の未導入部分はREADMEへ予定として記載する。
-2. 既存の開始、終了、一覧、時間表示を一つずつBlazorへ移す。既存APIを利用し、画面の操作とVisual Studioからの起動を確認する。
-3. 最小限のプロジェクト登録からMVP機能の追加を再開する。
+1. 配置整理は完了。最上位の `src/` と `tests/` の下をbackends、frontends、domainsに分けた。OpenAPI契約、DTO生成、別実装等の未導入部分はREADMEへ予定として記載している。
+2. 既存の開始、終了、一覧、時間表示をBlazorへ移行済み。既存APIを利用し、CLI起動とブラウザ操作、自動テストを確認した。Visual Studioからの起動操作は未確認である。
+3. Visual Studioからの起動確認を経て、最小限のプロジェクト登録からMVP機能の追加を再開する。
 
 Reactは現在の到達点で保持し、追加開発を保留する。Reactの開発再開とNodeなどの別実装はMVP後に検討する。Blazorへの切り替えでは既存機能の同等性を目標とし、MVPの製品要件を増やさない。
 
@@ -46,6 +46,7 @@ Reactは現在の到達点で保持し、追加開発を保留する。Reactの�
 * Visual Studioからの一括起動
 * サーバーとクライアントの疎通確認
 * xUnit統合テスト、Vitest、React Testing Library、ESLint
+* Blazor WebAssembly、bUnit、AwesomeAssertionsによる既存機能の移植とテスト
 * 製品コンセプトとAI開発指示
 
 ## ステップ1: プロジェクト単位の複数同時記録

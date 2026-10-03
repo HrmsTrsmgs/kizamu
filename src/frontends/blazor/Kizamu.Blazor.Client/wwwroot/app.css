@@ -1,0 +1,144 @@
+:root {
+  font-family: Inter, "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+  color: #18201d;
+  background: #eef1ed;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-width: 20rem;
+  min-height: 100vh;
+  margin: 0;
+  background: radial-gradient(circle at top left, rgb(173 207 187 / 28%), transparent 28rem), #eef1ed;
+}
+
+button, time { font: inherit; }
+
+main {
+  width: min(100% - 2rem, 52rem);
+  margin: 0 auto;
+  padding: 4rem 0 2rem;
+}
+
+.app-header { margin-bottom: 2rem; }
+h1, h2, p { margin-top: 0; }
+
+h1 {
+  margin-bottom: 0.35rem;
+  font-family: Georgia, "Yu Mincho", serif;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+}
+
+.app-description { margin-bottom: 0; color: #66706b; }
+.time-recorder { display: grid; gap: 1rem; }
+
+.recorder-panel, .records-panel {
+  overflow: hidden;
+  border: 1px solid #d9dfdb;
+  border-radius: 1.1rem;
+  background: rgb(255 255 255 / 86%);
+  box-shadow: 0 1rem 2.5rem rgb(38 55 47 / 7%);
+}
+
+.recorder-panel { padding: 1.5rem; }
+
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.panel-header h2 { margin-bottom: 0; font-size: 1.25rem; font-weight: 650; }
+
+.status-badge, .record-count {
+  flex: none;
+  border-radius: 999px;
+  background: #edf0ee;
+  color: #65716b;
+  font-size: 0.78rem;
+  font-weight: 650;
+  padding: 0.35rem 0.65rem;
+}
+
+.status-badge.is-active { background: #dff3e7; color: #17623e; }
+
+.recorder-action {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+
+.record-button {
+  min-width: 9.5rem;
+  border: 0;
+  border-radius: 0.8rem;
+  background: #1f6b48;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.85rem 1.2rem;
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.record-button:hover { background: #18583b; }
+.record-button:active { transform: translateY(1px); }
+.record-button:focus-visible { outline: 3px solid rgb(31 107 72 / 25%); outline-offset: 3px; }
+.record-button.is-active { background: #a84436; }
+.record-button.is-active:hover { background: #8f372c; }
+
+.time-record-times {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dfe6e2;
+  border-radius: 0.7rem;
+  background: #f7f9f8;
+}
+
+.records-header { padding: 1.25rem 1.5rem; }
+.records-list { margin: 0; padding: 0; border-top: 1px solid #e4e8e5; list-style: none; }
+
+.records-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.records-list li + li { border-top: 1px solid #edf0ee; }
+.record-status { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #aab2ae; }
+.record-status.is-active { background: #2c9662; box-shadow: 0 0 0 0.25rem rgb(44 150 98 / 12%); }
+.record-time { display: grid; gap: 0.2rem; min-width: 0; }
+.record-time > span:first-child { color: #7a837f; font-size: 0.7rem; font-weight: 650; }
+
+.record-time time, .recording-label, .time-record-duration-value {
+  overflow: hidden;
+  color: #26312c;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recording-label { color: #23784f; font-weight: 700; }
+.app-footer { margin-top: 1.25rem; color: #77817c; font-size: 0.75rem; text-align: right; }
+.app-footer p { margin-bottom: 0; }
+
+@media (max-width: 38rem) {
+  main { padding-top: 2.5rem; }
+  .recorder-action { align-items: stretch; flex-direction: column; }
+  .record-button { width: 100%; }
+  .time-record-times { grid-template-columns: 1fr; }
+}
