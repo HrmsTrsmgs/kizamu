@@ -41,10 +41,10 @@
 </div>
 
 @code {
-    List<TimeRecordResponse> records = [];
+    List<TimeRecord> records = [];
     Guid? currentId;
     /// <summary>操作した直近の記録です。終了後も結果を残し、再開始時に差し替えます。</summary>
-    TimeRecordResponse? displayedRecord;
+    TimeRecord? displayedRecord;
 
     protected override async Task OnInitializedAsync()
     {

@@ -12,6 +12,18 @@ public sealed class TimeRecord
     }
 
     /// <summary>
+    /// 既存の作業記録の識別子と時刻から状態を復元します。
+    /// </summary>
+    /// <param name="id">既存の作業記録の識別子。</param>
+    /// <param name="startedAt">記録された開始時刻。</param>
+    /// <param name="endedAt">記録された終了時刻。記録中の場合はnull。</param>
+    public TimeRecord(Guid id, DateTimeOffset startedAt, DateTimeOffset? endedAt)
+        : this(id, startedAt)
+    {
+        EndedAt = endedAt;
+    }
+
+    /// <summary>
     /// 作業記録の識別子を取得します。
     /// </summary>
     public Guid Id { get; }

@@ -1,6 +1,8 @@
+using System.Collections.Immutable;
 using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
+using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Client.TimeRecords;
 
 namespace Kizamu.Frontend.Blazor.Client.Tests.TimeRecords;
@@ -30,12 +32,14 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 作業記録一覧APIの応答を返します()
+    public async Task 作業記録一覧APIの応答を作業記録へ変換します()
     {
         TimeRecordResponse[] 記録 = [new(記録ID, 開始時刻, null), new(別の記録ID, 開始時刻, 終了時刻)];
         応答する(記録);
 
-        (await tested.GetTimeRecordsAsync()).Should().Equal(記録);
+        ImmutableArray<TimeRecord> 受信した記録 = await tested.GetTimeRecordsAsync();
+
+        受信した記録.Should().BeEquivalentTo(記録, it => it.WithStrictOrdering());
     }
 
     [Fact]
@@ -49,12 +53,14 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 記録開始APIの応答を返します()
+    public async Task 記録開始APIの応答を作業記録へ変換します()
     {
         TimeRecordResponse 記録 = new(記録ID, 開始時刻, null);
         応答する(記録);
 
-        (await tested.StartTimeRecordAsync()).Should().Be(記録);
+        TimeRecord 受信した記録 = await tested.StartTimeRecordAsync();
+
+        受信した記録.Should().BeEquivalentTo(記録);
     }
 
     [Fact]
@@ -68,12 +74,14 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 記録終了APIの応答を返します()
+    public async Task 記録終了APIの応答を作業記録へ変換します()
     {
         TimeRecordResponse 記録 = new(記録ID, 開始時刻, 終了時刻);
         応答する(記録);
 
-        (await tested.EndTimeRecordAsync(記録ID)).Should().Be(記録);
+        TimeRecord 受信した記録 = await tested.EndTimeRecordAsync(記録ID);
+
+        受信した記録.Should().BeEquivalentTo(記録);
     }
 
     void 応答する<T>(T body) => handler.Respond = it =>
