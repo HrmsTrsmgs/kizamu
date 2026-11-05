@@ -2,7 +2,7 @@
 
 作業を中断せず、プロジェクトごとの時間を素早く記録するタイムトラッカー。
 
-現在はASP.NET CoreとBlazor WebAssembly、および既存React版で、プロジェクト未指定の時間記録の開始、終了、一覧、開始・終了時刻、作業時間の表示を実装しています。記録はサーバーのメモリ上だけに保持し、サーバーを再起動すると失われます。
+現在はASP.NET Core／Nodeの業務APIと、Blazor WebAssembly／既存React版を組み合わせて、プロジェクト未指定の時間記録の開始、終了、一覧、開始・終了時刻、作業時間の表示を利用できます。記録は業務APIのメモリ上だけに保持し、そのサーバーを再起動すると失われます。
 
 MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間記録機能をBlazorへ移し、Reactは現状を保持して追加開発を保留します。
 
@@ -16,6 +16,7 @@ MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間�
 - YARP（Blazor配信サーバーから業務APIへのHTTP中継）
 - xUnit / bUnit / AwesomeAssertions
 - React / TypeScript（strict）/ Vite
+- Node.js / Fastify（業務APIの別実装）
 - Vitest / React Testing Library / ESLint / npm
 
 ## リポジトリ構成
@@ -26,10 +27,11 @@ MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間�
 kizamu/
 ├─ src/
 │  ├─ backends/
-│  │  └─ aspnetcore/
-│  │     ├─ Kizamu.Backend.AspNetCore.Api/
-│  │     ├─ Kizamu.Backend.AspNetCore.Application/
-│  │     └─ Kizamu.Backend.AspNetCore.Infrastructure/
+│  │  ├─ aspnetcore/
+│  │  │  ├─ Kizamu.Backend.AspNetCore.Api/
+│  │  │  ├─ Kizamu.Backend.AspNetCore.Application/
+│  │  │  └─ Kizamu.Backend.AspNetCore.Infrastructure/
+│  │  └─ node/                      kizamu-backend-node・業務APIのみ
 │  ├─ frontends/
 │  │  ├─ blazor/
 │  │  │  ├─ Kizamu.Frontend.Blazor.Client/   第一実装・WebAssembly UI
@@ -43,10 +45,11 @@ kizamu/
 │        └─ Kizamu.Domain/
 ├─ tests/
 │  ├─ backends/
-│  │  └─ aspnetcore/
-│  │     ├─ Kizamu.Backend.AspNetCore.Api.Tests/
-│  │     ├─ Kizamu.Backend.AspNetCore.Application.Tests/
-│  │     └─ Kizamu.Backend.AspNetCore.Infrastructure.Tests/
+│  │  ├─ aspnetcore/
+│  │  │  ├─ Kizamu.Backend.AspNetCore.Api.Tests/
+│  │  │  ├─ Kizamu.Backend.AspNetCore.Application.Tests/
+│  │  │  └─ Kizamu.Backend.AspNetCore.Infrastructure.Tests/
+│  │  └─ node/                      kizamu-backend-node-tests
 │  ├─ frontends/
 │  │  ├─ blazor/
 │  │  │  ├─ Kizamu.Frontend.Blazor.Client.Tests/
@@ -68,15 +71,15 @@ kizamu/
 └─ package-lock.json                npm依存関係の共通lockfile
 ```
 
-Visual Studioのソリューション表示は、物理配置や公開時の組み合わせとは別に扱います。同じ実装のプロジェクトとテストを、`Backends/ASP.NET Core`、`Frontends/Blazor`、`Frontends/React`、`Domains/.NET` の論理フォルダーへまとめています。Blazor開発には `Kizamu.Blazor.slnx`、バックエンドとDomainのテストだけの実行には `Kizamu.AspNetCore.slnx` を使います。業務APIはBlazorを参照せず、バックエンドだけでビルド・起動できます。
+Visual Studioのソリューション表示は、物理配置や公開時の組み合わせとは別に扱います。同じ実装のプロジェクトとテストを、`Backends/ASP.NET Core`、`Backends/Node`、`Frontends/Blazor`、`Frontends/React`、`Domains/.NET` の論理フォルダーへまとめています。BlazorとASP.NET Coreの開発には `Kizamu.Blazor.slnx`、ASP.NET CoreとDomainのテストだけの実行には `Kizamu.AspNetCore.slnx` を使います。業務APIはBlazorを参照せず、バックエンドだけでビルド・起動できます。
 
 .NETの実装固有プロジェクトは `Kizamu.<所属>.<技術>.<役割>` と命名します。業務バックエンドのHTTP APIは `Backend.AspNetCore.Api`、Blazorのブラウザー側UIは `Frontend.Blazor.Client`、画面配信・API中継サーバーは `Frontend.Blazor.Server` とし、ClientとServerは同じUI実装内の対になる名前です。Domainと通信契約は実装技術に所属させず、それぞれ `Kizamu.Domain` と将来の `Kizamu.Api.Contracts` として区別します。
 
-npmパッケージは各技術の習慣に合わせて小文字のハイフン区切りにし、現在のReact版は `kizamu-frontend-react` と命名します。テストは.NETで `.Tests`、npmで `-tests` を付けます。Reactの `.esproj` もnpmパッケージ名に揃えます。
+npmパッケージは各技術の習慣に合わせて小文字のハイフン区切りにし、React版は `kizamu-frontend-react`、Node版は `kizamu-backend-node` と命名します。テストは.NETで `.Tests`、npmで `-tests` を付け、`.esproj` もnpmパッケージ名に揃えます。
 
 Domainはバックエンド専用の位置から分離し、ASP.NET CoreとBlazorから共用しています。Blazorの画面は通信DTOではなくDomainの作業記録を保持します。配置の共通化によって、すべてのフロントエンドへ同じ内部モデルの利用を強制するものではありません。
 
-Reactの製品パッケージとテストパッケージは独立させ、ルートのnpm workspacesで管理します。依存関係のインストールとlockfileの更新はリポジトリルートで行います。各 `.esproj` による個別の自動 `npm install` は無効にしており、最初にルートで `npm ci` を実行する必要があります。
+ReactとNodeの製品・テストパッケージは独立させ、ルートのnpm workspacesで管理します。依存関係のインストールとlockfileの更新はリポジトリルートで行います。各 `.esproj` による個別の自動 `npm install` は無効にしており、最初にルートで `npm ci` を実行する必要があります。
 
 日常の開発と差分レビューはVisual Studioを基本とし、ReactやNodeを含め、技術や組み合わせによってIDEを使い分けることは前提にしません。一方で、VS Codeでの作業も考慮します。ビルドとテストの本体は `dotnet` と `npm` のコマンドに置き、IDE固有の設定はその操作の補助として扱います。
 
@@ -88,9 +91,8 @@ Reactの製品パッケージとテストパッケージは独立させ、ルー
 | --- | --- |
 | `contracts/openapi.yaml` | 実装言語から独立した共通HTTP API契約。複数バックエンドの互換性の基準にします。 |
 | `src/api/dotnet/Kizamu.Api.Contracts/`、`src/api/typescript/` | OpenAPIから生成する通信用DTO等。TypeScriptパッケージは `kizamu-api-typescript`。Domainとは分離します。 |
-| `src/backends/node/` | `kizamu-backend-node`。Nodeによる業務APIの別実装。ReactのSSRサーバーとは区別します。 |
 | `src/domains/typescript/` | `kizamu-domain-typescript`。NodeやReactから必要に応じて共用する、実行環境に依存しない業務ロジック。 |
-| `tests/backends/node/`、`tests/domains/typescript/` | 対応する実装の `-tests` パッケージ。 |
+| `tests/domains/typescript/` | 対応する実装の `-tests` パッケージ。 |
 | `tests/api/` | 通信コードの検証が必要になった場合のテスト。生成DTOの数だけ形式的にテストを増やしません。 |
 | `tests/contracts/` | 各バックエンドが共通のHTTP API契約を満たすことを確認するテスト。 |
 | `tests/system/` | フロントエンドとバックエンドを組み合わせた製品全体のテスト。 |
@@ -104,12 +106,12 @@ Reactの製品パッケージとテストパッケージは独立させ、ルー
 
 フロントエンドはブラウザーだけを意味しません。BlazorのServerは静的ファイル配信と `/api/...` の中継を担当し、記録処理は持ちません。業務APIへのプロジェクト参照はせず、接続先URLだけを設定します。SSR・Autoは採用しておらず、UIは引き続きWebAssemblyとしてブラウザー内で実行します。React公開時にもフロント側の配信・API中継サーバーを置く方針ですが、未実装です。開発時は既存のVite proxyが中継します。
 
-Visual Studio用の共有一括起動設定は `Kizamu.slnLaunch` と `Kizamu.Blazor.slnLaunch` に置きます。業務APIとフロント側サーバーを別プロセスで起動します。Node導入後は中継先を切り替えてASP.NET Core/NodeとBlazor/Reactを組み合わせる方針です。プロファイルや公開処理のためにソースを複製しません。
+Visual Studio用の共有一括起動設定は `Kizamu.slnLaunch` と `Kizamu.Blazor.slnLaunch` に置きます。全実装用の `Kizamu.slnx` では `Blazor + ASP.NET Core`、`React + ASP.NET Core`、`Blazor + Node`、`React + Node` の四つを定義しています。業務APIとフロント側サーバーを別プロセスで起動します。プロファイルや公開処理のためにソースを複製しません。IDEでの検出・起動操作はCLIとは別に確認が必要です。
 
 ## 実装とリリースの方針
 
 1. 既存の時間記録機能はBlazorへ移行済みです。ASP.NET Coreとの組み合わせを第一実装としてMVPを進めます。
-2. Node版の導入を前倒しし、その前提として.NETの業務APIと画面配信を分離します。Reactの追加機能開発は引き続き保留し、将来のMVPと同じ機能を持つとは扱いません。
+2. .NETの業務APIと画面配信を分離し、Node版に現在の正常性確認・記録の開始・終了・一覧APIを追加しました。Reactの追加機能開発は引き続き保留し、NodeやReactが将来のMVPと同じ機能を持つとは扱いません。
 3. 業務APIとフロントサーバーを独立した起動・配備単位にします。ブラウザーはフロントサーバーだけに接続し、API通信はそこから業務APIへ中継します。
 
 当初は製品として一つのリリースバージョンを使い、含まれる実装の機能範囲と検証済みの組み合わせを明示する方針です。全組み合わせを毎回配布する前提にはしません。HTTP APIの互換性と保存データの互換性は別に設計し、別サーバーに同じデータベース構造を強制しません。
@@ -138,10 +140,10 @@ Pop-Location
 ## 必要な環境
 
 - .NET SDK 10.0.302 以降の .NET 10 SDK
-- Node.js 24.18.0（現行React版の確認時）
-- npm 11.16.0（現行React版の確認時）
+- Node.js 24.18.0（Node・React版の確認時）
+- npm 11.16.0（Node・React版の確認時）
 
-Blazor版だけを開発・起動する場合はNode.jsとnpmは不要です。
+BlazorとASP.NET Coreだけを開発・起動する場合はNode.jsとnpmは不要です。
 
 標準のIDEはVisual Studio 2026（ASP.NETとWeb開発ワークロード）です。VS Codeでは `Kizamu.code-workspace` を開くとリポジトリ全体を扱えます。C#拡張向けに既定のソリューションを `Kizamu.slnx` に指定しています。IDE上の起動・テスト操作は今回のCLI検証とは別に確認が必要です。VS Code専用の起動・デバッグ設定はまだ用意していません。
 
@@ -175,6 +177,30 @@ dotnet run --project src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api --no-
 ```
 
 正常性確認は `http://localhost:5213/api/health`、記録一覧は `http://localhost:5213/api/time-records` です。
+
+## Node版業務APIのセットアップと起動
+
+リポジトリルートで実行します。
+
+```powershell
+npm ci
+npm run dev --workspace=kizamu-backend-node
+```
+
+TypeScriptをビルドして `http://localhost:5213` でAPIを起動します。変更後は停止・再実行します。画面は配信しません。ASP.NET Core版と同じポートを使うため、両バックエンドを同時に起動しないでください。
+
+別のターミナルで、Blazor ServerまたはReactのViteを上記・下記の手順で起動します。既存の `/api` 中継先を変更せず、そのままNodeへ接続できます。Visual Studioでは `Kizamu.slnx` の `Blazor + Node` または `React + Node` を選びます。Nodeのデバッグ設定は製品ディレクトリの `.vscode/launch.json` に置き、ビルド済みの `dist/server.js` を起動します（[Visual StudioのNodeデバッグ設定](https://learn.microsoft.com/en-us/visualstudio/javascript/tutorial-nodejs?view=visualstudio#examine-the-launchjson-file)）。
+
+ビルドと起動を分ける場合は次のとおりです。
+
+```powershell
+npm run build --workspace=kizamu-backend-node
+npm start --workspace=kizamu-backend-node
+```
+
+ポートは環境変数 `PORT` で変更できます。その場合はフロント側のAPI中継先も合わせます。Nodeの起動に.NETは不要ですが、Blazor Serverと組み合わせる場合は.NETも必要です。配布用成果物の組み立てはまだ用意していません。
+
+互換性の範囲は、既存画面から行う正常性確認・開始・終了・一覧と、[NodeのHTTPテスト](tests/backends/node/)で確認しています。不明なIDの終了など未確定の異常系まで、両実装が同じ応答を保証するものではありません。
 
 ## 現行React版のセットアップと起動
 
@@ -220,9 +246,9 @@ npm test
 npm run build
 ```
 
-ルートのnpmコマンドは、登録されたworkspacesのうち対応するscriptを持つパッケージへ処理を委譲します。`npm run build` ではReactの公開用ビルドとテストコードの型検査を行います。個別実行には `npm test --workspace=kizamu-frontend-react-tests` などを使えます。
+ルートのnpmコマンドは、登録されたworkspacesのうち対応するscriptを持つパッケージへ処理を委譲します。`npm run build` ではReactの公開用ビルド、NodeのJavaScript出力、テストコードの型検査を行います。個別実行には `npm test --workspace=kizamu-frontend-react-tests`、`npm test --workspace=kizamu-backend-node-tests` などを使えます。
 
-Visual Studioでは `kizamu-frontend-react-tests.esproj` をテスト用プロジェクトとして追加しています。テストエクスプローラーでの検出・実行はIDE上で確認してください。`dotnet test` のCLI検証は.NETテストだけであり、Reactを確認するには `npm test` も実行します。
+Visual Studioでは `kizamu-frontend-react-tests.esproj` と `kizamu-backend-node-tests.esproj` をテスト用プロジェクトとして追加しています。テストエクスプローラーでの検出・実行はIDE上で確認してください。`dotnet test` のCLI検証は.NETテストだけであり、ReactとNodeを確認するには `npm test` も実行します。
 
 Visual Studio向けの現行ソリューションをCLIで確認する場合は、次のコマンドを使います。Reactの検証は上記npmコマンドと併せて行います。
 

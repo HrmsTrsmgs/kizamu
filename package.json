@@ -2,7 +2,12 @@
   "name": "kizamu-workspace",
   "private": true,
   "version": "0.0.0",
-  "workspaces": ["src/frontends/react", "tests/frontends/react"],
+  "workspaces": [
+    "src/frontends/react",
+    "tests/frontends/react",
+    "src/backends/node",
+    "tests/backends/node"
+  ],
   "scripts": {
     "dev": "npm run dev --workspace=kizamu-frontend-react",
     "build": "npm run build --workspaces --if-present",

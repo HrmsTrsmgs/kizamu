@@ -2,6 +2,8 @@
 
 通常の技術規約は共通Skill `typescript-react-conventions` を使う。この文書の共通規約は未導入環境向けの参照版。UIの日本語表示、Vitest・React Testing Library、npm workspaces、Vite・Visual Studioの起動統合はKizamu固有の補足として維持する。
 
+Nodeの業務APIはFastifyを使い、HTTP契約はVitestとFastifyの `inject` で検証する。対象パッケージは `kizamu-backend-node` と `kizamu-backend-node-tests`。ルートのlint・test・buildにはReactとNodeの両方を含める。Nodeへ画面配信やフロント側のAPI中継を持ち込まない。
+
 ## TypeScriptとReact
 
 * TypeScriptのstrict設定、既存ESLint設定、Reactの標準的な英語命名規則に従う。

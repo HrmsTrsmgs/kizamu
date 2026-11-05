@@ -88,4 +88,5 @@
 * 変更した旧方針：業務APIへBlazorの静的配信を同梱する構成、およびSSR・Autoを採用するまでフロント用サーバーを作らない方針を置き換えます。SSR・Auto自体を採用したわけではありません。
 * 採らなかった案：Nodeの業務APIへ静的配信を追加する案は責務分離に反するため撤回。ブラウザーから別URLのAPIへ直接接続してCORSを設定する案も比較しましたが、クライアント側の接続先を固定し、中継先の切替をサーバー側へ閉じ込める方式を選びました。
 * 依存：新Blazor Serverに `Yarp.ReverseProxy 2.3.0`（Microsoft提供、MIT）を追加することを了承済み。別のプロキシ専用プロセスを増やさず、フロント用Server内で利用します。
+* Node側の依存：`kizamu-backend-node` に `fastify 5.12.8`（MIT）を追加することを了承済み。既存のTypeScript・Vitest基盤とFastifyのHTTPテスト機能を利用します。静的配信の `@fastify/static` は追加していません。
 * 根拠：開発者とのサーバー独立性・CORS・リバースプロキシの比較と、.NET側の分離を先に行う指示。[YARP公式説明](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/yarp/getting-started?view=aspnetcore-10.0)。

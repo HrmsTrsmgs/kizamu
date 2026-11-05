@@ -24,5 +24,31 @@
         "Action": "Start"
       }
     ]
+  },
+  {
+    "Name": "Blazor + Node",
+    "Projects": [
+      {
+        "Path": "src\\backends\\node\\kizamu-backend-node.esproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\frontends\\blazor\\Kizamu.Frontend.Blazor.Server\\Kizamu.Frontend.Blazor.Server.csproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "React + Node",
+    "Projects": [
+      {
+        "Path": "src\\backends\\node\\kizamu-backend-node.esproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\frontends\\react\\kizamu-frontend-react.esproj",
+        "Action": "Start"
+      }
+    ]
   }
 ]

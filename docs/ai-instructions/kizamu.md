@@ -40,13 +40,13 @@ Kizamuを第三者がビルド、テスト、利用、レビューできるア�
 
 * 単一リポジトリの最上位で `src/` と `tests/` を分け、それぞれを役割と実装技術で整理する。業務APIは `src/backends/<技術名>/`、UIは `src/frontends/<技術名>/`、共用可能なDomainは `src/domains/<言語・実行基盤>/` に置き、テストは対応する `tests/` 配下へ置く。実装ごとに独立してビルド、テストできる構成を保つ。
 * MVPの第一実装はASP.NET CoreとBlazor WebAssemblyとする。まず既存の開始、終了、一覧、時間表示をBlazorへ移してから、残りのMVP機能へ進む。
-* 既存のReact実装は削除せず、追加機能開発を保留する。Node版の業務API導入は開発者の指示で前倒しし、その前に.NETの業務APIと画面配信サーバーを分離する。
+* 既存のReact実装は削除せず、追加機能開発を保留する。Node版の業務API導入は開発者の指示で前倒しした。.NETの業務APIと画面配信サーバーの分離を維持し、Nodeも業務APIだけを担当する。
 * 実装間の互換性は言語非依存のHTTP API契約で扱う。共通契約を `contracts/openapi.yaml` に定義し、通信用DTOを各言語向けに生成する方針とする。生成物は `src/api/<言語・実行基盤>/` に置き、Domainとは分離する。未導入の契約や生成物を、構成整理のためだけに先行実装しない。
 * API呼び出しコードの生成も検討対象とする。生成ツールは対象言語・ランタイムの進化への追随、機能対応の速度、拡張性、更新履歴、実際の生成結果で評価する。DTO生成への同意だけで呼び出しコード生成の採用を決めず、新しい依存関係を導入する前に確認する。
 * 同じ業務ロジックが必要なら、ブラウザーで動作する.NETのDomainをASP.NET CoreとBlazorで、実行環境に依存しないTypeScriptのDomainをNodeとReactで共用してよい。ApplicationやInfrastructureの共用、全利用側への同じ内部モデルの強制、異なる言語間での直接ライブラリ参照は前提にしない。Domainを通信用DTOへ依存させない。
 * 画面の状態に通信用DTOを保持せず、通信境界でDomainのモデルへ変換する。DTOの生成・読み取りと通信形式への依存はAPI呼び出し処理へ閉じ込める。
 * .NETの実装固有プロジェクト名と名前空間は `Kizamu.<所属>.<技術>.<役割>` に揃える。ASP.NET Coreは `Kizamu.Backend.AspNetCore.Api`、`Application`、`Infrastructure`、Blazorは `Kizamu.Frontend.Blazor.Client` と `Server` とする。ClientとServerは同じUI実装内の対として扱い、業務APIをServerと呼んで混同しない。共用Domainは `Kizamu.Domain`、将来の通信用DTOは `Kizamu.Api.Contracts` として別の所属にする。
-* npmパッケージ名は `kizamu-frontend-react`、将来の `kizamu-backend-node`、`kizamu-domain-typescript`、`kizamu-api-typescript` のように小文字のハイフン区切りにする。テスト名は.NETの `.Tests`、npmの `-tests` とし、Reactの `.esproj` 名もnpmパッケージ名に揃える。予定の名前を決めただけで空プロジェクトを作らない。
+* npmパッケージ名は `kizamu-frontend-react`、`kizamu-backend-node`、将来の `kizamu-domain-typescript`、`kizamu-api-typescript` のように小文字のハイフン区切りにする。テスト名は.NETの `.Tests`、npmの `-tests` とし、`.esproj` 名もnpmパッケージ名に揃える。予定の名前を決めただけで空プロジェクトを作らない。
 * フロントエンドはブラウザーだけを意味しない。画面配信・API中継サーバーはフロント側へ置き、業務APIとは別の起動・配備単位にする。Blazor ServerはYARPで `/api/...` を中継し、バックエンド実装を参照せず接続先URLだけを設定する。Reactも同じ責務分担とし、開発時はVite proxy、公開時の配信・中継サーバーは未実装として扱う。SSR・Autoへの変更はこの分離とは別に判断する。
 * npmの製品・テストパッケージはルートのworkspacesで管理し、依存関係のインストールとlockfile更新はルートで行う。個別の `.esproj` で自動 `npm install` を実行してlockfileを分散させない。
 * リポジトリの物理配置、Visual Studioのソリューション表示、公開時の組み合わせを別の関心事として扱う。
