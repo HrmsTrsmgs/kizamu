@@ -1,20 +1,22 @@
 # Kizamu 作業指示
 
 このファイルは、CodexなどのAI開発エージェントがこのリポジトリで作業するときの入口である。
-詳細な指示は、用途別に `docs/ai-instructions/` 配下へ分割する。
+共通規則は個人共通のAGENTSとSkill、固有規則と未導入環境向けの参照版は `docs/ai-instructions/` に置く。
 
 ## 読むべき指示
 
-作業開始時は、このファイルに加えて、作業内容に応じた指示を読む。
+* 常に適用する共通指示: ユーザー共通のAGENTS。未導入の場合は `docs/ai-instructions/common.md` の参照版を読む。
+* 新しい主チャットでの振る舞い追加、仕様変更、不具合修正: 共通Skill `tdd-workflow`。未導入の場合は `docs/ai-instructions/tdd.md` を入口とする。
+* 振る舞いを維持するリファクタリングの進行役: 共通Skill内の `references/run.md`。未導入の場合は `docs/ai-instructions/tdd-context/run.md`。性能調査・計測だけの依頼をTDDへ振り分けない。
+* C#/.NETの作業: 共通Skill `csharp-conventions`。採用パッケージ・具体的なビルド対象は `docs/ai-instructions/csharp.md` の該当節も確認する。共通Skill未導入時は同文書を技術規約の参照版として使う。
+* TypeScript/Reactの作業: 共通Skill `typescript-react-conventions`。Kizamu固有の表示言語・採用ツール・起動統合は `docs/ai-instructions/typescript-react.md` も確認する。未導入時は同文書を参照版として使う。
+* Kizamu固有の指示: `docs/ai-instructions/kizamu.md`。主担当は確認し、工程担当は自分の担当範囲に必要な節だけ参照する。
 
-* 常に適用する共通指示: `docs/ai-instructions/common.md`
-* 振る舞い追加、仕様変更、不具合修正、リファクタリング: `docs/ai-instructions/tdd.md`
-* 複数チャットでTDDを進行、レビューする場合: `docs/ai-instructions/tdd-orchestration.md`
-* C#、.NET、xUnit、AwesomeAssertions、FluentAssertions、NuGet、MSBuild: `docs/ai-instructions/csharp.md`
-* TypeScript、React、Vite、Vitest、ESLint、npm: `docs/ai-instructions/typescript-react.md`
-* Kizamu固有の製品設計、README、開発環境: `docs/ai-instructions/kizamu.md`
+共通ルールの正本は個人管理の `codex-workflows`。利用可能なSkillの一覧で名前と実際の場所を確認する。共通Skillとリポジトリ内の参照版は同じ用途へ重ねて読み込まず、固有の制約・検証対象・記録先だけを補足する。私用リポジトリへのアクセスや共通Skillの導入を、OSSへの参加条件にしない。
 
-詳細な製品コンセプトは `docs/concept.md` を参照する。
+進行役は選んだ入口の進行手順だけを読む。起動済みの工程担当は入口を再実行せず、同じ側の工程共通文書と担当工程文書だけを読む。必要な技術・固有規則は担当範囲で参照し、他工程や候補一覧を読み込まない。運用文書の整備だけでは工程担当を起動しない。
+
+2026-10-25に `codex-workflows` の `e66db1d` を基準として入口を統一した。共通規則の改善は正本でレビューし、未導入環境向けの参照版も同じ作業で同期する。プロジェクト固有の仕様や一時的な作業ログは共通規則へ昇格させない。
 
 ## 仕様・判断の引き継ぎ
 
@@ -26,8 +28,8 @@
 
 ## 分類方針
 
-* 他の開発にも共有できる内容は `common.md` または `tdd.md` に置く。
-* C#/.NETまたはTypeScript/Reactに閉じる内容は、それぞれの技術別指示に置く。
+* 他の開発にも共有できる規則は `codex-workflows` の共通AGENTS・該当Skillを正本とし、このリポジトリの参照版へ同期する。
+* 技術共通の規則は対応する共通Skill、採用パッケージや具体的な検証対象はリポジトリ内の技術別指示へ置く。
 * Kizamuの目的、記録操作、管理、集計、作業ツリー、外部連携などの固有方針は `kizamu.md` に置く。
 * 今回限りの作業メモ、試行錯誤、すぐ陳腐化する操作ログは指示化しない。
 * SpreadsheetAsDataとDocumentAsDataのAI指示から共通・技術別のルールを取り込む際も、Kizamu固有の決定を上書きしない。ライブラリ公開、Ruby版同期、Excel・DOCXテストデータなどの固有運用はそのまま転用しない。
@@ -46,7 +48,7 @@
 * 新しいAPI、型、メソッド、設定項目、コマンドは、提案または実装変更として明示し、確認可能な差分にする。
 * 依頼範囲外の変更を混ぜない。
 * ユーザーの未コミット変更を無断で破棄、上書き、コミットしない。
-* 振る舞いを追加または変更する場合は、原則としてRed、Green、Refactorで作業だけでなく考える対象も分ける。各段階の役割と仕様変更の手順は `docs/ai-instructions/tdd.md` に従う。
+* 振る舞い追加・変更は、共通TDDの工程境界に従う。通常はRed→Green→人間レビュー・Gコミット→Refactor→変更時の人間レビュー・Fコミット。段階指定ではそこで停止する。
 * Greenでは、対象テストが要求していない仕様を先取りして実装しない。
 * コミット前に差分、対象ファイル、コミットメッセージ案を提示し、ユーザーの了承を得る。
 * pushは、ユーザーから指示された場合に行う。
