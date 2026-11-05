@@ -1,9 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
-using Kizamu.Frontend.Blazor.Client.Health;
+using Kizamu.Frontend.Blazor.Infrastructure.Health;
+using Kizamu.Frontend.Blazor.TestSupport;
 
-namespace Kizamu.Frontend.Blazor.Client.Tests.Health;
+namespace Kizamu.Frontend.Blazor.Infrastructure.Tests.Health;
 
 public sealed class HealthApiTests : IDisposable
 {

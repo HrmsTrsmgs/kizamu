@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using AwesomeAssertions;
 using Bunit;
 using Kizamu.Frontend.Blazor.Client.Health;
+using Kizamu.Frontend.Blazor.Infrastructure.Health;
+using Kizamu.Frontend.Blazor.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Kizamu.Frontend.Blazor.Client.Tests.Health;

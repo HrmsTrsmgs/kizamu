@@ -35,6 +35,8 @@ kizamu/
 │  ├─ frontends/
 │  │  ├─ blazor/
 │  │  │  ├─ Kizamu.Frontend.Blazor.Client/   第一実装・WebAssembly UI
+│  │  │  ├─ Kizamu.Frontend.Blazor.Presentation/   記録画面の状態・操作とサービス契約
+│  │  │  ├─ Kizamu.Frontend.Blazor.Infrastructure/ HTTP通信・応答DTO
 │  │  │  └─ Kizamu.Frontend.Blazor.Server/   画面配信・API中継
 │  │  └─ react/                     既存React実装・追加開発は保留
 │  │     ├─ kizamu-frontend-react.esproj
@@ -53,6 +55,9 @@ kizamu/
 │  ├─ frontends/
 │  │  ├─ blazor/
 │  │  │  ├─ Kizamu.Frontend.Blazor.Client.Tests/
+│  │  │  ├─ Kizamu.Frontend.Blazor.Presentation.Tests/
+│  │  │  ├─ Kizamu.Frontend.Blazor.Infrastructure.Tests/
+│  │  │  ├─ TestSupport/             テスト間で共有する小さなスタブ（ソースリンク）
 │  │  │  └─ Kizamu.Frontend.Blazor.Server.Tests/
 │  │  └─ react/
 │  │     ├─ kizamu-frontend-react-tests.esproj
@@ -101,7 +106,11 @@ ReactとNodeの製品・テストパッケージは独立させ、ルートのnp
 
 通信用DTOは共通のOpenAPI契約から各言語向けに生成する方針です。API呼び出しコードの生成も検討対象とし、対象言語・ランタイムの進化への追随、必要な機能への対応速度、拡張性、実際の更新履歴と生成結果を確認して採否を決めます。生成ツールは未選定です。生成物は手書き部分と区別し、手修正せず、ツールのバージョンと設定を固定して再生成できるようにします。生成DTOと呼び出し処理のプロジェクト分割は、採用ツールの出力と依存関係を確認して決めます。
 
-現在のBlazorの通信用DTOとAPI呼び出し処理はClient内の手書き実装です。API呼び出し処理が応答DTOを共有Domainの作業記録へ変換して画面へ渡し、通信形式を画面の状態へ持ち込まない境界にしています。通信用DTOは将来生成物へ置き換える対象です。ClientはサーバーのResponse型を参照していません。
+Blazorの記録画面の状態と操作は `Kizamu.Frontend.Blazor.Presentation` に置き、Domainだけを参照する通常の.NETライブラリにしています。`ITimeRecordService` を通じて確定した作業記録を受け取り、HTMLやHTTPを準備せずにテストできます。ClientのRazorは表示と操作の接続を担当します。
+
+手書きの通信用DTOとAPI呼び出し処理（作業記録と正常性確認）は `Kizamu.Frontend.Blazor.Infrastructure` に置きます。作業記録の応答DTOを共有Domainへ変換し、通信形式を画面状態へ持ち込みません。通信用DTOは将来生成物へ置き換える対象です。バックエンドのResponse型は参照しません。
+
+依存方向は `Client → Presentation / Infrastructure`、`Infrastructure → Presentation / Domain`、`Presentation → Domain` です。PresentationとInfrastructureはClientを参照しません。プロジェクト参照でコンパイル範囲を分け、既存テスト基盤によるアセンブリ参照の検査で逆方向への依存とPresentationからのHTTP・JSON・ASP.NET Core参照を検出します。この検査はコンパイル結果に残る参照が対象であり、未使用のプロジェクト参照や動的ロードまでを禁止するものではありません。
 
 同じ業務ロジックが必要な場合、ASP.NET CoreとBlazorは.NET版、NodeとReactはTypeScript版のDomainを共用できます。異なる言語間で同じライブラリの直接参照は前提にせず、HTTP API契約で相互運用します。Domainが通信用DTOへ依存する構成にはしません。
 
@@ -230,6 +239,13 @@ Blazor、バックエンド、Domainのビルドとテスト:
 ```powershell
 dotnet build Kizamu.Blazor.slnx --no-restore
 dotnet test Kizamu.Blazor.slnx --no-build --no-restore
+```
+
+記録画面の状態・操作と通信境界は、Blazorの画面テストと別の通常.NETテストプロジェクトでも確認できます。Presentation.TestsはBlazor・HTTPテスト基盤を参照せず、Infrastructure.TestsはHTTP要求と応答変換を確認します。どちらもbUnitやASP.NET Coreのテストホストは使用しません。
+
+```powershell
+dotnet test tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests --no-restore
+dotnet test tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests --no-restore
 ```
 
 バックエンドとDomainのテストだけを実行する場合:

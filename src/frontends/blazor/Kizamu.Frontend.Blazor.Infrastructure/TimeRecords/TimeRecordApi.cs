@@ -2,12 +2,13 @@ using System.Collections.Immutable;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Kizamu.Domain;
+using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 
-namespace Kizamu.Frontend.Blazor.Client.TimeRecords;
+namespace Kizamu.Frontend.Blazor.Infrastructure.TimeRecords;
 
 /// <summary>作業記録のHTTP APIを呼び出します。HttpClientの所有権は呼び出し側にあります。</summary>
 /// <param name="client">APIと同じオリジンを基底URIとするHTTPクライアント。</param>
-public sealed partial class TimeRecordApi(HttpClient client)
+public sealed partial class TimeRecordApi(HttpClient client) : ITimeRecordService
 {
     /// <summary>サーバーが保持している作業記録を取得します。</summary>
     /// <returns>記録中と終了済みの記録を含む一覧。</returns>

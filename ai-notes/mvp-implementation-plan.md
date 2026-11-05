@@ -464,30 +464,31 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 この節は再開用の短い引き継ぎであり、作業を区切る際に更新する。記録の入口は [一覧](README.md)、詳細な履歴はGit、設計理由は [判断記録](../docs/decisions.md)、未確定の議論は [開発候補](development-candidates.md) を参照する。再開時はブランチ・HEAD・差分を再確認し、この記録だけで状態を断定しない。
 
-### 完了点と確認済みの事実
+### 目的と現在位置
 
-* 基準コミット：`4b14677`（Node版の業務APIとBlazor・Reactとの起動構成）。ブランチは `codex/node-backend`。Node実装はコミット済みで、後続の記録整理では製品コードを変更していない。最新HEADはGitで確認する。
-* 2026-11-05、Nodeの正常性確認・記録の開始・終了・一覧と、Node単独での起動入口を追加した。APIだけを担当し、画面配信やフロントの起動は行わない。メモリ上の保持と既存画面の正常操作が対象であり、不明IDの終了など未確定の異常系まで完全互換とは扱わない。起動手順と対応範囲は [README](../README.md)、具体的な契約は [Nodeテスト](../tests/backends/node/) を参照。
-* 工程別のコンテキストを分離して、health未実装、記録APIの404、起動入口未存在のRedを確認し、それぞれGreen・Refactorを完了した。ユーザー指示で今回の途中レビューを省略し、解説後に開発者からコミット指示を受けた。未完了のRed・Skipはない。Nodeのレイヤー分割と、それに応じた内側のテスト追加は後続作業へ回す。
-* 記録整理：開発者の移動指示に従い、実装計画と未確定候補を `ai-notes/` へ移動した。仕様・ロードマップ・判断・作業指示の正本は従来の場所を維持し、入口と参照元を更新した。配置変更の理由は判断記録D006を参照。
-* 記録整理の検証：21文書のローカルリンク60件・見出し参照13件、旧パス・移動保留文言・旧ファイルの不在、差分の空白と文字コード・改行を確認した。移動前後で計画本体と候補の内容を照合し、リンク修正以外は保持している。コミット時の更新は本節の状態整理に限定する。
-* 検証成功：`npm ci --no-audit --no-fund --fetch-retries=0 --fetch-timeout=15000`、ルートのlint・test・build（React 37件、Node 8件）、`dotnet restore Kizamu.slnx --ignore-failed-sources`、`dotnet build Kizamu.slnx --no-restore`、Nodeの `.esproj` 単体ビルド。ソリューションからNodeのTypeScriptビルドも呼ばれることを確認した。
-* 実HTTP確認：Node既定ポート、画面を配信しないこと、Blazor Server／Vite経由の正常性確認・開始・終了・一覧・404、フロント再起動で記録が残りNode再起動で消えることの16項目が成功した。検証用プロセスは終了済み。再現用のスクリプトとログは下記のローカル成果物を参照。
-* コミット前の再確認：ルートのlint・test・buildに成功（React 37件、Node 8件、製品ビルドとテストコードの型検査）。通常権限でのVitest起動は一時領域のrenameでEPERMとなり、権限付き再実行で成功した。検証後の製品・テスト・設定は `4b14677` と同じ内容である。
-* 検証上の残件：既存 `Microsoft.AspNetCore.Components.WebAssembly.Server 10.0.10` のNU1903警告は残る。.NETコードは今回変更していないため、前回の75件成功を引き継ぎ、テストとformatを再実行していない。前回のformat診断（IDE0290・既存ASP0027）も未解消。
-* Visual Studioの一括起動・テストエクスプローラーと、ブラウザーでの画面操作は今回未確認。ソリューションと四つの共有起動設定の構文・参照先は確認した。Reactの製品コード・Vite設定、Blazorの製品コードは変更していない。
+* 基準コミット：`31aebb5`（AI作業記録の移動）。ブランチは `codex/node-backend`。Node版の追加は `4b14677` として保存済み。最新HEADと差分はGitで確認する。
+* 2026-11-05、開発者から全実装でViewModel・通信サービスを分け、HTTPやHTMLに依存しないテストを書けるようにする指示を受けた。理由と適用方針は [D008](../docs/decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする) を参照する。製品機能の追加ではなく、既存挙動を維持するRefactorとして扱う。
+* 最初の確認単位はBlazor。`TimeRecorderViewModel` と `ITimeRecordService` をPresentationプロジェクト、HTTPとDTOをInfrastructureプロジェクトへ分離し、画面のClientから組み立てる。HealthのHTTP処理もInfrastructureへ移動した。対応する単体テストプロジェクトを設け、状態遷移の詳細をViewModelへ集約し、画面テストは表示と代表的な接続に絞った。既存のAPIテストと小さな共通スタブを維持し、外部パッケージは追加していない。
+* PresentationはDomainのみを参照し、InfrastructureはPresentationとDomainを参照する。コンパイル結果の参照を既存テスト基盤で検査するが、未使用参照・動的ロードは保証対象外。React・ASP.NET・Nodeは変更しない。全実装への分離方針と、今回の実装済み範囲を区別する。未完了のRed・追加Skipはない。
 
-### 今回の区切り
+### 検証
 
-* 2026-11-05、開発者のコミット指示に従い、Node実装とAI作業記録の移動を別コミットに分ける。Node実装は `4b14677`、記録移動・参照更新・本節は後続の文書コミットに含める。pushは依頼されていないため行わない。
-* 元の退避はローカルGit stash `fe3f05fddcb9e6a0fffee3ebcc8a525e4f61c47c` に保持したまま。適用済みなので再適用しない。
-* Blazor Clientの `Properties/launchSettings.json` はローカルで作成された未追跡設定として保持している。今回の変更に含めない。
-* 前回の.NET公開物、今回のHTTPスモーク用スクリプト `verify-node-frontends.ps1` とログはローカルの `.artifacts/` にあり、Git管理対象外である。Nodeのビルド出力もGitへ含めない。
+* 対象版：`31aebb5` に今回のBlazor変更を加えた未コミット差分。最終版の `Kizamu.Blazor.slnx` の.NETテスト75件に成功（失敗・Skipなし）。Client 21件、Presentation 9件、Frontend Infrastructure 13件、Server 6件、Backend API 11件、Application 6件、Backend Infrastructure 4件、Domain 5件。新たなテストプロジェクト単独でも成功。
+* 解析付き非増分ビルドに成功（26.68秒、0エラー）。既存 `Microsoft.AspNetCore.Components.WebAssembly.Server 10.0.10` のNU1903警告4件は残る。通常権限のdotnetが出力なく失敗する環境問題は、必要な権限での再実行により検証した。
+* `dotnet format Kizamu.Blazor.slnx --no-restore --verify-no-changes --severity info` は既存IDE0290の3箇所・ASP0027の1箇所で終了コード1。変更箇所の診断はない。全16プロジェクトのSARIFも確認した。ワークスペース読み込み警告の詳細原因は未調査。既存箇所の一括修正は行わない。
+* React・Nodeはコード・設定・実行経路が今回のBlazor内の抽出から変わらないため再検証していない。前回のnpm lint・test・buildは成功（React 37件、Node 8件）。ブラウザーの実操作とVisual Studioの一括起動・テストエクスプローラーは今回未確認。
 
-### 次回の着手点
+### レビュー境界と次回の着手点
 
-1. Nodeのレイヤー分割と内側のテスト追加は後続作業として扱う。着手時に分割対象と確認単位を決め、今回のコミットに先行実装を含めない。
-2. Visual Studioで `Blazor + Node`／`React + Node` の起動と、Nodeのテスト検出を実機確認する。既存NU1903警告への対応も残件として扱う。
-3. 次の製品機能は開発者の指示を待ち、第一実装のMVP計画へ戻る。Nodeを理由に新しい製品仕様を増やさない。
+* Refactorの差分を人間レビューへ渡す。変更はBlazorの製品・テストの分割・移動、ソリューション・README、方針・判断・本節。分離とテスト整理は指示済みだが、この差分のコミットは未承認。ステージング・コミット・pushは行わない。
+* コミットメッセージ案：`Blazorの画面状態とHTTP通信を独立プロジェクトへ分離する`。
+* レビュー後、了承を得てこの単位をコミットしてから、Reactやサーバー側等の次の確認単位へ進む。全実装を同時に書き換えず、仕様を追加する場合は別のRed→Greenとする。
+* 既存NU1903警告への対応とIDE上の実機確認は残件。製品機能の開発順序は、今回の責務分離だけを理由に変更しない。
+
+### ローカルで保持するもの
+
+* Blazor Clientの `Properties/launchSettings.json` はユーザー側の未追跡設定であり、変更・コミット対象に含めない。
+* 適用済みの退避はGit stash `fe3f05fddcb9e6a0fffee3ebcc8a525e4f61c47c` に保持したまま。再適用しない。
+* 前回の.NET公開物、HTTPスモーク用 `verify-node-frontends.ps1` とログは `.artifacts/` にあるローカル成果物。今回のビルド診断も含め、生成物はGitへ含めない。
 
 OpenAPI等の未導入部分の配置は [README](../README.md#今後追加する配置未実装)、公開成果物の組み立てはフェーズ6を参照する。

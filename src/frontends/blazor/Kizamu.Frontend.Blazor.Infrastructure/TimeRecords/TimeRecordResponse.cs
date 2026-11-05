@@ -1,6 +1,6 @@
 using Kizamu.Domain;
 
-namespace Kizamu.Frontend.Blazor.Client.TimeRecords;
+namespace Kizamu.Frontend.Blazor.Infrastructure.TimeRecords;
 
 /// <summary>HTTP APIで交換する作業記録です。業務ルールを持つDomainとは区別します。</summary>
 /// <param name="Id">サーバーが発行した記録の識別子。</param>

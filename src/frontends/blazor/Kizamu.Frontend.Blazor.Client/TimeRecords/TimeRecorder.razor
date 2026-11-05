@@ -1,23 +1,23 @@
-@inject TimeRecordApi Api
+@inject TimeRecorderViewModel ViewModel
 
 <div class="time-recorder">
     <section class="recorder-panel" aria-labelledby="recorder-title">
         <header class="panel-header">
             <h2 id="recorder-title">プロジェクト未登録</h2>
-            <span class="status-badge @(currentId is null ? "" : "is-active")">
-                @(currentId is null ? "待機中" : "記録中")
+            <span class="status-badge @(ViewModel.IsRecording ? "is-active" : "")">
+                @(ViewModel.IsRecording ? "記録中" : "待機中")
             </span>
         </header>
         <div class="recorder-action">
-            @if (currentId is null)
+            @if (!ViewModel.IsRecording)
             {
-                <button class="record-button" type="button" @onclick="StartTimeRecordAsync">記録を開始</button>
+                <button class="record-button" type="button" @onclick="ViewModel.StartTimeRecordAsync">記録を開始</button>
             }
             else
             {
-                <button class="record-button is-active" type="button" @onclick="EndTimeRecordAsync">記録を終了</button>
+                <button class="record-button is-active" type="button" @onclick="ViewModel.EndTimeRecordAsync">記録を終了</button>
             }
-            @if (displayedRecord is { } displayed)
+            @if (ViewModel.DisplayedRecord is { } displayed)
             {
                 <TimeRecordTimes StartedAt="displayed.StartedAt" EndedAt="displayed.EndedAt" Labelled="true" />
             }
@@ -26,10 +26,10 @@
     <section class="records-panel" aria-labelledby="records-title">
         <header class="panel-header records-header">
             <h2 id="records-title">作業記録</h2>
-            <span class="record-count">@(records.Count)件</span>
+            <span class="record-count">@(ViewModel.Records.Count)件</span>
         </header>
         <ul class="records-list" aria-label="作業記録一覧">
-            @foreach (var record in records)
+            @foreach (var record in ViewModel.Records)
             {
                 <li @key="record.Id">
                     <span class="record-status @(record.EndedAt is null ? "is-active" : "")" aria-hidden="true"></span>
@@ -41,39 +41,5 @@
 </div>
 
 @code {
-    List<TimeRecord> records = [];
-    Guid? currentId;
-    /// <summary>操作した直近の記録です。終了後も結果を残し、再開始時に差し替えます。</summary>
-    TimeRecord? displayedRecord;
-
-    protected override async Task OnInitializedAsync()
-    {
-        records = (await Api.GetTimeRecordsAsync()).ToList();
-        currentId =
-            (from record in records
-             where record.EndedAt is null
-             select (Guid?)record.Id).FirstOrDefault();
-    }
-
-    async Task StartTimeRecordAsync()
-    {
-        var record = await Api.StartTimeRecordAsync();
-        records.Add(record);
-        displayedRecord = record;
-        currentId = record.Id;
-    }
-
-    async Task EndTimeRecordAsync()
-    {
-        if (currentId is { } id)
-        {
-            var record = await Api.EndTimeRecordAsync(id);
-            records[records.FindIndex(it => it.Id == record.Id)] = record;
-            if (displayedRecord is not null)
-            {
-                displayedRecord = record;
-            }
-            currentId = null;
-        }
-    }
+    protected override Task OnInitializedAsync() => ViewModel.LoadAsync();
 }

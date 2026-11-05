@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
-namespace Kizamu.Frontend.Blazor.Client.Health;
+namespace Kizamu.Frontend.Blazor.Infrastructure.Health;
 
 /// <summary>サーバーの正常性を確認します。HttpClientは呼び出し側が管理します。</summary>
 /// <param name="client">サーバーを基底URIとするHTTPクライアント。</param>

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 
-namespace Kizamu.Frontend.Blazor.Client.Tests;
+namespace Kizamu.Frontend.Blazor.TestSupport;
 
 sealed class TestHttpMessageHandler : HttpMessageHandler
 {

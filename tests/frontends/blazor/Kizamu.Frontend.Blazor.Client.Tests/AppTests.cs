@@ -2,8 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using Bunit;
-using Kizamu.Frontend.Blazor.Client.Health;
-using Kizamu.Frontend.Blazor.Client.TimeRecords;
+using Kizamu.Frontend.Blazor.Infrastructure.Health;
+using Kizamu.Frontend.Blazor.Infrastructure.TimeRecords;
+using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
+using Kizamu.Frontend.Blazor.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Kizamu.Frontend.Blazor.Client.Tests;
@@ -26,7 +28,8 @@ public sealed class AppTests : IDisposable
         })
         { BaseAddress = new("http://localhost/") };
         context.Services.AddSingleton(new HealthApi(client));
-        context.Services.AddSingleton(new TimeRecordApi(client));
+        context.Services.AddSingleton<ITimeRecordService>(new TimeRecordApi(client));
+        context.Services.AddTransient<TimeRecorderViewModel>();
         context.Services.AddSingleton(TimeProvider.System);
     }
 

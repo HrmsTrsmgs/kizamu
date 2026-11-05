@@ -3,9 +3,10 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using Kizamu.Domain;
-using Kizamu.Frontend.Blazor.Client.TimeRecords;
+using Kizamu.Frontend.Blazor.Infrastructure.TimeRecords;
+using Kizamu.Frontend.Blazor.TestSupport;
 
-namespace Kizamu.Frontend.Blazor.Client.Tests.TimeRecords;
+namespace Kizamu.Frontend.Blazor.Infrastructure.Tests.TimeRecords;
 
 public sealed class TimeRecordApiTests : IDisposable
 {
