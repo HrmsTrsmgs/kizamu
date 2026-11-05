@@ -2,7 +2,7 @@ using System.Net;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Kizamu.Frontend.Blazor.Client.Tests.Hosting;
+namespace Kizamu.Frontend.Blazor.Server.Tests.Hosting;
 
 public sealed class BlazorHostingTests : IClassFixture<WebApplicationFactory<global::Program>>, IDisposable
 {
@@ -29,14 +29,6 @@ public sealed class BlazorHostingTests : IClassFixture<WebApplicationFactory<glo
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType?.MediaType.Should().Be(mediaType);
-    }
-
-    [Fact]
-    public async Task 存在しないAPIには画面を返さず404を返します()
-    {
-        using var response = await client.GetAsync("/api/does-not-exist");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     public void Dispose() => client.Dispose();

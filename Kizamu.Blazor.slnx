@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/Frontends/Blazor/">
     <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Client/Kizamu.Frontend.Blazor.Client.csproj" />
+    <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Server/Kizamu.Frontend.Blazor.Server.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Server.Tests/Kizamu.Frontend.Blazor.Server.Tests.csproj" />
     <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/Kizamu.Frontend.Blazor.Client.Tests.csproj" />
   </Folder>
   <Folder Name="/Backends/ASP.NET Core/">

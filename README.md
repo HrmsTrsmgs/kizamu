@@ -13,6 +13,7 @@ MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間�
 ## 技術構成
 
 - .NET 10 LTS / ASP.NET Core Minimal API / Blazor WebAssembly
+- YARP（Blazor配信サーバーから業務APIへのHTTP中継）
 - xUnit / bUnit / AwesomeAssertions
 - React / TypeScript（strict）/ Vite
 - Vitest / React Testing Library / ESLint / npm
@@ -31,7 +32,8 @@ kizamu/
 │  │     └─ Kizamu.Backend.AspNetCore.Infrastructure/
 │  ├─ frontends/
 │  │  ├─ blazor/
-│  │  │  └─ Kizamu.Frontend.Blazor.Client/   第一実装・WebAssembly UI
+│  │  │  ├─ Kizamu.Frontend.Blazor.Client/   第一実装・WebAssembly UI
+│  │  │  └─ Kizamu.Frontend.Blazor.Server/   画面配信・API中継
 │  │  └─ react/                     既存React実装・追加開発は保留
 │  │     ├─ kizamu-frontend-react.esproj
 │  │     ├─ package.json
@@ -47,7 +49,8 @@ kizamu/
 │  │     └─ Kizamu.Backend.AspNetCore.Infrastructure.Tests/
 │  ├─ frontends/
 │  │  ├─ blazor/
-│  │  │  └─ Kizamu.Frontend.Blazor.Client.Tests/
+│  │  │  ├─ Kizamu.Frontend.Blazor.Client.Tests/
+│  │  │  └─ Kizamu.Frontend.Blazor.Server.Tests/
 │  │  └─ react/
 │  │     ├─ kizamu-frontend-react-tests.esproj
 │  │     ├─ package.json
@@ -65,9 +68,9 @@ kizamu/
 └─ package-lock.json                npm依存関係の共通lockfile
 ```
 
-Visual Studioのソリューション表示は、物理配置や公開時の組み合わせとは別に扱います。同じ実装のプロジェクトとテストを、`Backends/ASP.NET Core`、`Frontends/Blazor`、`Frontends/React`、`Domains/.NET` の論理フォルダーへまとめています。Blazor開発には `Kizamu.Blazor.slnx`、バックエンドとDomainのテストだけの実行には `Kizamu.AspNetCore.slnx` を使います。APIプロジェクトはBlazorの静的ファイルを配信するためClientをプロジェクト参照しており、後者のビルドでもClientは参照先としてビルドされます。
+Visual Studioのソリューション表示は、物理配置や公開時の組み合わせとは別に扱います。同じ実装のプロジェクトとテストを、`Backends/ASP.NET Core`、`Frontends/Blazor`、`Frontends/React`、`Domains/.NET` の論理フォルダーへまとめています。Blazor開発には `Kizamu.Blazor.slnx`、バックエンドとDomainのテストだけの実行には `Kizamu.AspNetCore.slnx` を使います。業務APIはBlazorを参照せず、バックエンドだけでビルド・起動できます。
 
-.NETの実装固有プロジェクトは `Kizamu.<所属>.<技術>.<役割>` と命名します。業務バックエンドのHTTP APIは `Backend.AspNetCore.Api`、Blazorのブラウザー側UIは `Frontend.Blazor.Client`、将来のUIサーバーは `Frontend.Blazor.Server` とし、ClientとServerは同じUI実装内の対になる名前です。Domainと通信契約は実装技術に所属させず、それぞれ `Kizamu.Domain` と将来の `Kizamu.Api.Contracts` として区別します。
+.NETの実装固有プロジェクトは `Kizamu.<所属>.<技術>.<役割>` と命名します。業務バックエンドのHTTP APIは `Backend.AspNetCore.Api`、Blazorのブラウザー側UIは `Frontend.Blazor.Client`、画面配信・API中継サーバーは `Frontend.Blazor.Server` とし、ClientとServerは同じUI実装内の対になる名前です。Domainと通信契約は実装技術に所属させず、それぞれ `Kizamu.Domain` と将来の `Kizamu.Api.Contracts` として区別します。
 
 npmパッケージは各技術の習慣に合わせて小文字のハイフン区切りにし、現在のReact版は `kizamu-frontend-react` と命名します。テストは.NETで `.Tests`、npmで `-tests` を付けます。Reactの `.esproj` もnpmパッケージ名に揃えます。
 
@@ -85,10 +88,9 @@ Reactの製品パッケージとテストパッケージは独立させ、ルー
 | --- | --- |
 | `contracts/openapi.yaml` | 実装言語から独立した共通HTTP API契約。複数バックエンドの互換性の基準にします。 |
 | `src/api/dotnet/Kizamu.Api.Contracts/`、`src/api/typescript/` | OpenAPIから生成する通信用DTO等。TypeScriptパッケージは `kizamu-api-typescript`。Domainとは分離します。 |
-| `src/frontends/blazor/Kizamu.Frontend.Blazor.Server/` | SSR・Auto等を採用する場合に追加するUIサーバー。WebAssemblyのClientは実装済みです。 |
 | `src/backends/node/` | `kizamu-backend-node`。Nodeによる業務APIの別実装。ReactのSSRサーバーとは区別します。 |
 | `src/domains/typescript/` | `kizamu-domain-typescript`。NodeやReactから必要に応じて共用する、実行環境に依存しない業務ロジック。 |
-| `tests/backends/node/`、`tests/domains/typescript/` | 対応する実装の `-tests` パッケージ。BlazorのClientと配信のテストは導入済みで、UIサーバーを追加する場合は `.Tests` プロジェクトも追加します。 |
+| `tests/backends/node/`、`tests/domains/typescript/` | 対応する実装の `-tests` パッケージ。 |
 | `tests/api/` | 通信コードの検証が必要になった場合のテスト。生成DTOの数だけ形式的にテストを増やしません。 |
 | `tests/contracts/` | 各バックエンドが共通のHTTP API契約を満たすことを確認するテスト。 |
 | `tests/system/` | フロントエンドとバックエンドを組み合わせた製品全体のテスト。 |
@@ -100,26 +102,34 @@ Reactの製品パッケージとテストパッケージは独立させ、ルー
 
 同じ業務ロジックが必要な場合、ASP.NET CoreとBlazorは.NET版、NodeとReactはTypeScript版のDomainを共用できます。異なる言語間で同じライブラリの直接参照は前提にせず、HTTP API契約で相互運用します。Domainが通信用DTOへ依存する構成にはしません。
 
-フロントエンドはブラウザーだけを意味しません。BlazorのUIサーバーや、将来Reactへ追加するSSRサーバーも、それぞれ `src/frontends/` 配下へ置きます。スタンドアロンBlazor WebAssemblyでは専用のUIサーバーを作りません。SSR・Autoの採用自体は未確定です。
+フロントエンドはブラウザーだけを意味しません。BlazorのServerは静的ファイル配信と `/api/...` の中継を担当し、記録処理は持ちません。業務APIへのプロジェクト参照はせず、接続先URLだけを設定します。SSR・Autoは採用しておらず、UIは引き続きWebAssemblyとしてブラウザー内で実行します。React公開時にもフロント側の配信・API中継サーバーを置く方針ですが、未実装です。開発時は既存のVite proxyが中継します。
 
-現在はサーバーの起動プロファイルで `blazor`（ASP.NET CoreとBlazor）と `http`（ASP.NET CoreとReact）の2種類を選べます。Node導入後はASP.NET Core/NodeとBlazor/Reactの4種類を選べることを目標とします。プロファイルや公開処理のためにソースを複製しません。
+Visual Studio用の共有一括起動設定は `Kizamu.slnLaunch` と `Kizamu.Blazor.slnLaunch` に置きます。業務APIとフロント側サーバーを別プロセスで起動します。Node導入後は中継先を切り替えてASP.NET Core/NodeとBlazor/Reactを組み合わせる方針です。プロファイルや公開処理のためにソースを複製しません。
 
 ## 実装とリリースの方針
 
 1. 既存の時間記録機能はBlazorへ移行済みです。ASP.NET Coreとの組み合わせを第一実装としてMVPを進めます。
-2. Reactの開発再開とNodeなどの別実装はMVP後に検討します。保留中のReactが将来のMVPと同じ機能を持つとは扱いません。
-3. 各実装の成果物と、利用者が起動するサーバー・クライアントの組み合わせを区別します。ASP.NET CoreがBlazor WebAssemblyの静的ファイルとAPIを提供し、一つのサーバー起動で利用できる構成にしています。
+2. Node版の導入を前倒しし、その前提として.NETの業務APIと画面配信を分離します。Reactの追加機能開発は引き続き保留し、将来のMVPと同じ機能を持つとは扱いません。
+3. 業務APIとフロントサーバーを独立した起動・配備単位にします。ブラウザーはフロントサーバーだけに接続し、API通信はそこから業務APIへ中継します。
 
 当初は製品として一つのリリースバージョンを使い、含まれる実装の機能範囲と検証済みの組み合わせを明示する方針です。全組み合わせを毎回配布する前提にはしません。HTTP APIの互換性と保存データの互換性は別に設計し、別サーバーに同じデータベース構造を強制しません。
 
 対応OS、ランタイム同梱、ZIPやインストーラーなどの配布形態と、その組み立て処理は未実装・未確定です。
 
-標準の `dotnet publish` でAPIとBlazorの静的ファイルを同じ出力先へ公開できます。以下は動作確認用のフレームワーク依存の出力であり、利用環境にはASP.NET Core Runtime 10が必要です。
+標準の `dotnet publish` で業務APIとBlazorサーバーを別々の出力先へ公開します。Blazorサーバーの出力にはClientの静的ファイルが含まれます。以下は動作確認用のフレームワーク依存の出力であり、利用環境にはASP.NET Core Runtime 10が必要です。
 
 ```powershell
-dotnet publish src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api -c Release -o .artifacts/blazor-publish
-Push-Location .artifacts/blazor-publish
+dotnet publish src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api -c Release -o .artifacts/api-publish
+dotnet publish src/frontends/blazor/Kizamu.Frontend.Blazor.Server -c Release -o .artifacts/blazor-server-publish
+
+# 一つ目のターミナル
+Push-Location .artifacts/api-publish
 dotnet Kizamu.Backend.AspNetCore.Api.dll --urls http://localhost:5213
+Pop-Location
+
+# 別のターミナル
+Push-Location .artifacts/blazor-server-publish
+dotnet Kizamu.Frontend.Blazor.Server.dll --urls http://localhost:5214
 Pop-Location
 ```
 
@@ -141,16 +151,23 @@ Blazor版だけを開発・起動する場合はNode.jsとnpmは不要です。
 
 ```powershell
 dotnet restore Kizamu.Blazor.slnx
-dotnet run --project src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api --launch-profile blazor
+
+# 一つ目のターミナル
+dotnet run --project src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api --launch-profile http
+
+# 別のターミナル
+dotnet run --project src/frontends/blazor/Kizamu.Frontend.Blazor.Server --launch-profile http
 ```
 
-`http://localhost:5213` を開きます。APIとBlazor画面を同じASP.NET Coreサーバーが配信するため、別の開発サーバーは起動しません。WebAssemblyでのUI実行はブラウザ内です。
+`http://localhost:5214` を開きます。Blazorサーバーが画面を配信し、`/api/...` を業務APIの `http://localhost:5213` へ中継します。UIはブラウザー内で実行されます。二つのプロセスはそれぞれ停止・再起動できます。記録を保持しているのは業務APIなので、その再起動では記録が失われます。
 
-Visual Studioでは `Kizamu.Blazor.slnx` を開き、`Kizamu.Backend.AspNetCore.Api` をスタートアッププロジェクトにして、起動プロファイル `blazor` を選びます。プロファイルとCLI起動は確認済みですが、Visual Studio上の操作は別途確認が必要です。
+中継先はBlazor Serverの `appsettings.json` にある `ReverseProxy:Clusters:backend:Destinations:backend:Address` です。公開先や別バックエンドへ切り替える場合は、同じキーを環境変数 `ReverseProxy__Clusters__backend__Destinations__backend__Address` 等で上書きできます。ブラウザー側のAPI呼び出しコードや業務APIのビルドには影響しません。
 
-## Reactを起動しないサーバー起動
+Visual Studioでは `Kizamu.Blazor.slnx` または `Kizamu.slnx` を開き、共有起動プロファイル `Blazor + ASP.NET Core` を選びます。表示されない場合はソリューションの「スタートアッププロジェクトの構成」でAPIとBlazor Serverを両方「開始」にします。複数プロジェクト起動プロファイル機能の有効化が必要な場合があります。IDE上の検出・操作はCLI検証とは別に確認してください。
 
-以下のコマンドはリポジトリルートから実行します。ReactやViteを起動せず、HTTP APIを確認できます。Blazorの静的ファイルも配信されます。
+## 業務APIだけの起動
+
+以下のコマンドはリポジトリルートから実行します。画面配信やフロントエンドの起動を伴わず、HTTP APIだけを確認できます。
 
 ```powershell
 dotnet restore Kizamu.AspNetCore.slnx
@@ -168,12 +185,15 @@ dotnet restore Kizamu.slnx
 npm ci
 ```
 
-Visual Studioでは `Kizamu.slnx` を開き、`Kizamu.Backend.AspNetCore.Api` をスタートアッププロジェクトにして、起動プロファイル `http` を選んでデバッグ開始します。ASP.NET CoreのSPA proxyがViteを自動起動し、ブラウザをReact画面へ転送するため、別のターミナルでReactを起動する必要はありません。サーバーは `http://localhost:5213`、Viteは `http://localhost:5173` で起動し、Viteの `/api` proxyがサーバーへ転送します。Blazor版と同じAPIポートを使うため、両プロファイルを同時には起動しません。
+Visual Studioでは `Kizamu.slnx` を開き、共有起動プロファイル `React + ASP.NET Core` でAPIとReactを起動します。業務APIがViteを自動起動する以前のSPA proxy連携は廃止し、起動する組み合わせはIDE側で管理します。APIは `http://localhost:5213`、Viteは `http://localhost:5173` で、Viteの `/api` proxyが業務APIへ転送します。Blazorとのプロファイル切替時には、同じAPIプロセスを二重に起動しないでください。
 
-コマンドラインでも、ASP.NET Coreを起動して `http://localhost:5213` をブラウザで開くとViteが自動起動します。
+コマンドラインでは二つのターミナルで起動し、`http://localhost:5173` を開きます。
 
 ```powershell
 dotnet run --project src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api --launch-profile http
+
+# 別のターミナル
+npm run dev
 ```
 
 ## ビルドと検証
@@ -215,11 +235,13 @@ dotnet test Kizamu.slnx --no-build --no-restore
 
 Kizamu本体は [MIT License](LICENSE) で公開します。依存ライブラリには、それぞれのライセンス条件が適用されます。
 
+BlazorサーバーのAPI中継には、Microsoft提供の [Yarp.ReverseProxy](https://www.nuget.org/packages/Yarp.ReverseProxy/2.3.0)（MIT）を使用します。
+
 .NETテストでは、コミュニティによるオープンソースのフォーク [AwesomeAssertions](https://awesomeassertions.org/introduction)（Apache-2.0）を使用します。Blazor、Server、Application、Infrastructure、Domainの各テストで使用しており、FluentAssertionsへの依存はありません。
 
 ## 未実装
 
-プロジェクト登録・タブ切替、プロジェクト単位の複数同時記録、記録の修正、作業ツリー、時間配分、Clockify連携、ログイン、ユーザー管理、永続化、集計、公開用成果物の組み立ては未実装です。次はVisual StudioからBlazor版を起動する確認を経て、最小限のプロジェクト登録へ進みます。
+プロジェクト登録・タブ切替、プロジェクト単位の複数同時記録、記録の修正、作業ツリー、時間配分、Clockify連携、ログイン、ユーザー管理、永続化、集計、公開用成果物の組み立ては未実装です。直近の作業状況は実装計画の「現在の次作業」を参照してください。
 
 AsData連携およびWord・Excel・PDFの入出力は今後の検討対象です。今回のBlazor移行には含めず、対応形式、処理場所、依存ライブラリを決めてから別の作業単位として扱います。
 

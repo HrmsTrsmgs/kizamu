@@ -1,0 +1,28 @@
+[
+  {
+    "Name": "Blazor + ASP.NET Core",
+    "Projects": [
+      {
+        "Path": "src\\backends\\aspnetcore\\Kizamu.Backend.AspNetCore.Api\\Kizamu.Backend.AspNetCore.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\frontends\\blazor\\Kizamu.Frontend.Blazor.Server\\Kizamu.Frontend.Blazor.Server.csproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "React + ASP.NET Core",
+    "Projects": [
+      {
+        "Path": "src\\backends\\aspnetcore\\Kizamu.Backend.AspNetCore.Api\\Kizamu.Backend.AspNetCore.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\frontends\\react\\kizamu-frontend-react.esproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

@@ -4,20 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <SpaRoot>..\..\..\frontends\react\</SpaRoot>
-    <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
-    <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="10.0.10" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.10" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kizamu.Backend.AspNetCore.Application\Kizamu.Backend.AspNetCore.Application.csproj" />
     <ProjectReference Include="..\Kizamu.Backend.AspNetCore.Infrastructure\Kizamu.Backend.AspNetCore.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\frontends\blazor\Kizamu.Frontend.Blazor.Client\Kizamu.Frontend.Blazor.Client.csproj" />
   </ItemGroup>
 
 </Project>
