@@ -10,7 +10,6 @@ namespace Kizamu.Backend.AspNetCore.Api.Tests;
 public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
     static readonly DateTimeOffset 早い時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
-    static readonly DateTimeOffset 中間の時刻 = new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 遅い時刻 = new(2026, 8, 1, 11, 0, 0, TimeSpan.Zero);
 
     readonly FakeTimeProvider timeProvider;
@@ -26,20 +25,10 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         client = configuredFactory.CreateClient();
     }
 
-    public static TheoryData<DateTimeOffset> 開始時刻の例 => [早い時刻, 中間の時刻];
-
-    public static TheoryData<DateTimeOffset, DateTimeOffset> 記録時刻の例 => new()
+    [Fact]
+    public async Task 記録を開始すると201と作業記録のJSONが返されます()
     {
-        { 早い時刻, 中間の時刻 },
-        { 中間の時刻, 遅い時刻 },
-    };
-
-    [Theory]
-    [MemberData(nameof(開始時刻の例))]
-    public async Task 記録を開始すると識別子と開始時刻があり終了時刻がない作業記録が返されます(
-        DateTimeOffset startedAt)
-    {
-        timeProvider.SetUtcNow(startedAt);
+        timeProvider.SetUtcNow(早い時刻);
 
         using var response = await client.PostAsync("/api/time-records/start", null);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -47,18 +36,15 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>();
         body.Should().NotBeNull();
         body.Id.Should().NotBe(Guid.Empty);
-        body.StartedAt.Should().Be(startedAt);
+        body.StartedAt.Should().Be(早い時刻);
         body.EndedAt.Should().BeNull();
     }
 
-    [Theory]
-    [MemberData(nameof(記録時刻の例))]
-    public async Task 記録を終了すると識別子と開始時刻と終了時刻が返されます(
-        DateTimeOffset startedAt,
-        DateTimeOffset endedAt)
+    [Fact]
+    public async Task 記録を終了すると200と終了した作業記録のJSONが返されます()
     {
-        var startedRecord = await 開始済みの記録を用意する(startedAt);
-        timeProvider.SetUtcNow(endedAt);
+        var startedRecord = await 開始済みの記録を用意する(早い時刻);
+        timeProvider.SetUtcNow(遅い時刻);
 
         using var response = await client.PostAsync($"/api/time-records/{startedRecord.Id}/end", null);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -66,37 +52,12 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>();
         body.Should().NotBeNull();
         body.Id.Should().Be(startedRecord.Id);
-        body.StartedAt.Should().Be(startedAt);
-        body.EndedAt.Should().Be(endedAt);
+        body.StartedAt.Should().Be(早い時刻);
+        body.EndedAt.Should().Be(遅い時刻);
     }
 
     [Fact]
-    public async Task 記録を開始した後に一覧を取得すると開始した記録が含まれます()
-    {
-        var startedRecord = await 開始済みの記録を用意する(早い時刻);
-
-        using var response = await client.GetAsync("/api/time-records");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>();
-        body.Should().ContainEquivalentOf(startedRecord);
-    }
-
-    [Fact]
-    public async Task 二件の記録を開始した後に一覧を取得すると開始した順に両方が返されます()
-    {
-        var firstRecord = await 開始済みの記録を用意する(早い時刻);
-        var secondRecord = await 開始済みの記録を用意する(遅い時刻);
-
-        using var response = await client.GetAsync("/api/time-records");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>();
-        body.Should().Equal(firstRecord, secondRecord);
-    }
-
-    [Fact]
-    public async Task 記録を終了した後に一覧を取得すると終了時刻が含まれます()
+    public async Task 開始して終了した記録の一覧を取得すると200とJSON配列が返されます()
     {
         var startedRecord = await 開始済みの記録を用意する(早い時刻);
         timeProvider.SetUtcNow(遅い時刻);
@@ -107,7 +68,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>();
-        body.Should().ContainEquivalentOf(
+        body.Should().Equal(
             new TimeRecordResponse(startedRecord.Id, 早い時刻, 遅い時刻));
     }
 

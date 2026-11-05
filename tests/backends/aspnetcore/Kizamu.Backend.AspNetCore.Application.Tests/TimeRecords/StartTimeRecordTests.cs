@@ -6,45 +6,27 @@ namespace Kizamu.Backend.AspNetCore.Application.Tests.TimeRecords;
 
 public sealed class StartTimeRecordTests
 {
-    static readonly DateTimeOffset 現在時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
+    public static TheoryData<DateTimeOffset> 開始時刻の例 =>
+    [
+        new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero),
+        new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero),
+    ];
 
-    [Fact]
-    public void 記録を開始すると空でない識別子が返されます()
+    [Theory]
+    [MemberData(nameof(開始時刻の例))]
+    public void 記録を開始すると識別子と現在の開始時刻を返し終了時刻のない記録を保存する(
+        DateTimeOffset startedAt)
     {
-        var tested =
-            new StartTimeRecord(
-                new FakeTimeProvider(現在時刻),
-                new FakeTimeRecordState());
+        var state = new FakeTimeRecordState();
+        var tested = new StartTimeRecord(new FakeTimeProvider(startedAt), state);
 
         var result = tested.Execute();
 
         result.Id.Should().NotBeEmpty();
-    }
-
-    [Fact]
-    public void 記録を開始すると現在時刻が開始時刻として返されます()
-    {
-        var tested =
-            new StartTimeRecord(
-                new FakeTimeProvider(現在時刻),
-                new FakeTimeRecordState());
-
-        var result = tested.Execute();
-
-        result.StartedAt.Should().Be(現在時刻);
-    }
-
-    [Fact]
-    public void 記録を開始すると作業記録が保存されます()
-    {
-        var timeRecordState = new FakeTimeRecordState();
-        var tested =
-            new StartTimeRecord(
-                new FakeTimeProvider(現在時刻),
-                timeRecordState);
-
-        var result = tested.Execute();
-
-        timeRecordState.Current.Should().BeEquivalentTo(result);
+        result.StartedAt.Should().Be(startedAt);
+        state.Current.Should().NotBeNull();
+        state.Current.Id.Should().Be(result.Id);
+        state.Current.StartedAt.Should().Be(startedAt);
+        state.Current.EndedAt.Should().BeNull();
     }
 }

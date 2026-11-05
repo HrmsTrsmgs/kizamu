@@ -1,5 +1,4 @@
 using Kizamu.Backend.AspNetCore.Application.TimeRecords;
-using Kizamu.Domain;
 
 namespace Kizamu.Backend.AspNetCore.Api.Endpoints.TimeRecords;
 
@@ -15,11 +14,11 @@ sealed record TimeRecordResponse(
     DateTimeOffset? EndedAt)
 {
     /// <summary>
-    /// Domainの作業記録からAPIレスポンスを生成します。
+    /// 記録一覧ユースケースの結果からAPIレスポンスを生成します。
     /// </summary>
-    /// <param name="timeRecord">作業記録。</param>
-    public TimeRecordResponse(TimeRecord timeRecord)
-        : this(timeRecord.Id, timeRecord.StartedAt, timeRecord.EndedAt)
+    /// <param name="result">一覧で取得した作業記録。</param>
+    public TimeRecordResponse(GetTimeRecordResult result)
+        : this(result.Id, result.StartedAt, result.EndedAt)
     {
     }
 

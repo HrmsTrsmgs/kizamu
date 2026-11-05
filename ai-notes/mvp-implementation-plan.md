@@ -466,23 +466,23 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### 目的と現在位置
 
-* 基準コミット：`31aebb5`（AI作業記録の移動）。ブランチは `codex/node-backend`。Node版の追加は `4b14677` として保存済み。最新HEADと差分はGitで確認する。
-* 2026-11-05、開発者から全実装でViewModel・通信サービスを分け、HTTPやHTMLに依存しないテストを書けるようにする指示を受けた。理由と適用方針は [D008](../docs/decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする) を参照する。製品機能の追加ではなく、既存挙動を維持するRefactorとして扱う。
-* 最初の確認単位はBlazor。`TimeRecorderViewModel` と `ITimeRecordService` をPresentationプロジェクト、HTTPとDTOをInfrastructureプロジェクトへ分離し、画面のClientから組み立てる。HealthのHTTP処理もInfrastructureへ移動した。対応する単体テストプロジェクトを設け、状態遷移の詳細をViewModelへ集約し、画面テストは表示と代表的な接続に絞った。既存のAPIテストと小さな共通スタブを維持し、外部パッケージは追加していない。
-* PresentationはDomainのみを参照し、InfrastructureはPresentationとDomainを参照する。コンパイル結果の参照を既存テスト基盤で検査するが、未使用参照・動的ロードは保証対象外。React・ASP.NET・Nodeは変更しない。全実装への分離方針と、今回の実装済み範囲を区別する。未完了のRed・追加Skipはない。
+* 基準コミット：`9c58bda`（Blazorの画面状態とHTTP通信のプロジェクト分離）。ブランチは `codex/node-backend`。Blazorの分離はレビュー・コミット済み、Node版の追加は `4b14677` として保存済み。最新HEADと差分はGitで確認する。
+* 全実装でHTTPやHTMLに依存しない内側のテストへ仕様を集約する方針は [D008](../docs/decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする) を参照する。2026-11-06の開発者指示に従い、今回の確認単位はASP.NET。既存挙動を維持するRefactorであり、製品機能の追加ではない。
+* 既存のApi／Application／Infrastructureと共用Domainのプロジェクト分割は維持。一覧取得の状態読取・結果投影をApplicationの `GetTimeRecords` へ移し、ApiはApplication結果をHTTP応答へ変換する。開始・終了の時刻例と状態更新、一覧の投影はApplication、保存順はInfrastructureで確認し、HTTPには固有の仕様と代表的な接続確認を残した。対応するテストは [README](../README.md#ビルドと検証) と各テストを参照する。
+* 4層のコンパイル結果の参照を既存テスト基盤で検査する。未使用参照設定・動的ロードは保証対象外。プロジェクト・外部依存・HTTP契約は変更していない。Blazor・React・Nodeの製品コードは今回変更しておらず、全実装への適用が完了したとは扱わない。未完了のRed・追加Skipはない。
 
 ### 検証
 
-* 対象版：`31aebb5` に今回のBlazor変更を加えた未コミット差分。最終版の `Kizamu.Blazor.slnx` の.NETテスト75件に成功（失敗・Skipなし）。Client 21件、Presentation 9件、Frontend Infrastructure 13件、Server 6件、Backend API 11件、Application 6件、Backend Infrastructure 4件、Domain 5件。新たなテストプロジェクト単独でも成功。
-* 解析付き非増分ビルドに成功（26.68秒、0エラー）。既存 `Microsoft.AspNetCore.Components.WebAssembly.Server 10.0.10` のNU1903警告4件は残る。通常権限のdotnetが出力なく失敗する環境問題は、必要な権限での再実行により検証した。
+* 対象版：`9c58bda` に今回のASP.NET変更を加えた未コミット差分。`dotnet test Kizamu.AspNetCore.slnx --no-restore` は26件成功（Api 8／Application 7／Infrastructure 5／Domain 6）。HTTPを通るケースは11件から7件となり、Api.Testsの残り1件は依存検査。`dotnet test Kizamu.Blazor.slnx --no-build --no-restore` も全.NET75件成功、失敗・Skipなし。
+* `Kizamu.Blazor.slnx` の解析付き非増分ビルドに成功（32.78秒、0エラー）。既存 `Microsoft.AspNetCore.Components.WebAssembly.Server 10.0.10` のNU1903警告4件は残る。通常権限のdotnetが出力なく失敗する環境問題は、必要な権限での再実行により検証した。
 * `dotnet format Kizamu.Blazor.slnx --no-restore --verify-no-changes --severity info` は既存IDE0290の3箇所・ASP0027の1箇所で終了コード1。変更箇所の診断はない。全16プロジェクトのSARIFも確認した。ワークスペース読み込み警告の詳細原因は未調査。既存箇所の一括修正は行わない。
-* React・Nodeはコード・設定・実行経路が今回のBlazor内の抽出から変わらないため再検証していない。前回のnpm lint・test・buildは成功（React 37件、Node 8件）。ブラウザーの実操作とVisual Studioの一括起動・テストエクスプローラーは今回未確認。
+* React・Nodeは製品・テスト・設定を変更しておらず、HTTP契約も維持するためnpmの再検証は行っていない。前回のnpm lint・test・buildは成功（React 37件、Node 8件）。ブラウザーの実操作、Visual Studioの一括起動・テストエクスプローラー、Release publishは今回未確認。
 
 ### レビュー境界と次回の着手点
 
-* Refactorの差分を人間レビューへ渡す。変更はBlazorの製品・テストの分割・移動、ソリューション・README、方針・判断・本節。分離とテスト整理は指示済みだが、この差分のコミットは未承認。ステージング・コミット・pushは行わない。
-* コミットメッセージ案：`Blazorの画面状態とHTTP通信を独立プロジェクトへ分離する`。
-* レビュー後、了承を得てこの単位をコミットしてから、Reactやサーバー側等の次の確認単位へ進む。全実装を同時に書き換えず、仕様を追加する場合は別のRed→Greenとする。
+* 2026-11-06、開発者がASP.NETのRefactor差分をレビューし、コミットとReact着手を指示した。対象は一覧取得・応答変換・DI、バックエンドの仕様テスト、バックエンドとDomainの依存検査、READMEと判断記録・本節。ユーザー側の未追跡起動設定は含めない。pushは指示されていない。
+* コミットメッセージ：`refactor: ASP.NET Coreの一覧取得とテストを責務ごとに整理する`。前回検証後に入った `2e3dfae` はコミットメッセージ規則の文書変更だけで、検証済みの製品・テスト差分は変わらない。
+* この単位をコミットしてからReactを整理する。責務はC#側にできるだけ揃え、Reactに不向きな実装形式は採用しない。全実装を同時に書き換えず、仕様を追加する場合は別のRed→Greenとする。
 * 既存NU1903警告への対応とIDE上の実機確認は残件。製品機能の開発順序は、今回の責務分離だけを理由に変更しない。
 
 ### ローカルで保持するもの

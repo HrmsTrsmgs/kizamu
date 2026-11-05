@@ -16,10 +16,10 @@ static class GetTimeRecordsEndpoint
         {
             self.MapGet(
                 "/api/time-records",
-                (ITimeRecordState timeRecordState) =>
+                (GetTimeRecords getTimeRecords) =>
                     Results.Ok(
-                        timeRecordState.All.Select(timeRecord =>
-                            new TimeRecordResponse(timeRecord))));
+                        getTimeRecords.Execute().Select(it =>
+                            new TimeRecordResponse(it))));
         }
     }
 }

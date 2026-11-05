@@ -55,7 +55,7 @@
 * 決定：BlazorのAPI呼び出し処理が通信DTOを `TimeRecord` へ変換し、画面はそのDomainモデルを保持します。Domainから通信DTOへの依存は作りません。
 * 理由：画面状態を通信形式から分離し、業務モデルとして扱うためです。開発者が画面によるDTOの直接保持を設計上の問題として指摘し、修正を指示しました。
 * 採らなかった案：画面でDTOをそのまま状態として保持し続ける案は不採用。INPC・INCCの採用やモデルの同一性管理は、この修正で確定したことには含めません。
-* 根拠：開発者の修正指示、`d2adae0`、[TimeRecordApiTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecordTests](../tests/domains/dotnet/Kizamu.Domain.Tests/TimeRecordTests.cs)。
+* 根拠：開発者の修正指示、`d2adae0`、[TimeRecordApiTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecordTests](../tests/domains/dotnet/Kizamu.Domain.Tests/TimeRecordTests.cs)。
 
 ## D004：Clockifyへは終了済み記録だけを送る
 
@@ -98,6 +98,6 @@
 * 確認日・状態：2026-11-05、方針は確定。適用は小さな確認単位で進め、実装済みの範囲は [現在の次作業](../ai-notes/mvp-implementation-plan.md#現在の次作業) を参照します。
 * 決定：ASP.NET・Node・Blazor・React全体を対象に、変更理由に応じた責務分離を進めます。特にViewModelと通信サービスを分け、画面状態・操作のテストがHTMLやHTTPに依存しない境界を作ります。通信DTOは境界内で変換し、内側へ持ち込みません。仕様はできるだけ責務範囲の狭いテストに集約し、画面・HTTP固有の振る舞いと代表的な接続は確認します。モック等の準備でテストの可読性を損なわず、既存仕様の検証を失わないようにします。
 * 理由：開発者は、HTTP通信を含むテストとHTMLに依存するテストでは、仕様以外の準備・検証が増えて可読性が落ちると指摘しました。できるだけ多くを責務範囲の狭いテストで確認し、不要な結合を避けるため、細かくレイヤーを分けます。ただしモックの多用により可読性が落ちては本末転倒です。
-* プロジェクト分割：開発者は、依存方向を守るためにプロジェクト単位で分離する利点を挙げ、必要に応じて自動テストや別ツールによる検証も検討する方針を示しました。Blazorでは画面、Presentation、HTTPを分離し、標準機能による参照検査を追加します。検査できる範囲はREADMEを参照します。
+* プロジェクト分割：開発者は、依存方向を守るためにプロジェクト単位で分離する利点を挙げ、必要に応じて自動テストや別ツールによる検証も検討する方針を示しました。Blazorでは画面、Presentation、HTTPを分離しました（`9c58bda`）。ASP.NETでは既存のApi／Application／Infrastructureと共用Domainを維持し、内側の仕様テストを整理する単位で参照検査も追加します（2026-11-06の適用指示）。検査できる範囲はREADMEを参照します。
 * 採らなかった案：小規模であることだけを理由にViewModelや通信サービスの分離を保留する案は採りません。一方、資料の区分を各実装へ一律に揃えたり、現在の責務がない空の層や別プロジェクトを増やす方針ではありません。
 * 根拠：開発者の全実装を対象とする指示と、ViewModel・通信サービスの分離指示。[AI駆動TDD原稿の第3章](https://github.com/HrmsTrsmgs/study-materials/blob/main/AI%E9%A7%86%E5%8B%95TDD/%E5%85%A8%E6%96%87%E6%9C%80%E6%96%B0%E7%89%88.md)（2026-11-05確認）は責務の区分とプロジェクト分割を区別しています。

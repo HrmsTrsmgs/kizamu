@@ -106,6 +106,8 @@ ReactとNodeの製品・テストパッケージは独立させ、ルートのnp
 
 通信用DTOは共通のOpenAPI契約から各言語向けに生成する方針です。API呼び出しコードの生成も検討対象とし、対象言語・ランタイムの進化への追随、必要な機能への対応速度、拡張性、実際の更新履歴と生成結果を確認して採否を決めます。生成ツールは未選定です。生成物は手書き部分と区別し、手修正せず、ツールのバージョンと設定を固定して再生成できるようにします。生成DTOと呼び出し処理のプロジェクト分割は、採用ツールの出力と依存関係を確認して決めます。
 
+ASP.NET Coreの開始・終了・一覧取得は `Kizamu.Backend.AspNetCore.Application` に置き、HTTPを使わずに時刻の取得、記録状態の更新、一覧の読取結果への変換を確認します。Apiはルート・状態コード・JSON応答への変換と起動時の構成、Infrastructureはメモリ上の記録保持を担当します。依存方向は `Api → Application / Infrastructure`、`Infrastructure → Application / Domain`、`Application → Domain` です。アセンブリ参照のテストでこの方向とApplication・DomainのHTTP/JSONからの独立を確認します。対象はコンパイル結果に残る参照であり、未使用の参照設定や動的ロードまでは検出しません。
+
 Blazorの記録画面の状態と操作は `Kizamu.Frontend.Blazor.Presentation` に置き、Domainだけを参照する通常の.NETライブラリにしています。`ITimeRecordService` を通じて確定した作業記録を受け取り、HTMLやHTTPを準備せずにテストできます。ClientのRazorは表示と操作の接続を担当します。
 
 手書きの通信用DTOとAPI呼び出し処理（作業記録と正常性確認）は `Kizamu.Frontend.Blazor.Infrastructure` に置きます。作業記録の応答DTOを共有Domainへ変換し、通信形式を画面状態へ持ち込みません。通信用DTOは将来生成物へ置き換える対象です。バックエンドのResponse型は参照しません。
@@ -248,7 +250,7 @@ dotnet test tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests --n
 dotnet test tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests --no-restore
 ```
 
-バックエンドとDomainのテストだけを実行する場合:
+バックエンドとDomainのテストだけを実行する場合（時刻例・開始/終了の状態更新・一覧投影はApplication.Tests、保存順はInfrastructure.Testsで確認し、Api.TestsにはHTTP固有の仕様と開始・終了・一覧の代表的な接続確認を残しています）:
 
 ```powershell
 dotnet build Kizamu.AspNetCore.slnx --no-restore
