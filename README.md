@@ -6,9 +6,9 @@
 
 MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間記録機能をBlazorへ移し、Reactは現状を保持して追加開発を保留します。
 
-製品構想は [docs/concept.md](docs/concept.md)、MVPまでの暫定的な順序は [docs/roadmap.md](docs/roadmap.md)、具体的な作業計画は [docs/mvp-implementation-plan.md](docs/mvp-implementation-plan.md) を参照してください。
+製品構想は [docs/concept.md](docs/concept.md)、MVPまでの暫定的な順序は [docs/roadmap.md](docs/roadmap.md)、具体的な作業計画は [ai-notes/mvp-implementation-plan.md](ai-notes/mvp-implementation-plan.md) を参照してください。
 
-開発を再開するときは、[現在の次作業](docs/mvp-implementation-plan.md#現在の次作業)、[判断の理由と記録先](docs/decisions.md)、[未確定の開発候補](docs/development-candidates.md) から確認できます。AWSのAI-DLCから、必要な仕様を対話で引き出し、合意と根拠を残して次回へ引き継ぐ考え方を取り入れています。日々の実装は既存のTDD手順に従います。
+開発を再開するときは、[AIの作業記録一覧](ai-notes/README.md)を入口に、[現在の次作業](ai-notes/mvp-implementation-plan.md#現在の次作業)、[判断の理由](docs/decisions.md)、[未確定の開発候補](ai-notes/development-candidates.md)を確認します。AWSのAI-DLCから、必要な仕様を対話で引き出し、合意と根拠を残して次回へ引き継ぐ考え方を取り入れています。日々の実装は既存のTDD手順に従います。
 
 ## 技術構成
 
@@ -62,7 +62,8 @@ kizamu/
 │  └─ domains/
 │     └─ dotnet/
 │        └─ Kizamu.Domain.Tests/
-├─ docs/                            製品仕様・作業方針
+├─ docs/                            製品仕様・設計判断・開発文書・作業指示
+├─ ai-notes/                        AIの作業計画・検討候補・引継ぎ
 ├─ Kizamu.slnx                      全実装の作業用
 ├─ Kizamu.Blazor.slnx               BlazorとASP.NET Core、Domain、そのテスト
 ├─ Kizamu.AspNetCore.slnx            ASP.NET CoreとDomain、そのテスト

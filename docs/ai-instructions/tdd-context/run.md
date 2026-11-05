@@ -6,7 +6,7 @@
 
 ## このプロジェクトの記録先
 
-再開は `docs/mvp-implementation-plan.md` の「現在の次作業」、判断は `docs/decisions.md`、未確定候補は `docs/development-candidates.md` を使う。 固有制約は `docs/ai-instructions/kizamu.md` に従う。工程担当へは必要な確定情報だけを渡す。
+再開の入口は `ai-notes/README.md`、現在位置は `ai-notes/mvp-implementation-plan.md` の「現在の次作業」、判断は `docs/decisions.md`、未確定候補は `ai-notes/development-candidates.md` を使う。固有制約は `docs/ai-instructions/kizamu.md` に従う。工程担当へは必要な確定情報だけを渡す。
 
 ## 開始とコンテキスト
 

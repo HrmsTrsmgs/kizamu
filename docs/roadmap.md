@@ -4,7 +4,7 @@
 個々の振る舞いを確定する仕様書ではない。各段階へ着手する前に、対象をさらに小さな仕様単位へ分け、テストで合意してから実装する。
 
 製品設計の前提は [concept.md](concept.md) を参照する。
-具体的な作業順、テスト方針、公開条件は [MVP実装計画](mvp-implementation-plan.md) を参照する。
+具体的な作業順、テスト方針、公開条件は [MVP実装計画](../ai-notes/mvp-implementation-plan.md) を参照する。
 
 ## MVPの位置付け
 

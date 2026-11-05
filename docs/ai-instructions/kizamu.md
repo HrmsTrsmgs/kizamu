@@ -4,7 +4,7 @@
 
 Kizamuを第三者がビルド、テスト、利用、レビューできるアプリケーションとして整備する。
 機能数より、記録操作の軽さ、理解しやすいUI、責務分離、変更箇所の局所化、テスト可能性を優先する。
-詳細な製品コンセプトは `docs/concept.md`、MVPまでの暫定的な実装順序は `docs/roadmap.md`、現在の具体的な作業順は `docs/mvp-implementation-plan.md` を参照する。
+詳細な製品コンセプトは `docs/concept.md`、MVPまでの暫定的な実装順序は `docs/roadmap.md`、現在の具体的な作業順は `ai-notes/mvp-implementation-plan.md` を参照する。
 
 ## 製品設計
 
@@ -58,4 +58,4 @@ Kizamuを第三者がビルド、テスト、利用、レビューできるア�
 * READMEの起動、ビルド、テスト、Lint手順は、実際に確認した構成と一致させる。
 * 利用者向け文書と画面表示は日本語にし、プロダクトコードの識別子は各言語の標準的な英語命名規則に従う。テストコードの日本語識別子は、技術別指示に従って仕様の読みやすさを優先する。
 * 未実装機能をREADMEや画面で利用可能なように見せない。
-* 次の実装対象は `docs/roadmap.md` と `docs/mvp-implementation-plan.md` の順序と現在の到達点を確認し、小さな単位で仕様を確定してから進める。
+* 次の実装対象は `docs/roadmap.md` と `ai-notes/mvp-implementation-plan.md` の順序と現在の到達点を確認し、小さな単位で仕様を確定してから進める。
