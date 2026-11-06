@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Kizamu.Backend.AspNetCore.Api.Tests;
 
+using static Kizamu.Tests.TestCancellation;
+
 public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
     readonly HttpClient client;
@@ -17,8 +19,8 @@ public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Pr
     [Fact]
     public async Task 正常性を確認すると正常な状態が返されます()
     {
-        using var response = await client.GetAsync("/api/health");
-        var body = await response.Content.ReadFromJsonAsync<HealthResponse>();
+        using var response = await client.GetAsync("/api/health", CancellationToken);
+        var body = await response.Content.ReadFromJsonAsync<HealthResponse>(CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();

@@ -466,27 +466,22 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### 目的と現在位置
 
-* 基準コミット：`462e9b8`。ブランチは `codex/node-backend`。Blazorの分離は `9c58bda`、ASP.NETの整理は依頼どおり `8b523fd` としてレビュー・コミット済み。最新HEADと差分はGitで確認する。
-* 全実装への分離方針とReactの実装形式は [D008](../docs/decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする)、Node／ReactのDomain共用はD003を参照する。2026-11-06、React内だけにDomainを置いた差分に対し、開発者が共有化まで含めるよう指示した。既存挙動を維持するRefactorであり、製品機能の追加ではない。
-* ReactのPresentation（サービス契約・Reducer・操作と表示用値のフック）とInfrastructure（HTTPとDTO変換）を分離。Domainの記録モデル・開始／終了の純粋操作・期間計算は `src/domains/typescript/` に置き、NodeとReactがパッケージ名で参照する。HTMLの `datetime` の元表記を保つ情報はReactのPresentationへ分け、共有Domainには含めていない。Nodeは共有モデルをメモリ保持し、HTTP境界で従来どおりのISO DTOへ変換する。Node全体のApplication／Infrastructure分離は今回に含めていない。
-* 依存は2026-11-06に承認済み：既存の `temporal-polyfill 1.0.2`（MIT）を共有Domainと直接利用するNode等へ明示した。ローカルworkspace・lockfileを更新し、既存の外部パッケージ版・種類が増えていないことを機械比較で確認した。判断理由はD003を参照する。
-* パッケージ宣言・共有DomainのJS／型宣言出力・ビルド順序・テスト追随は完了。React内の期間計算とDomain依存検査は共有側へ移した。新Domain製品／テストの `.esproj` と利用側のプロジェクト参照を追加し、`Kizamu.slnx` の `Domains/TypeScript` に表示する。具体的な構成とコマンドは [README](../README.md#ビルドと検証) を正本とする。未完了のRed・追加Skipはない。
-* 追加の人間レビュー指示への対応も完了：共有 `TimeRecord` をreadonlyプロパティの不変クラスにした。`TimeRecord.start` と、新インスタンスを返す `record.end` に操作をまとめ、旧Domain free functionは削除。復元用constructorでDTOからクラスインスタンスを生成する。DTO型、フック／Reducer、通信サービス、期間計算関数は維持し、新たな入力制約や振る舞いは追加していない。
+* 基準コミット：`eab248a`。ブランチは `codex/node-backend`。Blazor分離は `9c58bda`、ASP.NET整理は `8b523fd`、Reactの責務分離・Node／React共通Domain・TypeScriptのshould統一は `eab248a` に保存済み。設計理由は [D008](../docs/decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする) とD003、構成・実行方法は [README](../README.md#ビルドと検証) を参照する。
+* 今回は全8.NETテストプロジェクトのxUnit v3移行。2026-11-06に `xunit.v3.mtp-off` 4.0.2と `xunit.runner.visualstudio` 4.0.1への更新を承認済み。既存のVSTest経路を維持するためMTPを含まない構成を選択し、Microsoft.NET.Test.Sdk・coverlet・AwesomeAssertions・bUnitは維持した。テストプロジェクトを実行可能形式にしたが、製品の配布構成は変更していない。
+* 2列TheoryDataのタプルコレクション式、単一列の型解決の明示、HTTP呼び出しへのテスト用CancellationTokenを適用。追加レビュー指示により、取得処理を [TestCancellation](../tests/TestSupport/TestCancellation.cs) の `CancellationToken` プロパティ1箇所に集約し、2テストプロジェクトへソースリンクした。5クラスは名前空間内の `using static` で読み込み、同名の型との衝突を避けている。アクセス時のテストコンテキストを参照し、キャッシュせず、既存ハンドラーの引数tokenは維持。名前・条件・期待値・ケース数・Should句・Dispose経路は維持し、製品コード・TypeScriptは変更していない。方針は [C#指示](../docs/ai-instructions/csharp.md#テスト記述) を参照する。
 
 ### 検証
 
-* 対象版：`462e9b8` に共有Domain・React分離・Node参照・ビルド構成・不変クラス化とテスト記法の差分を加えた未コミット版。全17テストファイルの `should` 移行後、ルート `npm test`／`npm run lint`／`npm run build` はすべて終了コード0。Domain 12件・React 54件・Node 8件、合計74件成功。共通初期化もLint・型検査の対象であり、テスト名・件数・条件・期待値・操作／待機順序・検証する意味は維持した。
-* `npm ci --offline --ignore-scripts --no-audit --no-fund` でlockfileから復元成功。再生成できるDomain／Node／Reactの `dist` だけを取り除き、共有出力がない状態からのNode単独buildとReact単独buildが成功した。Domainテストの `.esproj` も参照先込みでビルド成功。外部パッケージの種類・版は既存と同じ。通常権限のworkspaceリンク作成のEPERMとdotnetの詳細なし終了1は、同じ処理の権限切替後に成功し、コードの失敗と区別した。
-* 共有パッケージ導入時の `Kizamu.slnx` 解析付き非増分ビルドは終了0、30.30秒、既存NU1903警告4件。SARIF 16本を確認し、既存Program.csのASP0027のみ。`dotnet format` は既存IDE0290×3／ASP0027×1で終了1。後続のクラス化・テスト記法修正では依存・構成・C#／.csprojを変更していないため、これらの同条件検証は繰り返していない。.NETテストは `8b523fd` 時点の75件成功を引き継ぐ。
-* 差分・UTF-8 BOMなし／CRLF・末尾改行・生成物非混入を確認済み。ブラウザーの実操作、Visual Studioの一括起動・テストエクスプローラーは未確認。proxy・起動設定は変更しておらず、実サーバーへの組合せ疎通・.NETのRelease publishも再確認していない。
+* 検証対象：`eab248a` にxUnit移行と `CancellationToken` プロパティの共通化を加えた本コミットのコード。共通化後は変更した2プロジェクトを直列に解析付き非増分ビルドし、Apiは13.63秒、Serverは21.75秒、いずれも終了0。共通ソースの両方でのコンパイルと、対象14件（Api8・Server6）の成功、失敗0／Skip0、終了0を確認した。
+* xUnit移行時の `Kizamu.Blazor.slnx` 全体ビルドは終了0、55.54秒、既存NU1903警告4件のみ。全.NETテストはVSTest Adapter 4.0.1で75件成功（Api8・Application7・Infra5・Domain6・Client21・Presentation9・FrontInfra13・Server6）。短縮で変更していない6プロジェクトはこの結果を引き継ぐ。
+* 短縮後の対象プロジェクトの `dotnet format` は既存IDE0290計3件で終了1。SARIFは既存Program.csのASP0027のみで、追加診断はない。移行時のNuGet復元の通常権限での出力なし終了1は、権限切分け後の同処理で終了0になった。単一列TheoryDataの型解決差も修正済み。
+* TypeScriptは未変更なので `eab248a` の74テスト・Lint・build成功を引き継ぎ、再実行していない。ブラウザー操作、Visual Studio Test Explorer、カバレッジ収集、Release publishは今回未確認。CLIでの検出・実行とIDEでの実操作を区別する。
 
 ### レビュー境界と次回の着手点
 
-* クラス化と全TypeScriptテストの `should` 移行・検証を完了し、共有DomainとReactのRefactor差分は開発者がコミットを指示した。対象は共有Domain製品／テスト、Reactの製品／テスト／ESLint設定、Nodeの共有利用とHTTP変換、テスト共通初期化と設定、workspace／lockfile／ソリューション／.esproj、READMEと判断・候補・本節。ASP.NETの整理は `8b523fd` に保存済み。pushは指示されていない。
-* レイヤー整理の次の対象は開発者の指示を受ける。Node全体のApplication／Infrastructure分離は未着手。仕様を追加する場合は別のRed→Greenとする。
+* xUnit移行とCancellationToken共通化のレビューを完了し、開発者が `test: .NETテストをxUnit v3へ移行する` でのコミットを了承した。pushは指示されていない。
+* 次の対象は開発者の指示を受ける。Node全体のApplication／Infrastructure分離は未着手。仕様を追加する場合は別のRed→Greenとする。
 * 一覧取得の旧応答を無視する改善は今回に混ぜず、元の挙動を維持した。検討事項は [C003](development-candidates.md#c003reactの一覧取得で古い応答を反映する範囲) を参照する。
-* テスト記述のレビューでは、可読性を最優先に[テストコードの記述方針](../docs/testing-style.md)を使う。日時一致・包含などは真偽値に潰さず直接検証し、値自体が真偽値の場合や適切な直接Assertがない場合は例外とする。
-* 2026-11-06、開発者が `should` 形式の代表例を確認し、全展開を指示した。全TypeScriptテストへ適用済み。基本の初期化と型宣言は [should.mts](../tests/should.mts)、JSDOMのDOMノードへの登録は [Reactのsetup](../tests/frontends/react/test/setup.ts) を参照する。NodeNextのモジュール形式とDOMの別系統の継承先に関する移行時の失敗は、テスト側の設定で解消した。DOM・モック・strict比較の専用機能は維持し、nullableな値は標準のproperty検証・should helperで扱う。独自matcher・依存追加・製品コード変更はない。
 * 既存NU1903警告への対応とIDE上の実機確認は残件。製品機能の開発順序は、今回の責務分離だけを理由に変更しない。
 
 ### ローカルで保持するもの

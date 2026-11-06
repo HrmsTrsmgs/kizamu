@@ -14,7 +14,7 @@ MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間�
 
 - .NET 10 LTS / ASP.NET Core Minimal API / Blazor WebAssembly
 - YARP（Blazor配信サーバーから業務APIへのHTTP中継）
-- xUnit / bUnit / AwesomeAssertions
+- xUnit.net v3 / bUnit / AwesomeAssertions
 - React / TypeScript（strict）/ Vite
 - Node.js / Fastify（業務APIの別実装）
 - Vitest / React Testing Library / ESLint / npm
@@ -47,6 +47,7 @@ kizamu/
 │     │  └─ Kizamu.Domain/
 │     └─ typescript/                kizamu-domain-typescript・Node/React共用
 ├─ tests/
+│  ├─ TestSupport/                  .NET実装間で共有するテスト補助（ソースリンク）
 │  ├─ backends/
 │  │  ├─ aspnetcore/
 │  │  │  ├─ Kizamu.Backend.AspNetCore.Api.Tests/
@@ -245,6 +246,8 @@ npm run dev
 ## ビルドと検証
 
 Blazor、バックエンド、Domainのビルドとテスト:
+
+.NETテストはxUnit.net v3を使い、既存のVSTest経由で実行します。テストプロジェクトだけを実行可能形式に変更しており、製品側のプロジェクト構成は変えていません。Microsoft Testing Platformへの切替は行っていません。
 
 ```powershell
 dotnet build Kizamu.Blazor.slnx --no-restore

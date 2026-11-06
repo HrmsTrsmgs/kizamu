@@ -8,8 +8,8 @@ public sealed class StartTimeRecordTests
 {
     public static TheoryData<DateTimeOffset> 開始時刻の例 =>
     [
-        new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero),
-        new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 8, 1, 9, 0, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 8, 1, 10, 30, 0, TimeSpan.Zero),
     ];
 
     [Theory]

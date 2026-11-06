@@ -99,6 +99,9 @@
 
 * テストコードのローカル変数と一時変数の詳細方針は `docs/testing-style.md` を参照する。
 * 既存のテストフレームワークと命名規則を優先する。
+* .NETテストはxUnit.net v3を使う。採用パッケージは `xunit.v3.mtp-off` 4.0.2と `xunit.runner.visualstudio` 4.0.1。VSTestによる既存の `dotnet test` とVisual Studio Test Explorerの経路を維持し、Microsoft Testing Platformへの移行は含めない。
+* 取消可能な非同期APIには `Xunit.TestContext.Current.CancellationToken` を渡す。テスト本体では [TestCancellation](../../tests/TestSupport/TestCancellation.cs) の読み取り専用プロパティを `using static` で読み込み、`CancellationToken` と記述する。このstatic usingは、暗黙に読み込まれる型名との衝突を避けるため名前空間内（file-scoped namespace宣言の後）に置く。共通ソースは利用するテストプロジェクトへソースリンクし、クラスごとのgetterを重複させない。アクセス時のテストコンテキストを参照し、コンストラクターやstaticフィールドへキャッシュしない。テストのためだけに製品APIへ引数を追加せず、既存の対応APIに適用する。
+* 複数列の `TheoryData` は、型と検証する組合せを維持できる場合、v3のタプルを使ったコレクション式で記述する。単一列など既に簡潔な記述を、記法統一のためだけに冗長にしない。
 * テストメソッドを追加するたびに、新しいテストクラスやテストファイルを作らない。
 * テストは原則としてテスト対象の公開型と責務に対応する既存のテストクラスへ追加する。
 * テストクラスやテストファイルを分けるのは、テスト対象となる型または責務が実際に分かれた場合とし、将来テストが増える予想やファイルの長さだけを理由に先回りして分割しない。

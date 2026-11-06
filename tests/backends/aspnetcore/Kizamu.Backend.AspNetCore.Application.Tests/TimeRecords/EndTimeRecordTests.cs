@@ -12,11 +12,11 @@ public sealed class EndTimeRecordTests
     static readonly DateTimeOffset 中間の時刻 = new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 遅い時刻 = new(2026, 8, 1, 11, 0, 0, TimeSpan.Zero);
 
-    public static TheoryData<DateTimeOffset, DateTimeOffset> 記録時刻の例 => new()
-    {
-        { 早い時刻, 中間の時刻 },
-        { 中間の時刻, 遅い時刻 },
-    };
+    public static TheoryData<DateTimeOffset, DateTimeOffset> 記録時刻の例 =>
+    [
+        (早い時刻, 中間の時刻),
+        (中間の時刻, 遅い時刻),
+    ];
 
     [Theory]
     [MemberData(nameof(記録時刻の例))]

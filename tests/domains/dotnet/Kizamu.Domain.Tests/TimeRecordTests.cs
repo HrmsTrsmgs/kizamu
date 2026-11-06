@@ -9,7 +9,7 @@ public sealed class TimeRecordTests
     static readonly DateTimeOffset 開始時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 終了時刻 = new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero);
 
-    public static TheoryData<DateTimeOffset?> 復元する終了時刻 => [null, 終了時刻];
+    public static TheoryData<DateTimeOffset?> 復元する終了時刻 => [(DateTimeOffset?)null, 終了時刻];
 
     [Theory]
     [MemberData(nameof(復元する終了時刻))]

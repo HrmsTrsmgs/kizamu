@@ -7,6 +7,8 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Kizamu.Backend.AspNetCore.Api.Tests;
 
+using static Kizamu.Tests.TestCancellation;
+
 public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
     static readonly DateTimeOffset 早い時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
@@ -30,10 +32,10 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     {
         timeProvider.SetUtcNow(早い時刻);
 
-        using var response = await client.PostAsync("/api/time-records/start", null);
+        using var response = await client.PostAsync("/api/time-records/start", null, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>();
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>(CancellationToken);
         body.Should().NotBeNull();
         body.Id.Should().NotBe(Guid.Empty);
         body.StartedAt.Should().Be(早い時刻);
@@ -46,10 +48,10 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         var startedRecord = await 開始済みの記録を用意する(早い時刻);
         timeProvider.SetUtcNow(遅い時刻);
 
-        using var response = await client.PostAsync($"/api/time-records/{startedRecord.Id}/end", null);
+        using var response = await client.PostAsync($"/api/time-records/{startedRecord.Id}/end", null, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>();
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>(CancellationToken);
         body.Should().NotBeNull();
         body.Id.Should().Be(startedRecord.Id);
         body.StartedAt.Should().Be(早い時刻);
@@ -61,13 +63,13 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     {
         var startedRecord = await 開始済みの記録を用意する(早い時刻);
         timeProvider.SetUtcNow(遅い時刻);
-        using var endResponse = await client.PostAsync($"/api/time-records/{startedRecord.Id}/end", null);
+        using var endResponse = await client.PostAsync($"/api/time-records/{startedRecord.Id}/end", null, CancellationToken);
         endResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        using var response = await client.GetAsync("/api/time-records");
+        using var response = await client.GetAsync("/api/time-records", CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>();
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>(CancellationToken);
         body.Should().Equal(
             new TimeRecordResponse(startedRecord.Id, 早い時刻, 遅い時刻));
     }
@@ -76,9 +78,9 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     {
         // 開始APIの仕様を直接読めるよう、開始テストと同じHTTP処理を意図的に共通化していない。
         timeProvider.SetUtcNow(startedAt);
-        using var response = await client.PostAsync("/api/time-records/start", null);
+        using var response = await client.PostAsync("/api/time-records/start", null, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>();
+        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>(CancellationToken);
         body.Should().NotBeNull();
         return body;
     }

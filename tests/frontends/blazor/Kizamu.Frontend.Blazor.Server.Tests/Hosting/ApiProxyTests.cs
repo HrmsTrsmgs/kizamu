@@ -10,6 +10,8 @@ using Yarp.ReverseProxy.Forwarder;
 
 namespace Kizamu.Frontend.Blazor.Server.Tests.Hosting;
 
+using static Kizamu.Tests.TestCancellation;
+
 public sealed class ApiProxyTests
 {
     [Theory]
@@ -37,11 +39,11 @@ public sealed class ApiProxyTests
             request.Content = new StringContent(body, Encoding.UTF8, "application/json");
         }
 
-        using var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request, CancellationToken);
 
         response.StatusCode.Should().Be(statusCode);
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
-        (await response.Content.ReadAsStringAsync()).Should().Be("{\"id\":\"backend-response\"}");
+        (await response.Content.ReadAsStringAsync(CancellationToken)).Should().Be("{\"id\":\"backend-response\"}");
         backend.Method.Should().Be(method);
         backend.Uri.Should().Be(new Uri($"http://configured-backend{path}"));
         backend.Body.Should().Be(body ?? "");

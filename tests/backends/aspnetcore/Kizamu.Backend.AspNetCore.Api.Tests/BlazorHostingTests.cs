@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Kizamu.Backend.AspNetCore.Api.Tests;
 
+using static Kizamu.Tests.TestCancellation;
+
 public sealed class BlazorHostingTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
     readonly HttpClient client;
@@ -16,7 +18,7 @@ public sealed class BlazorHostingTests : IClassFixture<WebApplicationFactory<Pro
     [InlineData("/_framework/blazor.webassembly.js")]
     public async Task 業務APIサーバーはBlazor画面を配信せず404を返します(string path)
     {
-        using var response = await client.GetAsync(path);
+        using var response = await client.GetAsync(path, CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
