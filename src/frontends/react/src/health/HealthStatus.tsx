@@ -1,33 +1,12 @@
-import { useEffect, useState } from 'react'
-import type { HealthApi } from './healthApi'
+import type { HealthService } from '../presentation/healthService'
+import { useHealthStatus } from '../presentation/useHealthStatus'
 
 type HealthStatusProps = {
-  health: HealthApi
+  health: HealthService
 }
 
 export default function HealthStatus({ health }: HealthStatusProps) {
-  const [isHealthy, setIsHealthy] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    let active = true
-
-    async function checkHealth() {
-      try {
-        const result = await health.checkHealth()
-        if (active) {
-          setIsHealthy(result)
-        }
-      } catch {
-        if (active) {
-          setIsHealthy(false)
-        }
-      }
-    }
-
-    void checkHealth()
-
-    return () => { active = false }
-  }, [health])
+  const isHealthy = useHealthStatus(health)
 
   let status = '確認中'
   if (isHealthy === true) {

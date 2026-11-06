@@ -6,6 +6,7 @@
   "scripts": {
     "pretest": "npm run build --workspace=kizamu-backend-node",
     "test": "vitest run",
+    "prebuild": "npm run build --workspace=kizamu-domain-typescript",
     "build": "tsc --noEmit",
     "lint": "eslint ."
   },

@@ -1,11 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
-import { healthApi } from './health/healthApi'
-import { timeRecordApi } from './timeRecords/timeRecordApi'
+import { healthService } from './infrastructure/healthService'
+import { timeRecordService } from './infrastructure/timeRecordService'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App health={healthApi} timeRecords={timeRecordApi} />
+    <App health={healthService} timeRecords={timeRecordService} />
   </StrictMode>,
 )

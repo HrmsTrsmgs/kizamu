@@ -31,6 +31,15 @@
     <Project Path="src/domains/dotnet/Kizamu.Domain/Kizamu.Domain.csproj" />
     <Project Path="tests/domains/dotnet/Kizamu.Domain.Tests/Kizamu.Domain.Tests.csproj" />
   </Folder>
+  <Folder Name="/Domains/TypeScript/">
+    <Project Path="src/domains/typescript/kizamu-domain-typescript.esproj">
+      <Build Project="true" />
+    </Project>
+    <Project Path="tests/domains/typescript/kizamu-domain-typescript-tests.esproj">
+      <Build />
+      <Deploy />
+    </Project>
+  </Folder>
   <Folder Name="/Backends/Node/">
     <Project Path="src/backends/node/kizamu-backend-node.esproj">
       <Build Project="true" />

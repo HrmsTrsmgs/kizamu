@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { healthApi } from '../../../../src/frontends/react/src/health/healthApi'
+import { afterEach, describe, it, vi } from 'vitest'
+import { healthService } from '../../../../src/frontends/react/src/infrastructure/healthService'
 
-const tested = healthApi
+const tested = healthService
 
-describe('healthApi', () => {
+describe('healthService', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -14,26 +14,29 @@ describe('healthApi', () => {
 
     await tested.checkHealth()
 
-    expect(fetchMock).toHaveBeenCalledOnce()
-    expect(fetchMock).toHaveBeenCalledWith('/api/health')
+    fetchMock.should.have.callCount(1)
+    fetchMock.should.have.been.calledWith('/api/health')
   })
 
   it('正常なレスポンスを受け取るとtrueを返します', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => response({ status: 'ok' })))
 
-    expect(await tested.checkHealth()).toBe(true)
+    const isHealthy = await tested.checkHealth()
+    isHealthy.should.equal(true)
   })
 
   it('正常でないHTTPレスポンスを受け取るとfalseを返します', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 503 })))
 
-    expect(await tested.checkHealth()).toBe(false)
+    const isHealthy = await tested.checkHealth()
+    isHealthy.should.equal(false)
   })
 
   it('正常でない内容を受け取るとfalseを返します', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => response({})))
 
-    expect(await tested.checkHealth()).toBe(false)
+    const isHealthy = await tested.checkHealth()
+    isHealthy.should.equal(false)
   })
 })
 

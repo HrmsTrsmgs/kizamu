@@ -466,23 +466,27 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### 目的と現在位置
 
-* 基準コミット：`9c58bda`（Blazorの画面状態とHTTP通信のプロジェクト分離）。ブランチは `codex/node-backend`。Blazorの分離はレビュー・コミット済み、Node版の追加は `4b14677` として保存済み。最新HEADと差分はGitで確認する。
-* 全実装でHTTPやHTMLに依存しない内側のテストへ仕様を集約する方針は [D008](../docs/decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする) を参照する。2026-11-06の開発者指示に従い、今回の確認単位はASP.NET。既存挙動を維持するRefactorであり、製品機能の追加ではない。
-* 既存のApi／Application／Infrastructureと共用Domainのプロジェクト分割は維持。一覧取得の状態読取・結果投影をApplicationの `GetTimeRecords` へ移し、ApiはApplication結果をHTTP応答へ変換する。開始・終了の時刻例と状態更新、一覧の投影はApplication、保存順はInfrastructureで確認し、HTTPには固有の仕様と代表的な接続確認を残した。対応するテストは [README](../README.md#ビルドと検証) と各テストを参照する。
-* 4層のコンパイル結果の参照を既存テスト基盤で検査する。未使用参照設定・動的ロードは保証対象外。プロジェクト・外部依存・HTTP契約は変更していない。Blazor・React・Nodeの製品コードは今回変更しておらず、全実装への適用が完了したとは扱わない。未完了のRed・追加Skipはない。
+* 基準コミット：`462e9b8`。ブランチは `codex/node-backend`。Blazorの分離は `9c58bda`、ASP.NETの整理は依頼どおり `8b523fd` としてレビュー・コミット済み。最新HEADと差分はGitで確認する。
+* 全実装への分離方針とReactの実装形式は [D008](../docs/decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする)、Node／ReactのDomain共用はD003を参照する。2026-11-06、React内だけにDomainを置いた差分に対し、開発者が共有化まで含めるよう指示した。既存挙動を維持するRefactorであり、製品機能の追加ではない。
+* ReactのPresentation（サービス契約・Reducer・操作と表示用値のフック）とInfrastructure（HTTPとDTO変換）を分離。Domainの記録モデル・開始／終了の純粋操作・期間計算は `src/domains/typescript/` に置き、NodeとReactがパッケージ名で参照する。HTMLの `datetime` の元表記を保つ情報はReactのPresentationへ分け、共有Domainには含めていない。Nodeは共有モデルをメモリ保持し、HTTP境界で従来どおりのISO DTOへ変換する。Node全体のApplication／Infrastructure分離は今回に含めていない。
+* 依存は2026-11-06に承認済み：既存の `temporal-polyfill 1.0.2`（MIT）を共有Domainと直接利用するNode等へ明示した。ローカルworkspace・lockfileを更新し、既存の外部パッケージ版・種類が増えていないことを機械比較で確認した。判断理由はD003を参照する。
+* パッケージ宣言・共有DomainのJS／型宣言出力・ビルド順序・テスト追随は完了。React内の期間計算とDomain依存検査は共有側へ移した。新Domain製品／テストの `.esproj` と利用側のプロジェクト参照を追加し、`Kizamu.slnx` の `Domains/TypeScript` に表示する。具体的な構成とコマンドは [README](../README.md#ビルドと検証) を正本とする。未完了のRed・追加Skipはない。
+* 追加の人間レビュー指示への対応も完了：共有 `TimeRecord` をreadonlyプロパティの不変クラスにした。`TimeRecord.start` と、新インスタンスを返す `record.end` に操作をまとめ、旧Domain free functionは削除。復元用constructorでDTOからクラスインスタンスを生成する。DTO型、フック／Reducer、通信サービス、期間計算関数は維持し、新たな入力制約や振る舞いは追加していない。
 
 ### 検証
 
-* 対象版：`9c58bda` に今回のASP.NET変更を加えた未コミット差分。`dotnet test Kizamu.AspNetCore.slnx --no-restore` は26件成功（Api 8／Application 7／Infrastructure 5／Domain 6）。HTTPを通るケースは11件から7件となり、Api.Testsの残り1件は依存検査。`dotnet test Kizamu.Blazor.slnx --no-build --no-restore` も全.NET75件成功、失敗・Skipなし。
-* `Kizamu.Blazor.slnx` の解析付き非増分ビルドに成功（32.78秒、0エラー）。既存 `Microsoft.AspNetCore.Components.WebAssembly.Server 10.0.10` のNU1903警告4件は残る。通常権限のdotnetが出力なく失敗する環境問題は、必要な権限での再実行により検証した。
-* `dotnet format Kizamu.Blazor.slnx --no-restore --verify-no-changes --severity info` は既存IDE0290の3箇所・ASP0027の1箇所で終了コード1。変更箇所の診断はない。全16プロジェクトのSARIFも確認した。ワークスペース読み込み警告の詳細原因は未調査。既存箇所の一括修正は行わない。
-* React・Nodeは製品・テスト・設定を変更しておらず、HTTP契約も維持するためnpmの再検証は行っていない。前回のnpm lint・test・buildは成功（React 37件、Node 8件）。ブラウザーの実操作、Visual Studioの一括起動・テストエクスプローラー、Release publishは今回未確認。
+* 対象版：`462e9b8` に共有Domain・React分離・Node参照・ビルド構成・不変クラス化とテスト記法の差分を加えた未コミット版。全17テストファイルの `should` 移行後、ルート `npm test`／`npm run lint`／`npm run build` はすべて終了コード0。Domain 12件・React 54件・Node 8件、合計74件成功。共通初期化もLint・型検査の対象であり、テスト名・件数・条件・期待値・操作／待機順序・検証する意味は維持した。
+* `npm ci --offline --ignore-scripts --no-audit --no-fund` でlockfileから復元成功。再生成できるDomain／Node／Reactの `dist` だけを取り除き、共有出力がない状態からのNode単独buildとReact単独buildが成功した。Domainテストの `.esproj` も参照先込みでビルド成功。外部パッケージの種類・版は既存と同じ。通常権限のworkspaceリンク作成のEPERMとdotnetの詳細なし終了1は、同じ処理の権限切替後に成功し、コードの失敗と区別した。
+* 共有パッケージ導入時の `Kizamu.slnx` 解析付き非増分ビルドは終了0、30.30秒、既存NU1903警告4件。SARIF 16本を確認し、既存Program.csのASP0027のみ。`dotnet format` は既存IDE0290×3／ASP0027×1で終了1。後続のクラス化・テスト記法修正では依存・構成・C#／.csprojを変更していないため、これらの同条件検証は繰り返していない。.NETテストは `8b523fd` 時点の75件成功を引き継ぐ。
+* 差分・UTF-8 BOMなし／CRLF・末尾改行・生成物非混入を確認済み。ブラウザーの実操作、Visual Studioの一括起動・テストエクスプローラーは未確認。proxy・起動設定は変更しておらず、実サーバーへの組合せ疎通・.NETのRelease publishも再確認していない。
 
 ### レビュー境界と次回の着手点
 
-* 2026-11-06、開発者がASP.NETのRefactor差分をレビューし、コミットとReact着手を指示した。対象は一覧取得・応答変換・DI、バックエンドの仕様テスト、バックエンドとDomainの依存検査、READMEと判断記録・本節。ユーザー側の未追跡起動設定は含めない。pushは指示されていない。
-* コミットメッセージ：`refactor: ASP.NET Coreの一覧取得とテストを責務ごとに整理する`。前回検証後に入った `2e3dfae` はコミットメッセージ規則の文書変更だけで、検証済みの製品・テスト差分は変わらない。
-* この単位をコミットしてからReactを整理する。責務はC#側にできるだけ揃え、Reactに不向きな実装形式は採用しない。全実装を同時に書き換えず、仕様を追加する場合は別のRed→Greenとする。
+* クラス化と全TypeScriptテストの `should` 移行・検証を完了し、共有DomainとReactのRefactor差分は開発者がコミットを指示した。対象は共有Domain製品／テスト、Reactの製品／テスト／ESLint設定、Nodeの共有利用とHTTP変換、テスト共通初期化と設定、workspace／lockfile／ソリューション／.esproj、READMEと判断・候補・本節。ASP.NETの整理は `8b523fd` に保存済み。pushは指示されていない。
+* レイヤー整理の次の対象は開発者の指示を受ける。Node全体のApplication／Infrastructure分離は未着手。仕様を追加する場合は別のRed→Greenとする。
+* 一覧取得の旧応答を無視する改善は今回に混ぜず、元の挙動を維持した。検討事項は [C003](development-candidates.md#c003reactの一覧取得で古い応答を反映する範囲) を参照する。
+* テスト記述のレビューでは、可読性を最優先に[テストコードの記述方針](../docs/testing-style.md)を使う。日時一致・包含などは真偽値に潰さず直接検証し、値自体が真偽値の場合や適切な直接Assertがない場合は例外とする。
+* 2026-11-06、開発者が `should` 形式の代表例を確認し、全展開を指示した。全TypeScriptテストへ適用済み。基本の初期化と型宣言は [should.mts](../tests/should.mts)、JSDOMのDOMノードへの登録は [Reactのsetup](../tests/frontends/react/test/setup.ts) を参照する。NodeNextのモジュール形式とDOMの別系統の継承先に関する移行時の失敗は、テスト側の設定で解消した。DOM・モック・strict比較の専用機能は維持し、nullableな値は標準のproperty検証・should helperで扱う。独自matcher・依存追加・製品コード変更はない。
 * 既存NU1903警告への対応とIDE上の実機確認は残件。製品機能の開発順序は、今回の責務分離だけを理由に変更しない。
 
 ### ローカルで保持するもの
@@ -490,5 +494,6 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 * Blazor Clientの `Properties/launchSettings.json` はユーザー側の未追跡設定であり、変更・コミット対象に含めない。
 * 適用済みの退避はGit stash `fe3f05fddcb9e6a0fffee3ebcc8a525e4f61c47c` に保持したまま。再適用しない。
 * 前回の.NET公開物、HTTPスモーク用 `verify-node-frontends.ps1` とログは `.artifacts/` にあるローカル成果物。今回のビルド診断も含め、生成物はGitへ含めない。
+* 個人共通の可読性・直接Assertの規則は、privateリポジトリ `codex-workflows` の `instructions/AGENTS.md` にも未コミットで保持している。配備先の共通指示・Skillには再配備しておらず、他プロジェクトへの自動反映はまだ行っていない。
 
 OpenAPI等の未導入部分の配置は [README](../README.md#今後追加する配置未実装)、公開成果物の組み立てはフェーズ6を参照する。

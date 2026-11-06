@@ -6,4 +6,8 @@
     <ShouldRunNpmInstall>false</ShouldRunNpmInstall>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../domains/typescript/kizamu-domain-typescript.esproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
 </Project>

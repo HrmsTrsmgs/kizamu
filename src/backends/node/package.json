@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "npm run build && node dist/server.js",
     "start": "node dist/server.js",
+    "prebuild": "npm run build --workspace=kizamu-domain-typescript",
     "build": "tsc",
     "lint": "eslint ."
   },
-  "dependencies": { "fastify": "5.12.8" },
+  "dependencies": { "fastify": "5.12.8", "kizamu-domain-typescript": "0.0.0", "temporal-polyfill": "1.0.2" },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "26.1.1",

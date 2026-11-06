@@ -1,8 +1,6 @@
-export type HealthApi = {
-  checkHealth: () => Promise<boolean>
-}
+import type { HealthService } from '../presentation/healthService'
 
-export const healthApi: HealthApi = {
+export const healthService: HealthService = {
   async checkHealth() {
     const response = await fetch('/api/health')
     if (!response.ok) return false

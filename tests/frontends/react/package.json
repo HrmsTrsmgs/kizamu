@@ -3,7 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": { "test": "vitest run", "build": "tsc --noEmit", "lint": "eslint ." },
+  "scripts": {
+    "pretest": "npm run build --workspace=kizamu-domain-typescript",
+    "test": "vitest run",
+    "prebuild": "npm run build --workspace=kizamu-domain-typescript",
+    "build": "tsc --noEmit",
+    "lint": "eslint ."
+  },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
@@ -13,6 +19,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "eslint": "^10.7.0",
     "jsdom": "^29.1.1",
+    "kizamu-domain-typescript": "0.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "temporal-polyfill": "^1.0.2",

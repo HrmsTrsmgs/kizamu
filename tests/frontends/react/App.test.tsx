@@ -1,17 +1,18 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, it } from 'vitest'
+import { should } from '../../should.mjs'
 import App from '../../../src/frontends/react/src/App'
-import { createTimeRecordApiMock } from './test/createTimeRecordApiMock'
+import { createTimeRecordServiceStub } from './test/createTimeRecordServiceStub'
 
 describe('App', () => {
   it('準備完了画面を表示します', () => {
     const health = { checkHealth: async () => true }
-    const timeRecords = createTimeRecordApiMock()
+    const timeRecords = createTimeRecordServiceStub()
 
     render(<App health={health} timeRecords={timeRecords} />)
 
-    expect(screen.getByRole('heading', { name: 'Kizamu' })).toBeInTheDocument()
-    expect(screen.getByText('作業時間を記録します。')).toBeInTheDocument()
-    expect(screen.queryByText(/count is/i)).not.toBeInTheDocument()
+    screen.getByRole('heading', { name: 'Kizamu' }).should.toBeInTheDocument()
+    screen.getByText('作業時間を記録します。').should.toBeInTheDocument()
+    should.not.exist(screen.queryByText(/count is/i))
   })
 })

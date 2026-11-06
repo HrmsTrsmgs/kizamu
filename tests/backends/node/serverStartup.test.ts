@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { expect, test } from 'vitest'
+import { test } from 'vitest'
 
 test('Nodeの起動入口を空きポートで実行すると出力されたURLで業務APIが応答します', async () => {
   const serverEntry = fileURLToPath(new URL('../../../src/backends/node/dist/server.js', import.meta.url))
@@ -36,8 +36,9 @@ test('Nodeの起動入口を空きポートで実行すると出力されたURL�
 
     const response = await fetch(`${listeningUrl}/api/health`, { signal: AbortSignal.timeout(3000) })
 
-    expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ status: 'ok' })
+    response.status.should.equal(200)
+    const content = { body: await response.json() }
+    content.should.have.property('body').that.deep.equal({ status: 'ok' })
   } finally {
     clearTimeout(startupTimeout)
     if (server.exitCode === null && server.signalCode === null) server.kill()

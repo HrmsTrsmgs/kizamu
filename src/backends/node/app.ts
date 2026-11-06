@@ -1,12 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import Fastify from 'fastify'
 import { randomUUID } from 'node:crypto'
-
-interface TimeRecord {
-  id: string
-  startedAt: string
-  endedAt: string | null
-}
+import { Temporal } from 'temporal-polyfill'
+import { TimeRecord } from 'kizamu-domain-typescript'
 
 export function createApp(): FastifyInstance {
   const app = Fastify()
@@ -14,22 +10,27 @@ export function createApp(): FastifyInstance {
 
   app.get('/api/health', async () => ({ status: 'ok' }))
   app.post('/api/time-records/start', async (_request, reply) => {
-    const timeRecord: TimeRecord = {
-      id: randomUUID(),
-      startedAt: new Date().toISOString(),
-      endedAt: null,
-    }
+    const timeRecord = TimeRecord.start(randomUUID(), Temporal.Instant.fromEpochMilliseconds(Date.now()))
     timeRecords.push(timeRecord)
-    return reply.code(201).send(timeRecord)
+    return reply.code(201).send(toResponse(timeRecord))
   })
   app.post<{ Params: { id: string } }>('/api/time-records/:id/end', async (request) => {
-    const timeRecord = timeRecords.find((record) => record.id === request.params.id)
-    if (timeRecord) {
-      timeRecord.endedAt = new Date().toISOString()
+    const index = timeRecords.findIndex((record) => record.id === request.params.id)
+    if (index !== -1) {
+      const timeRecord = timeRecords[index].end(Temporal.Instant.fromEpochMilliseconds(Date.now()))
+      timeRecords[index] = timeRecord
+      return toResponse(timeRecord)
     }
-    return timeRecord
   })
-  app.get('/api/time-records', async () => timeRecords)
+  app.get('/api/time-records', async () => timeRecords.map(toResponse))
 
   return app
+}
+
+function toResponse(record: TimeRecord) {
+  return {
+    id: record.id,
+    startedAt: record.startedAt.toString({ fractionalSecondDigits: 3 }),
+    endedAt: record.endedAt?.toString({ fractionalSecondDigits: 3 }) ?? null,
+  }
 }

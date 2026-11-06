@@ -51,10 +51,13 @@
 
 ## D003：画面の状態はDomainで扱い、DTOは通信境界で変換する
 
-* 状態：確定。.NETの共有DomainをBlazorから参照する修正は実装済み。
+* 状態：確定。.NETの共有DomainをBlazorから参照する修正は実装済み。2026-11-06に指示されたNodeとReactのTypeScript Domain共用と不変クラス化も実装・検証済みで、最終差分レビュー待ち。
 * 決定：BlazorのAPI呼び出し処理が通信DTOを `TimeRecord` へ変換し、画面はそのDomainモデルを保持します。Domainから通信DTOへの依存は作りません。
 * 理由：画面状態を通信形式から分離し、業務モデルとして扱うためです。開発者が画面によるDTOの直接保持を設計上の問題として指摘し、修正を指示しました。
 * 採らなかった案：画面でDTOをそのまま状態として保持し続ける案は不採用。INPC・INCCの採用やモデルの同一性管理は、この修正で確定したことには含めません。
+* TypeScriptの共有（2026-11-06）：`src/domains/typescript/` のモデルと必要な処理をNodeとReactの両方から利用します。React内だけにDomainを置く今回の整理は、共有化まで含めるよう開発者が変更を指示しました。C#側と同じく、実行環境に依存しない業務モデルを共用するためです。HTMLの `datetime` 属性の元表記を保つ情報はReact側へ分け、HTTP DTOやHTML固有の情報を共有Domainへ持ち込みません。
+* 共有化に伴う依存（2026-11-06承認）：既存の `temporal-polyfill 1.0.2`（MIT）を共有DomainとNodeの実行時にも利用します。日時APIを自作せず既存のライブラリを共通利用するための追加先変更です。Node配布物とlockfileの依存構成が変わりますが、新しい種類・バージョンの外部ライブラリは増やしません。
+* TypeScriptモデルの形式（2026-11-06指示）：共有 `TimeRecord` は不変クラスとし、記録のデータと開始・終了操作を一つにまとめます。終了操作は元の記録を変更せず新しいインスタンスを返します。現在すでにある業務概念をまとめ、C#側との対応を追いやすくするためです。先行した「Readonlyの型＋独立した開始・終了関数」も有効な形式ですが、今回はC#との対応を優先して変更します。Reactの関数コンポーネント推奨を、Domainのクラスまで避ける理由とはしません。DTOは型定義、画面状態はフック／Reducer、通信サービスはオブジェクト、独立した期間計算は純粋関数のまま維持します。
 * 根拠：開発者の修正指示、`d2adae0`、[TimeRecordApiTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecordTests](../tests/domains/dotnet/Kizamu.Domain.Tests/TimeRecordTests.cs)。
 
 ## D004：Clockifyへは終了済み記録だけを送る
@@ -98,6 +101,8 @@
 * 確認日・状態：2026-11-05、方針は確定。適用は小さな確認単位で進め、実装済みの範囲は [現在の次作業](../ai-notes/mvp-implementation-plan.md#現在の次作業) を参照します。
 * 決定：ASP.NET・Node・Blazor・React全体を対象に、変更理由に応じた責務分離を進めます。特にViewModelと通信サービスを分け、画面状態・操作のテストがHTMLやHTTPに依存しない境界を作ります。通信DTOは境界内で変換し、内側へ持ち込みません。仕様はできるだけ責務範囲の狭いテストに集約し、画面・HTTP固有の振る舞いと代表的な接続は確認します。モック等の準備でテストの可読性を損なわず、既存仕様の検証を失わないようにします。
 * 理由：開発者は、HTTP通信を含むテストとHTMLに依存するテストでは、仕様以外の準備・検証が増えて可読性が落ちると指摘しました。できるだけ多くを責務範囲の狭いテストで確認し、不要な結合を避けるため、細かくレイヤーを分けます。ただしモックの多用により可読性が落ちては本末転倒です。
-* プロジェクト分割：開発者は、依存方向を守るためにプロジェクト単位で分離する利点を挙げ、必要に応じて自動テストや別ツールによる検証も検討する方針を示しました。Blazorでは画面、Presentation、HTTPを分離しました（`9c58bda`）。ASP.NETでは既存のApi／Application／Infrastructureと共用Domainを維持し、内側の仕様テストを整理する単位で参照検査も追加します（2026-11-06の適用指示）。検査できる範囲はREADMEを参照します。
+* プロジェクト分割：開発者は、依存方向を守るためにプロジェクト単位で分離する利点を挙げ、必要に応じて自動テストや別ツールによる検証も検討する方針を示しました。Blazorでは画面、Presentation、HTTPを分離しました（`9c58bda`）。ASP.NETでは既存のApi／Application／Infrastructureと共用Domainを維持し、内側の仕様テストと参照検査を整理しました（`8b523fd`）。検査できる範囲はREADMEを参照します。
+* Reactへの適用指示（2026-11-06）：責務はC#側へなるべく揃えつつ、Reactに推奨されない部分は実装形式を変えてよいと開発者が指示しました。役割を揃えることと、クラス・DI基盤・プロジェクト数をそのまま移植することを区別します。具体的な分割と実装形式は各差分でレビューします。
+* Reactの実装形式（差分レビュー待ち）：状態と操作はカスタムフックと純粋なReducerに分け、Reactの状態更新へ自然につなぎ、ロジックをHTMLなしで確認できる形にしました。クラス型ViewModelやDIコンテナは追加しません。参照した公式説明は [カスタムフック](https://react.dev/learn/reusing-logic-with-custom-hooks) と [Reducerの純粋性・単独テスト](https://react.dev/learn/extracting-state-logic-into-a-reducer) です。React内の責務境界は既存ESLintで検査します。DomainをNodeと共用するパッケージ分離はD003を参照します。
 * 採らなかった案：小規模であることだけを理由にViewModelや通信サービスの分離を保留する案は採りません。一方、資料の区分を各実装へ一律に揃えたり、現在の責務がない空の層や別プロジェクトを増やす方針ではありません。
 * 根拠：開発者の全実装を対象とする指示と、ViewModel・通信サービスの分離指示。[AI駆動TDD原稿の第3章](https://github.com/HrmsTrsmgs/study-materials/blob/main/AI%E9%A7%86%E5%8B%95TDD/%E5%85%A8%E6%96%87%E6%9C%80%E6%96%B0%E7%89%88.md)（2026-11-05確認）は責務の区分とプロジェクト分割を区別しています。

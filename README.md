@@ -43,8 +43,9 @@ kizamu/
 │  │     ├─ package.json
 │  │     └─ src/
 │  └─ domains/
-│     └─ dotnet/
-│        └─ Kizamu.Domain/
+│     ├─ dotnet/
+│     │  └─ Kizamu.Domain/
+│     └─ typescript/                kizamu-domain-typescript・Node/React共用
 ├─ tests/
 │  ├─ backends/
 │  │  ├─ aspnetcore/
@@ -65,8 +66,9 @@ kizamu/
 │  │     ├─ vitest.config.ts
 │  │     └─ …                       既存テストと補助コード
 │  └─ domains/
-│     └─ dotnet/
-│        └─ Kizamu.Domain.Tests/
+│     ├─ dotnet/
+│     │  └─ Kizamu.Domain.Tests/
+│     └─ typescript/                kizamu-domain-typescript-tests
 ├─ docs/                            製品仕様・設計判断・開発文書・作業指示
 ├─ ai-notes/                        AIの作業計画・検討候補・引継ぎ
 ├─ Kizamu.slnx                      全実装の作業用
@@ -87,6 +89,14 @@ Domainはバックエンド専用の位置から分離し、ASP.NET CoreとBlazo
 
 ReactとNodeの製品・テストパッケージは独立させ、ルートのnpm workspacesで管理します。依存関係のインストールとlockfileの更新はリポジトリルートで行います。各 `.esproj` による個別の自動 `npm install` は無効にしており、最初にルートで `npm ci` を実行する必要があります。
 
+TypeScriptの作業記録モデルと期間計算は `src/domains/typescript/` の `kizamu-domain-typescript` に置き、NodeとReactから共用します。`TimeRecord` は公開プロパティが `readonly` の不変クラスで、`TimeRecord.start` で開始し、`end` は元を変更せず新しい記録を返します。既存記録はコンストラクターで復元します。独立した期間計算は純粋関数のままです。日時点には既存の `temporal-polyfill 1.0.2`（MIT）を使用します。共有DomainはReact、Fastify、Node固有API、HTTP、HTMLに依存せず、識別子の発行と現在時刻の取得はNode側に残します。Nodeは共有モデルをメモリに保持し、HTTP境界で従来のミリ秒3桁のISO文字列へ変換します。
+
+React版は同じ製品パッケージ内の `src/presentation/`（画面状態・操作のフック、Reducer、サービス契約）と `src/infrastructure/`（HTTP通信・DTO変換）に責務を分けています。既存の `App`、`timeRecords/`、`health/` は表示とイベント接続を担当し、`main.tsx` で通信サービスを渡します。通信の時刻文字列は境界で共有Domainの日時点へ変換します。HTMLの `datetime` 属性に使う元のISO表記はReactのPresentation側の包みに保持し、共有Domainへ持ち込みません。
+
+依存方向は `表示 → presentation / domain`、`infrastructure → presentation / domain`、`presentation → domain` です。状態を持つクラスやDIコンテナではなく、Reactのフックと純粋なReducerを使用します。ESLintで型専用・未使用を含む静的importと再exportの逆依存、内側からの動的import、直接の通信・DOMグローバル参照を検出します。この検査は記載したパスと構文を対象とし、パス別名や別モジュール経由の間接呼出しを完全に追跡するものではありません。
+
+共有DomainはESMのJavaScriptと型宣言を `dist/` へビルドし、利用側はパッケージ名でimportします。ルートのworkspacesはDomainを先に処理します。個別のReact開発・ビルド、Nodeビルド、各テストの前処理でもDomainをビルドするため、生成物がない状態から単独コマンドを実行できます。Visual Studioの `.esproj` にもDomainへのプロジェクト参照を置き、`Domains/TypeScript` に製品とテストを表示します。Nodeの起動用出力は従来どおり `npm run build --workspace=kizamu-backend-node` で作成し、`npm run start --workspace=kizamu-backend-node` で起動します。
+
 日常の開発と差分レビューはVisual Studioを基本とし、ReactやNodeを含め、技術や組み合わせによってIDEを使い分けることは前提にしません。一方で、VS Codeでの作業も考慮します。ビルドとテストの本体は `dotnet` と `npm` のコマンドに置き、IDE固有の設定はその操作の補助として扱います。
 
 ### 今後追加する配置（未実装）
@@ -97,8 +107,6 @@ ReactとNodeの製品・テストパッケージは独立させ、ルートのnp
 | --- | --- |
 | `contracts/openapi.yaml` | 実装言語から独立した共通HTTP API契約。複数バックエンドの互換性の基準にします。 |
 | `src/api/dotnet/Kizamu.Api.Contracts/`、`src/api/typescript/` | OpenAPIから生成する通信用DTO等。TypeScriptパッケージは `kizamu-api-typescript`。Domainとは分離します。 |
-| `src/domains/typescript/` | `kizamu-domain-typescript`。NodeやReactから必要に応じて共用する、実行環境に依存しない業務ロジック。 |
-| `tests/domains/typescript/` | 対応する実装の `-tests` パッケージ。 |
 | `tests/api/` | 通信コードの検証が必要になった場合のテスト。生成DTOの数だけ形式的にテストを増やしません。 |
 | `tests/contracts/` | 各バックエンドが共通のHTTP API契約を満たすことを確認するテスト。 |
 | `tests/system/` | フロントエンドとバックエンドを組み合わせた製品全体のテスト。 |
@@ -265,9 +273,11 @@ npm test
 npm run build
 ```
 
-ルートのnpmコマンドは、登録されたworkspacesのうち対応するscriptを持つパッケージへ処理を委譲します。`npm run build` ではReactの公開用ビルド、NodeのJavaScript出力、テストコードの型検査を行います。個別実行には `npm test --workspace=kizamu-frontend-react-tests`、`npm test --workspace=kizamu-backend-node-tests` などを使えます。
+ルートのnpmコマンドは、登録されたworkspacesのうち対応するscriptを持つパッケージへ処理を委譲します。`npm run build` では共有DomainのJavaScript・型宣言、Reactの公開用ビルド、NodeのJavaScript出力、各テストコードの型検査を行います。個別実行には `npm test --workspace=kizamu-domain-typescript-tests`、`npm test --workspace=kizamu-frontend-react-tests`、`npm test --workspace=kizamu-backend-node-tests` を使えます。
 
-Visual Studioでは `kizamu-frontend-react-tests.esproj` と `kizamu-backend-node-tests.esproj` をテスト用プロジェクトとして追加しています。テストエクスプローラーでの検出・実行はIDE上で確認してください。`dotnet test` のCLI検証は.NETテストだけであり、ReactとNodeを確認するには `npm test` も実行します。
+共有モデルの開始・終了と期間計算、Domainの依存境界は `tests/domains/typescript/` で確認します。Reactの状態遷移と開始・終了操作、正常性確認、時刻・作業時間の表示用値とタイマー寿命は `tests/frontends/react/presentation/` でHTMLやHTTPを準備せずに確認します。HTTP経路・メソッドとDTO変換は `infrastructure/`、Reactの依存方向のLint設定は `architecture/` で確認します。画面テストには日本語表示・HTML属性と、一覧取得・開始・終了の代表的な接続確認を残しています。
+
+Visual Studioでは `kizamu-domain-typescript-tests.esproj`、`kizamu-frontend-react-tests.esproj`、`kizamu-backend-node-tests.esproj` をテスト用プロジェクトとして追加しています。テストエクスプローラーでの検出・実行はIDE上で確認してください。`dotnet test` のCLI検証は.NETテストだけであり、TypeScriptの共有Domain・React・Nodeを確認するには `npm test` も実行します。
 
 Visual Studio向けの現行ソリューションをCLIで確認する場合は、次のコマンドを使います。Reactの検証は上記npmコマンドと併せて行います。
 

@@ -1,37 +1,14 @@
-import { useEffect, useReducer } from 'react'
-import type { TimeRecordApi } from './timeRecordApi'
+import type { TimeRecordService } from '../presentation/timeRecordService'
+import { useTimeRecorder } from '../presentation/useTimeRecorder'
+import { getTimeRecordTimestamps } from '../presentation/timeRecordPresentation'
 import TimeRecordTimes from './TimeRecordTimes'
-import { initialTimeRecorderState, timeRecorderReducer } from './timeRecorderState'
 
 type TimeRecorderProps = {
-  timeRecords: TimeRecordApi
+  timeRecords: TimeRecordService
 }
 
 export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
-  const [state, dispatch] = useReducer(timeRecorderReducer, initialTimeRecorderState)
-
-  useEffect(() => {
-    async function getTimeRecords() {
-      dispatch({
-        type: 'recordsLoaded',
-        records: await timeRecords.getTimeRecords(),
-      })
-    }
-
-    void getTimeRecords()
-  }, [timeRecords])
-
-  async function startTimeRecord() {
-    const record = await timeRecords.startTimeRecord()
-    dispatch({ type: 'recordStarted', record })
-  }
-
-  async function endTimeRecord() {
-    if (state.timeRecordId !== null) {
-      const record = await timeRecords.endTimeRecord(state.timeRecordId)
-      dispatch({ type: 'recordEnded', record })
-    }
-  }
+  const { state, startTimeRecord, endTimeRecord } = useTimeRecorder(timeRecords)
 
   return (
     <div className="time-recorder">
@@ -71,9 +48,9 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
 
         <ul className="records-list" aria-label="作業記録一覧">
           {state.records.map(record => (
-            <li key={record.id}>
-              <span className={`record-status ${record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
-              <TimeRecordTimes startedAt={record.startedAt} endedAt={record.endedAt} />
+            <li key={record.record.id}>
+              <span className={`record-status ${record.record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
+              <TimeRecordTimes {...getTimeRecordTimestamps(record)} />
             </li>
           ))}
         </ul>

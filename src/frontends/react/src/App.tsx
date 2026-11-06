@@ -1,12 +1,12 @@
 import HealthStatus from './health/HealthStatus'
 import TimeRecorder from './timeRecords/TimeRecorder'
-import type { HealthApi } from './health/healthApi'
-import type { TimeRecordApi } from './timeRecords/timeRecordApi'
+import type { HealthService } from './presentation/healthService'
+import type { TimeRecordService } from './presentation/timeRecordService'
 import './index.css'
 
 type AppProps = {
-  health: HealthApi
-  timeRecords: TimeRecordApi
+  health: HealthService
+  timeRecords: TimeRecordService
 }
 
 export default function App({ health, timeRecords }: AppProps) {
