@@ -21,6 +21,18 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
+    public void 複数の記録から指定した識別子の記録を取得できる()
+    {
+        var 最初の記録 = TimeRecord.Start(開始時刻);
+        var 次の記録 = TimeRecord.Start(次の開始時刻);
+        var tested = new InMemoryTimeRecordState();
+        tested.Add(最初の記録);
+        tested.Add(次の記録);
+
+        tested.Find(最初の記録.Id).Should().BeSameAs(最初の記録);
+    }
+
+    [Fact]
     public void 作業記録を追加していない場合は空の一覧を取得できます()
     {
         var tested = new InMemoryTimeRecordState();

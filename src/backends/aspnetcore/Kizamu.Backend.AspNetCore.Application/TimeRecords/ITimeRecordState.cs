@@ -18,6 +18,13 @@ public interface ITimeRecordState
     IReadOnlyList<TimeRecord> All { get; }
 
     /// <summary>
+    /// 識別子に一致する作業記録を取得します。
+    /// </summary>
+    /// <param name="id">作業記録の識別子。</param>
+    /// <returns>一致する記録。存在しない場合はnull。</returns>
+    TimeRecord? Find(Guid id);
+
+    /// <summary>
     /// 作業記録を追加します。
     /// </summary>
     /// <param name="timeRecord">追加する作業記録。</param>

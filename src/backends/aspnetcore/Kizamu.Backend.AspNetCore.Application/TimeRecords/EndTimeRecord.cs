@@ -16,9 +16,9 @@ public sealed class EndTimeRecord(
     /// <returns>終了した作業記録。</returns>
     public EndTimeRecordResult Execute(Guid id)
     {
-        var timeRecord = timeRecordState.Current;
+        var timeRecord = timeRecordState.Find(id);
         var endedAt = timeProvider.GetUtcNow();
-        if (timeRecord is null || timeRecord.Id != id)
+        if (timeRecord is null)
         {
             return new(id, default, endedAt);
         }

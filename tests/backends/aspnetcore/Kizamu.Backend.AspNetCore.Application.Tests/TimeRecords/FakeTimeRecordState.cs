@@ -11,6 +11,8 @@ sealed class FakeTimeRecordState : ITimeRecordState
 
     public IReadOnlyList<TimeRecord> All => timeRecords;
 
+    public TimeRecord? Find(Guid id) => timeRecords.SingleOrDefault(it => it.Id == id);
+
     public void Add(TimeRecord timeRecord)
     {
         timeRecords.Add(timeRecord);

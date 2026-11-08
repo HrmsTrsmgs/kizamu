@@ -13,6 +13,9 @@ public sealed class InMemoryTimeRecordState : ITimeRecordState
     /// <inheritdoc />
     public TimeRecord? Current => timeRecords.LastOrDefault();
 
+    /// <inheritdoc />
+    public TimeRecord? Find(Guid id) => timeRecords.FirstOrDefault(it => it.Id == id);
+
     /// <summary>
     /// 作業記録を追加します。
     /// </summary>
