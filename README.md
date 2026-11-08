@@ -32,6 +32,10 @@ kizamu/
 │  │  │  ├─ Kizamu.Backend.AspNetCore.Application/
 │  │  │  └─ Kizamu.Backend.AspNetCore.Infrastructure/
 │  │  └─ node/                      kizamu-backend-node・業務APIのみ
+│  │     ├─ api/                    HTTPルート・応答DTO変換
+│  │     ├─ application/            記録操作・依存契約
+│  │     ├─ infrastructure/         メモリ保持・時刻・ID生成
+│  │     └─ app.ts                  アプリの組み立て
 │  ├─ frontends/
 │  │  ├─ blazor/
 │  │  │  ├─ Kizamu.Frontend.Blazor.Client/   第一実装・WebAssembly UI
@@ -91,6 +95,8 @@ Domainはバックエンド専用の位置から分離し、ASP.NET CoreとBlazo
 ReactとNodeの製品・テストパッケージは独立させ、ルートのnpm workspacesで管理します。依存関係のインストールとlockfileの更新はリポジトリルートで行います。各 `.esproj` による個別の自動 `npm install` は無効にしており、最初にルートで `npm ci` を実行する必要があります。
 
 TypeScriptの作業記録モデルと期間計算は `src/domains/typescript/` の `kizamu-domain-typescript` に置き、NodeとReactから共用します。`TimeRecord` は公開プロパティが `readonly` の不変クラスで、`TimeRecord.start` で開始し、`end` は元を変更せず新しい記録を返します。既存記録はコンストラクターで復元します。独立した期間計算は純粋関数のままです。日時点には既存の `temporal-polyfill 1.0.2`（MIT）を使用します。共有DomainはReact、Fastify、Node固有API、HTTP、HTMLに依存せず、識別子の発行と現在時刻の取得はNode側に残します。Nodeは共有モデルをメモリに保持し、HTTP境界で従来のミリ秒3桁のISO文字列へ変換します。
+
+Node版は同じ製品パッケージ内の `api/`（HTTPルート・応答DTO変換）、`application/`（開始・指定IDでの終了・一覧と依存契約）、`infrastructure/`（メモリ上の記録保持・時刻とIDの取得）に分けています。`app.ts` で依存を組み立て、記録操作は共有Domainを利用します。依存方向は `api → application / domain`、`infrastructure → application / domain`、`application → domain` です。ApplicationとInfrastructureの単体テストに加え、既存のHTTP経路の接続確認を維持しています。レイヤーは同じnpmパッケージ内のモジュールとして分けており、Node側にレイヤー間の依存を禁止する自動検査はまだありません。
 
 React版は同じ製品パッケージ内の `src/presentation/`（画面状態・操作のフック、Reducer、サービス契約）と `src/infrastructure/`（HTTP通信・DTO変換）に責務を分けています。既存の `App`、`timeRecords/`、`health/` は表示とイベント接続を担当し、`main.tsx` で通信サービスを渡します。通信の時刻文字列は境界で共有Domainの日時点へ変換します。HTMLの `datetime` 属性に使う元のISO表記はReactのPresentation側の包みに保持し、共有Domainへ持ち込みません。
 
