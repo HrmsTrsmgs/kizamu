@@ -7,7 +7,6 @@ namespace Kizamu.Backend.AspNetCore.Application.Tests.TimeRecords;
 
 public sealed class EndTimeRecordTests
 {
-    static readonly Guid 識別子 = new("019cde5b-4c00-7000-8000-000000000001");
     static readonly DateTimeOffset 早い時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 中間の時刻 = new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 遅い時刻 = new(2026, 8, 1, 11, 0, 0, TimeSpan.Zero);
@@ -29,7 +28,21 @@ public sealed class EndTimeRecordTests
         state.Add(timeRecord);
         var tested = new EndTimeRecord(new FakeTimeProvider(endedAt), state);
 
-        tested.Execute(識別子).Should().Be(new EndTimeRecordResult(識別子, startedAt, endedAt));
+        tested.Execute(timeRecord.Id).Should().Be(new EndTimeRecordResult(timeRecord.Id, startedAt, endedAt));
         timeRecord.EndedAt.Should().Be(endedAt);
+    }
+
+    [Fact]
+    public void 異なる識別子で終了を要求しても現在の記録は終了しない()
+    {
+        var timeRecord = TimeRecord.Start(早い時刻);
+        var state = new FakeTimeRecordState();
+        state.Add(timeRecord);
+        var tested = new EndTimeRecord(new FakeTimeProvider(遅い時刻), state);
+
+        // 対象が異なる場合の戻り値や例外は未確定のため、記録への影響だけを確認する。
+        Record.Exception(() => tested.Execute(Guid.NewGuid()));
+
+        timeRecord.EndedAt.Should().BeNull();
     }
 }

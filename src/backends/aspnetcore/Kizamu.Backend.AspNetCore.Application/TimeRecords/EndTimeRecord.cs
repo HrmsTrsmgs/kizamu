@@ -18,7 +18,7 @@ public sealed class EndTimeRecord(
     {
         var timeRecord = timeRecordState.Current;
         var endedAt = timeProvider.GetUtcNow();
-        if (timeRecord is null)
+        if (timeRecord is null || timeRecord.Id != id)
         {
             return new(id, default, endedAt);
         }
