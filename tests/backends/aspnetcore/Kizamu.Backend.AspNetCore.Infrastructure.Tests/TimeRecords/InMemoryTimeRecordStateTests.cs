@@ -63,4 +63,38 @@ public sealed class InMemoryTimeRecordStateTests
 
         tested.All.Should().Equal(最初の記録, 次の記録);
     }
+
+    [Fact]
+    public void 一覧構成のコピーは後から追加されず記録自体は共有します()
+    {
+        var 最初の記録 = TimeRecord.Start(開始時刻);
+        var 次の記録 = TimeRecord.Start(次の開始時刻);
+        var tested = new InMemoryTimeRecordState();
+        tested.Add(最初の記録);
+        var 一覧 = tested.All;
+
+        var コピー = tested.CopyAll();
+        tested.Add(次の記録);
+
+        コピー.Should().ContainSingle().Which.Should().BeSameAs(最初の記録);
+        一覧.Should().Equal(最初の記録, 次の記録);
+    }
+    [Fact]
+    public void 同じ一覧を列挙するたびに列挙開始前に追加された記録を取得できます()
+    {
+        var tested = new InMemoryTimeRecordState();
+        var 一覧 = tested.All;
+        var 最初の記録 = TimeRecord.Start(開始時刻);
+        tested.Add(最初の記録);
+
+        一覧.Should().Equal(最初の記録);
+
+        var 次の記録 = TimeRecord.Start(次の開始時刻);
+        tested.Add(次の記録);
+
+        一覧.Should().Equal(最初の記録, 次の記録);
+        一覧.Count.Should().Be(2);
+        一覧[0].Should().BeSameAs(最初の記録);
+        一覧[1].Should().BeSameAs(次の記録);
+    }
 }

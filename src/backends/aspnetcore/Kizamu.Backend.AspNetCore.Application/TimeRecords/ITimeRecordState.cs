@@ -18,6 +18,12 @@ public interface ITimeRecordState
     IReadOnlyList<TimeRecord> All { get; }
 
     /// <summary>
+    /// 作業記録の一覧構成を、追加操作と安全に並行してコピーします。
+    /// </summary>
+    /// <returns>コピー時点の記録を保存順に保持する配列。記録自体はコピーしません。</returns>
+    TimeRecord[] CopyAll();
+
+    /// <summary>
     /// 識別子に一致する作業記録を取得します。
     /// </summary>
     /// <param name="id">作業記録の識別子。</param>

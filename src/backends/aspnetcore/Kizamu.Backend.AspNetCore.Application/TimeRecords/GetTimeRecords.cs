@@ -10,8 +10,11 @@ public sealed class GetTimeRecords(ITimeRecordState timeRecordState)
     /// 保存順を保ち、作業記録の識別子と開始・終了時刻を取得します。
     /// </summary>
     /// <returns>保存されている作業記録の読取結果。記録中の終了時刻はnullです。</returns>
-    public IEnumerable<GetTimeRecordResult> Execute() =>
-        timeRecordState.All.Select(it => new GetTimeRecordResult(it.Id, it.StartedAt, it.EndedAt));
+    public IEnumerable<GetTimeRecordResult> Execute()
+    {
+        foreach (var record in timeRecordState.CopyAll())
+            yield return new GetTimeRecordResult(record.Id, record.StartedAt, record.EndedAt);
+    }
 }
 
 /// <summary>
