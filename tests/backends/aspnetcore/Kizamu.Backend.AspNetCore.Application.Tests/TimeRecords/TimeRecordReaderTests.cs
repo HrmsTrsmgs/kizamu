@@ -4,7 +4,7 @@ using Kizamu.Domain;
 
 namespace Kizamu.Backend.AspNetCore.Application.Tests.TimeRecords;
 
-public sealed class GetTimeRecordsTests
+public sealed class TimeRecordReaderTests
 {
     static readonly DateTimeOffset 開始時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 終了時刻 = new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero);
@@ -12,7 +12,7 @@ public sealed class GetTimeRecordsTests
     [Fact]
     public void 保存された記録がなければ空の一覧を返す()
     {
-        var tested = new GetTimeRecords(new FakeTimeRecordState());
+        var tested = new TimeRecordReader(new FakeTimeRecordState());
 
         tested.Execute().Should().BeEmpty();
     }
@@ -26,7 +26,7 @@ public sealed class GetTimeRecordsTests
         var state = new FakeTimeRecordState();
         state.Add(記録中の記録);
         state.Add(終了済みの記録);
-        var tested = new GetTimeRecords(state);
+        var tested = new TimeRecordReader(state);
 
         tested.Execute().Should().Equal(
             new GetTimeRecordResult(記録中の記録.Id, 開始時刻, null),
@@ -37,7 +37,7 @@ public sealed class GetTimeRecordsTests
     public void 一覧の各列挙開始前に追加された記録を返す()
     {
         var state = new FakeTimeRecordState();
-        var tested = new GetTimeRecords(state);
+        var tested = new TimeRecordReader(state);
         var 一覧 = tested.Execute();
         var 最初の記録 = TimeRecord.Start(開始時刻);
         state.Add(最初の記録);
@@ -59,7 +59,7 @@ public sealed class GetTimeRecordsTests
         var 次の記録 = TimeRecord.Start(終了時刻);
         var state = new FakeTimeRecordState();
         state.Add(最初の記録);
-        var 一覧 = new GetTimeRecords(state).Execute();
+        var 一覧 = new TimeRecordReader(state).Execute();
         using var 列挙子 = 一覧.GetEnumerator();
 
         列挙子.MoveNext().Should().BeTrue();

@@ -12,7 +12,7 @@ static WebApplication CreateApplication(string[] args)
     builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
     builder.Services.AddSingleton<StartTimeRecord>();
     builder.Services.AddSingleton<EndTimeRecord>();
-    builder.Services.AddSingleton<GetTimeRecords>();
+    builder.Services.AddSingleton<TimeRecordReader>();
     builder.Services.AddSingleton<ITimeRecordState, InMemoryTimeRecordState>();
 
     var app = builder.Build();
