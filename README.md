@@ -176,6 +176,14 @@ BlazorとASP.NET Coreだけを開発・起動する場合はNode.jsとnpmは不�
 
 ## Blazor版のセットアップと起動
 
+リポジトリルートから動作確認用スクリプトをPowerShell 7以降で実行すると、ASP.NET CoreとBlazorをビルドして起動し、ブラウザーを開きます。ポート5213または5214が使用中の場合は中断します。
+
+```powershell
+./scripts/CheckBlazor.ps1
+```
+
+確認後にEnterを押すとサーバーが停止し、メモリ上の記録は失われます。
+
 以下のコマンドはリポジトリルートから実行します。
 
 ```powershell
