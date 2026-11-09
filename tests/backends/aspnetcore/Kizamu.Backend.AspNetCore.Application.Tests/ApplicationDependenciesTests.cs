@@ -8,7 +8,7 @@ public sealed class ApplicationDependenciesTests
     [Fact]
     public void ユースケースはAPIと保存実装を参照せずDomainだけに依存する()
     {
-        var references = typeof(StartTimeRecord).Assembly.GetReferencedAssemblies();
+        var references = typeof(TimeRecordStartOperation).Assembly.GetReferencedAssemblies();
 
         references.Select(it => it.Name).Where(it => it is not null && it.StartsWith("Kizamu.", StringComparison.Ordinal))
             .Should().Equal("Kizamu.Domain");

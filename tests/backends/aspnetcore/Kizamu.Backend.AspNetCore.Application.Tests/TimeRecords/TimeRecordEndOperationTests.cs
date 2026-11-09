@@ -5,7 +5,7 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Kizamu.Backend.AspNetCore.Application.Tests.TimeRecords;
 
-public sealed class EndTimeRecordTests
+public sealed class TimeRecordEndOperationTests
 {
     static readonly DateTimeOffset 早い時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 中間の時刻 = new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero);
@@ -26,7 +26,7 @@ public sealed class EndTimeRecordTests
         var timeRecord = TimeRecord.Start(startedAt);
         var state = new FakeTimeRecordState();
         state.Add(timeRecord);
-        var tested = new EndTimeRecord(new FakeTimeProvider(endedAt), state);
+        var tested = new TimeRecordEndOperation(new FakeTimeProvider(endedAt), state);
 
         tested.Execute(timeRecord.Id).Should().Be(new EndTimeRecordResult(timeRecord.Id, startedAt, endedAt));
         timeRecord.EndedAt.Should().Be(endedAt);
@@ -40,7 +40,7 @@ public sealed class EndTimeRecordTests
         var state = new FakeTimeRecordState();
         state.Add(最初の記録);
         state.Add(次の記録);
-        var tested = new EndTimeRecord(new FakeTimeProvider(遅い時刻), state);
+        var tested = new TimeRecordEndOperation(new FakeTimeProvider(遅い時刻), state);
 
         tested.Execute(最初の記録.Id).Should().Be(new EndTimeRecordResult(最初の記録.Id, 早い時刻, 遅い時刻));
         最初の記録.EndedAt.Should().Be(遅い時刻);
@@ -56,7 +56,7 @@ public sealed class EndTimeRecordTests
         var state = new FakeTimeRecordState();
         state.Add(最初の記録);
         state.Add(次の記録);
-        var tested = new EndTimeRecord(new FakeTimeProvider(遅い時刻), state);
+        var tested = new TimeRecordEndOperation(new FakeTimeProvider(遅い時刻), state);
 
         tested.Execute(最初の記録.Id).Should().Be(new EndTimeRecordResult(最初の記録.Id, 早い時刻, 遅い時刻));
         最初の記録.EndedAt.Should().Be(遅い時刻);
@@ -69,7 +69,7 @@ public sealed class EndTimeRecordTests
         var timeRecord = TimeRecord.Start(早い時刻);
         var state = new FakeTimeRecordState();
         state.Add(timeRecord);
-        var tested = new EndTimeRecord(new FakeTimeProvider(遅い時刻), state);
+        var tested = new TimeRecordEndOperation(new FakeTimeProvider(遅い時刻), state);
 
         // 対象が異なる場合の戻り値や例外は未確定のため、記録への影響だけを確認する。
         Record.Exception(() => tested.Execute(Guid.NewGuid()));
