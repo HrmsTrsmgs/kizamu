@@ -19,6 +19,88 @@ public sealed class TimeRecorderViewModelTests
         tested = new(service);
     }
 
+    [Fact(Skip = "プロジェクト別の記録操作を実装するとき解除します。")]
+    public async Task 異なるプロジェクトの記録を同時に開始できる()
+    {
+        var プロジェクトA = new Project("プロジェクトA");
+        var プロジェクトB = new Project("プロジェクトB");
+        tested.SelectProject(プロジェクトA);
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(プロジェクトB);
+        service.StartedRecord = new(別の記録ID, 終了時刻, null);
+
+        await tested.StartTimeRecordAsync();
+
+        tested.Records.Select(it => it.Id).Should().Equal(記録ID, 別の記録ID);
+        tested.IsRecording.Should().BeTrue();
+        tested.SelectProject(プロジェクトA);
+        tested.IsRecording.Should().BeTrue();
+        service.EndedIds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task 対象を切り替えて戻ると記録中の状態が保たれる()
+    {
+        var プロジェクトA = new Project("プロジェクトA");
+        tested.SelectProject(null);
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(プロジェクトA);
+        tested.IsRecording.Should().BeFalse();
+        service.StartedRecord = new(別の記録ID, 終了時刻, null);
+        await tested.StartTimeRecordAsync();
+
+        tested.SelectProject(null);
+        tested.IsRecording.Should().BeTrue();
+        tested.SelectProject(プロジェクトA);
+        tested.IsRecording.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task 開始の応答前に対象を切り替えても開始元の記録中状態を更新する()
+    {
+        var プロジェクトA = new Project("プロジェクトA");
+        TaskCompletionSource<TimeRecord> 応答 = new();
+        service.StartResponse = 応答.Task;
+        tested.SelectProject(プロジェクトA);
+        var 開始操作 = tested.StartTimeRecordAsync();
+        tested.SelectProject(null);
+
+        応答.SetResult(service.StartedRecord);
+        await 開始操作;
+
+        tested.Records.Should().ContainSingle().Which.Should().BeSameAs(service.StartedRecord);
+        tested.IsRecording.Should().BeFalse();
+        tested.SelectProject(プロジェクトA);
+        tested.IsRecording.Should().BeTrue();
+    }
+
+    [Theory(Skip = "プロジェクト別の記録操作を実装するとき解除します。")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task 一方の記録を終了しても他方は記録中のままになる(bool プロジェクトを終了する)
+    {
+        var プロジェクトA = new Project("プロジェクトA");
+        var 終了する記録ID = プロジェクトを終了する ? 別の記録ID : 記録ID;
+        var 残る記録ID = プロジェクトを終了する ? 記録ID : 別の記録ID;
+        var service = new StubTimeRecordService(
+            new(記録ID, 開始時刻, null), new(終了する記録ID, 開始時刻, 終了時刻));
+        var tested = new TimeRecorderViewModel(service);
+        tested.SelectProject(null);
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(プロジェクトA);
+        service.StartedRecord = new(別の記録ID, 開始時刻, null);
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(プロジェクトを終了する ? プロジェクトA : null);
+
+        await tested.EndTimeRecordAsync();
+
+        service.EndedIds.Should().Equal(終了する記録ID);
+        tested.IsRecording.Should().BeFalse();
+        tested.SelectProject(プロジェクトを終了する ? null : プロジェクトA);
+        tested.IsRecording.Should().BeTrue();
+        tested.Records.Single(it => it.Id == 残る記録ID).EndedAt.Should().BeNull();
+    }
+
     [Fact]
     public void 初期状態は空の一覧で操作結果がなく記録していない()
     {
