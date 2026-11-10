@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, it, vi } from 'vitest'
 import { useTimeRecorder } from '../../../../src/frontends/react/src/presentation/useTimeRecorder'
 import { createTimeRecordServiceStub } from '../test/createTimeRecordServiceStub'
+import { deferred } from '../test/deferred'
 import { presentedRecord, timestamp } from '../test/timeRecords'
 
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
@@ -39,6 +40,45 @@ describe('useTimeRecorder', () => {
     })
   })
 
+  it('開始後に古い一覧が届いても過去の記録と開始した記録が残り終了できます', async () => {
+    const 過去の記録 = presentedRecord(次の記録ID, 開始時刻, 終了時刻)
+    const list = deferred<(typeof 記録)[]>()
+    const endTimeRecord = vi.fn(async () => 終了済み記録)
+    const service = createTimeRecordServiceStub({
+      getTimeRecords: () => list.promise, startTimeRecord: async () => 記録, endTimeRecord,
+    })
+    const { result } = renderHook(() => useTimeRecorder(service))
+    await act(() => result.current.startTimeRecord())
+
+    await act(async () => { list.resolve([過去の記録]); await list.promise })
+
+    result.current.state.should.deep.equal({
+      records: [過去の記録, 記録], timeRecordId: 記録ID, startedAt: 開始時刻, endedAt: null,
+    })
+    await act(() => result.current.endTimeRecord())
+    endTimeRecord.should.have.been.calledOnceWith(記録ID)
+    result.current.state.should.deep.equal({
+      records: [過去の記録, 終了済み記録], timeRecordId: null, startedAt: 開始時刻, endedAt: 終了時刻,
+    })
+  })
+
+  it('操作後の再読み込みはサーバーの更新と削除を反映します', async () => {
+    const 過去の記録 = presentedRecord(次の記録ID, 開始時刻, 終了時刻)
+    const { result, rerender } = renderHook(({ service }) => useTimeRecorder(service), {
+      initialProps: {
+        service: createTimeRecordServiceStub({
+          getTimeRecords: async () => [過去の記録], startTimeRecord: async () => 記録,
+        }),
+      },
+    })
+    await waitFor(() => result.current.state.records.should.deep.equal([過去の記録]))
+    await act(() => result.current.startTimeRecord())
+
+    rerender({ service: createTimeRecordServiceStub({ getTimeRecords: async () => [終了済み記録] }) })
+
+    await waitFor(() => result.current.state.records.should.deep.equal([終了済み記録]))
+    result.current.state.should.have.property('timeRecordId', null)
+  })
   it('終了操作で現在の記録を指定して確定した終了時刻と一覧を更新します', async () => {
     const endTimeRecord = vi.fn(async () => 終了済み記録)
     const service = createTimeRecordServiceStub({

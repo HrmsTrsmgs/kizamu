@@ -7,6 +7,7 @@ namespace Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 public sealed class TimeRecorderViewModel(ITimeRecordService service)
 {
     List<TimeRecord> records = [];
+    readonly List<List<TimeRecord>> pendingLoads = [];
     Guid? currentId;
 
     /// <summary>取得した順序に、新たに開始した記録を追加した一覧を取得します。</summary>
@@ -22,11 +23,23 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service)
     /// <returns>読み込みと画面状態の更新の完了。</returns>
     public async Task LoadAsync()
     {
-        records = [.. await service.GetTimeRecordsAsync()];
-        currentId =
-            (from record in records
-             where record.EndedAt is null
-             select (Guid?)record.Id).FirstOrDefault();
+        List<TimeRecord> updatedRecords = [];
+        pendingLoads.Add(updatedRecords);
+        try
+        {
+            var loadedRecords = await service.GetTimeRecordsAsync();
+            records = [.. loadedRecords.Select(record => updatedRecords.LastOrDefault(it => it.Id == record.Id) ?? record)];
+            records.AddRange(updatedRecords.GroupBy(record => record.Id)
+                .Select(group => group.Last()).Where(record => !records.Exists(it => it.Id == record.Id)));
+            currentId = updatedRecords.LastOrDefault(it => it.Id == currentId && it.EndedAt is null)?.Id ??
+                (from record in records
+                 where record.EndedAt is null
+                 select (Guid?)record.Id).FirstOrDefault();
+        }
+        finally
+        {
+            pendingLoads.Remove(updatedRecords);
+        }
     }
 
     /// <summary>記録を開始し、一覧と操作欄へ確定した結果を反映します。</summary>
@@ -35,6 +48,10 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service)
     {
         var record = await service.StartTimeRecordAsync();
         records.Add(record);
+        foreach (var pending in pendingLoads)
+        {
+            pending.Add(record);
+        }
         DisplayedRecord = record;
         currentId = record.Id;
     }
@@ -47,6 +64,10 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service)
         {
             var record = await service.EndTimeRecordAsync(id);
             records[records.FindIndex(it => it.Id == record.Id)] = record;
+            foreach (var pending in pendingLoads)
+            {
+                pending.Add(record);
+            }
             if (DisplayedRecord is not null)
             {
                 DisplayedRecord = record;
