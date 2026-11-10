@@ -467,7 +467,7 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 ### このブランチの目的と停止位置
 
 * 2026-11-10の開発者指示により、テスト準備の整理は一単位ずつ小さなPRに分ける。今回はAPI中継テストのFactory設定だけを対象とする。
-* 作業ブランチは `codex/refactor-api-proxy-test-setup`、基準HEADは `de89b51`、予定するPR先は `codex/node-backend`。同じ `overall-refactoring` 作業ツリーを使用する。チャットの既定作業場所の関連付けは変更できていないため、操作時はこの作業ツリーを明示する。
+* 作業ブランチは `codex/refactor-api-proxy-test-setup`、基準HEADは `de89b51`、PR先は `main`（[PR #12](https://github.com/HrmsTrsmgs/kizamu/pull/12)）。同じ `overall-refactoring` 作業ツリーを使用する。チャットの既定作業場所の関連付けは変更できていないため、操作時はこの作業ツリーを明示する。
 * Refactor工程は完了し、`ApiProxyTests.cs` の `CreateFactoryWithApiBackend` に接続先設定と依存サービスの差し替えを抽出した。テスト名、データ行、要求、期待結果、リソース破棄は維持。テスト1ファイルとこの作業記録の差分を開発者が確認し、コミットして次の対象へ進む指示を受けた。
 * 検証対象は `d228a5a` に統合元 `de89b51` を取り込んだ版。Serverテスト6件成功（失敗・Skipなし）、対象の解析付き非増分ビルド成功（警告・エラー0）、対象と参照先SARIF計6件も診断0。Serverテストのformatは既存 `BlazorHostingTests.cs:13` のIDE0290により終了2、変更箇所の診断はなし。統合元の依存更新により従来のNU1903は出ていない。差分の空白検査は成功。Server以外のテスト、ブラウザー・IDEの実操作は未実行。
 * 方針と全件精査結果の文書は [PR #9](https://github.com/HrmsTrsmgs/kizamu/pull/9) で、開発者の明示承認後にmainへマージ済み。このコード整理とは別の変更単位。
