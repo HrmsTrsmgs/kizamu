@@ -470,7 +470,7 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 * 画面状態・操作はPresentationのViewModelへ分離済み。登録後のタブ自動選択は未決定。記録データとの結び付きとタブ切替は未実装。
 * ViewModelの選択API案を了承し、対象別状態を検証する3件のSkipを [TimeRecorderViewModelTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) に追加。引数はDomainのProjectへ変更済み（D003参照）。SelectProjectはコンパイル用の仮実装で、呼び出すとNotImplementedExceptionを投げる。画面側はタブ切替後の表示を確認する1件のSkipに整理した。
 
-* 設計方針を共通正本とKizamuの参照版・固有指示へ整理した（D008参照）。共通正本の文書差分は未コミット。共通指示・Skillのインストール先への再配布は未実施。
+* 設計方針を共通正本とKizamuの参照版・固有指示へ整理した（D008参照）。今回の共通正本の文書差分は 94ead29 でコミット済み。先行する別の共通指示2行は未コミット。共通指示・Skillのインストール先への再配布は未実施。
 
 * 画面の手動動作確認用に scripts/Check-Blazor.ps1 を追加し、PowerShell 7でビルド・起動・正常性中継・画面URL・ポート競合時の中断・Enterでの停止を確認した。画面での操作は未確認。旧名で aa2d791、Check-Blazor.ps1への改名は 49858b9 でコミット済み。
 
