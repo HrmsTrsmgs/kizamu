@@ -22,16 +22,7 @@ public sealed class ApiProxyTests
         string method, string path, string? body, HttpStatusCode statusCode)
     {
         using var backend = new RecordingBackend(statusCode);
-        using var factory = new WebApplicationFactory<global::Program>().WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
-                new Dictionary<string, string?>
-                {
-                    ["ReverseProxy:Clusters:backend:Destinations:backend:Address"] = "http://configured-backend/",
-                }));
-            builder.ConfigureServices(services => services.Replace(
-                ServiceDescriptor.Singleton<IForwarderHttpClientFactory>(backend)));
-        });
+        using var factory = CreateFactoryWithApiBackend("http://configured-backend/", backend);
         using var client = factory.CreateClient();
         using var request = new HttpRequestMessage(new HttpMethod(method), path);
         if (body is not null)
@@ -52,6 +43,19 @@ public sealed class ApiProxyTests
             backend.MediaType.Should().Be("application/json");
         }
     }
+
+    static WebApplicationFactory<global::Program> CreateFactoryWithApiBackend(
+        string backendAddress, RecordingBackend backend) =>
+        new WebApplicationFactory<global::Program>().WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["ReverseProxy:Clusters:backend:Destinations:backend:Address"] = backendAddress,
+                }));
+            builder.ConfigureServices(services => services.Replace(
+                ServiceDescriptor.Singleton<IForwarderHttpClientFactory>(backend)));
+        });
 
     sealed class RecordingBackend(HttpStatusCode statusCode) : HttpMessageHandler, IForwarderHttpClientFactory
     {
