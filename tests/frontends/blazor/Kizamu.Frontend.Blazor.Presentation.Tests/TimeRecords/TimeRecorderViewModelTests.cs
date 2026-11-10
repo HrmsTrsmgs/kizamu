@@ -74,31 +74,38 @@ public sealed class TimeRecorderViewModelTests
         tested.IsRecording.Should().BeTrue();
     }
 
-    [Theory(Skip = "プロジェクト別の記録操作を実装するとき解除します。")]
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task 一方の記録を終了しても他方は記録中のままになる(bool プロジェクトを終了する)
     {
         var プロジェクトA = new Project("プロジェクトA");
-        var 終了する記録ID = プロジェクトを終了する ? 別の記録ID : 記録ID;
-        var 残る記録ID = プロジェクトを終了する ? 記録ID : 別の記録ID;
+        var (終了するプロジェクト, 終了する記録ID, 残るプロジェクト, 残る記録ID) =
+            プロジェクトを終了する
+                ? (プロジェクトA, 別の記録ID, (Project?)null, 記録ID)
+                : ((Project?)null, 記録ID, プロジェクトA, 別の記録ID);
         var service = new StubTimeRecordService(
             new(記録ID, 開始時刻, null), new(終了する記録ID, 開始時刻, 終了時刻));
         var tested = new TimeRecorderViewModel(service);
-        tested.SelectProject(null);
-        await tested.StartTimeRecordAsync();
-        tested.SelectProject(プロジェクトA);
-        service.StartedRecord = new(別の記録ID, 開始時刻, null);
-        await tested.StartTimeRecordAsync();
-        tested.SelectProject(プロジェクトを終了する ? プロジェクトA : null);
+        await 未指定とプロジェクトAの記録を開始する();
+        tested.SelectProject(終了するプロジェクト);
 
         await tested.EndTimeRecordAsync();
 
         service.EndedIds.Should().Equal(終了する記録ID);
         tested.IsRecording.Should().BeFalse();
-        tested.SelectProject(プロジェクトを終了する ? null : プロジェクトA);
+        tested.SelectProject(残るプロジェクト);
         tested.IsRecording.Should().BeTrue();
         tested.Records.Single(it => it.Id == 残る記録ID).EndedAt.Should().BeNull();
+
+        async Task 未指定とプロジェクトAの記録を開始する()
+        {
+            tested.SelectProject(null);
+            await tested.StartTimeRecordAsync();
+            tested.SelectProject(プロジェクトA);
+            service.StartedRecord = new(別の記録ID, 開始時刻, null);
+            await tested.StartTimeRecordAsync();
+        }
     }
 
     [Fact]

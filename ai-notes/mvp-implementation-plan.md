@@ -468,7 +468,7 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 * 目的はプロジェクト単位の複数同時記録。作業ツリーは `codex/project-tabs`、登録ポップアップと名前付きタブは `5e7d454` でコミット済み。
 * 画面状態・操作はPresentationのViewModelへ分離済み。登録後のタブ自動選択は未決定。記録データとの結び付きとタブ切替は未実装。
-* 対象切替時の記録中ID保持は 545d000、開始応答前の切替に関する修正は e191c20 でコミット済み。ID更新の重複を整理したRefactorは 3827621 でコミット済み。[TimeRecorderViewModelTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) の「異なるプロジェクトの記録を同時に開始できる」は既存実装で成功したためSkipを解除し、未コミット・レビュー待ち。残る1件と画面の切替テスト1件はSkip。
+* 対象切替時の記録中ID保持は 545d000、開始応答前の切替に関する修正は e191c20 でコミット済み。ID更新の重複を整理したRefactorは 3827621 でコミット済み。[TimeRecorderViewModelTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) の「異なるプロジェクトの記録を同時に開始できる」は c2b08c3 でSkip解除済み。「一方の記録を終了しても他方は記録中のままになる」は既存実装で2例とも成功し、Skip解除と初期処理の読みやすさの整理が未コミット・レビュー待ち。画面の切替テスト1件はSkip。
 
 * 設計方針を共通正本とKizamuの参照版・固有指示へ整理した（D008参照）。今回の共通正本の文書差分は 94ead29 でコミット済み。先行する別の共通指示2行は未コミット。共通指示・Skillのインストール先への再配布は未実施。
 
@@ -480,11 +480,12 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### 検証と次の着手点
 
-* 今回のSkip解除後、PresentationのReleaseテストは15件成功・1件Skip、解析付き非増分ビルドは警告0で成功。formatは残りSkipのxUnit1004で失敗。実サービス結合と再読み込みは未検証。
+* 統合前 c2b08c3 と今回のSkip解除で、PresentationのReleaseテストは17件成功・Skipなし、解析付き非増分ビルドと対象formatは成功。スタブを使用しており、実サービス結合と再読み込みは未検証。
 
 * DomainのProjectを使う変更後、Blazor全体テストは79件成功・4件Skip。解析付き非増分ビルド成功、既存依存のNU1903警告4件。formatは維持したSkipのxUnit1004と既存ASP0027・IDE0290の診断で終了2、差分の空白検査は成功。
 * Refactor後のRelease全体テストは84件成功・3件Skip、解析付き非増分ビルド成功（既存NU1903警告4件）。Debug全体テストは稼働中サーバーのDLLロックでビルド失敗。formatは既存診断等で失敗し、今回の変更箇所への指摘はなし。
 * DomainのProjectとそのテスト、登録一覧・画面表示・選択APIとテストのProject化は 5e7d454 でコミット済み。設計理由はD003を参照。画面側での連続終了順序と開始サービスの呼び出し回数の直接検証は前回の整理で外した。
+* 終了対象をIDで検索する並行修正はPR #10で codex/node-backend にマージ済み（de89b51）。本ブランチには未統合。テストのレビュー後、ベースの変更を取り込み、実経路の確認に進む。
 * 現在の画面は選択APIを呼ばず、サービスはプロジェクトを保存しないため、実画面での切替と再読み込み後の対象別復元は未実現。登録画面と対象別状態の途中段階はPR #8でcodex/node-backendへマージ済み（290af7b）。次の仕様単位へ進む。既存の `Client/Properties/` は未追跡の個人設定で、今回の差分に含めない。
 
 ### ローカルで保持するもの
