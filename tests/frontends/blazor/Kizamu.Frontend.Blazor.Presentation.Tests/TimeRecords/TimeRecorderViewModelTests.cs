@@ -38,7 +38,7 @@ public sealed class TimeRecorderViewModelTests
         service.EndedIds.Should().BeEmpty();
     }
 
-    [Fact(Skip = "プロジェクト別の記録操作を実装するとき解除します。")]
+    [Fact]
     public async Task 対象を切り替えて戻ると記録中の状態が保たれる()
     {
         var プロジェクトA = new Project("プロジェクトA");
