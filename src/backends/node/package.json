@@ -1,0 +1,22 @@
+{
+  "name": "kizamu-backend-node",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run build && node dist/server.js",
+    "start": "node dist/server.js",
+    "prebuild": "npm run build --workspace=kizamu-domain-typescript",
+    "build": "tsc",
+    "lint": "eslint ."
+  },
+  "dependencies": { "fastify": "5.12.8", "kizamu-domain-typescript": "0.0.0", "temporal-polyfill": "1.0.2" },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.1.1",
+    "eslint": "10.7.0",
+    "globals": "17.7.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0"
+  }
+}

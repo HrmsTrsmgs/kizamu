@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Backends/ASP.NET Core/">
+    <Project Path="src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/Kizamu.Backend.AspNetCore.Application.csproj" />
+    <Project Path="src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure/Kizamu.Backend.AspNetCore.Infrastructure.csproj" />
+    <Project Path="src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Kizamu.Backend.AspNetCore.Api.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/Kizamu.Backend.AspNetCore.Application.Tests.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Kizamu.Backend.AspNetCore.Infrastructure.Tests.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Kizamu.Backend.AspNetCore.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Domains/.NET/">
+    <Project Path="src/domains/dotnet/Kizamu.Domain/Kizamu.Domain.csproj" />
+    <Project Path="tests/domains/dotnet/Kizamu.Domain.Tests/Kizamu.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

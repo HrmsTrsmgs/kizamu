@@ -1,0 +1,9 @@
+{
+  "extends": "../../../src/domains/typescript/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "rootDir": "../.."
+  },
+  "include": ["**/*.ts", "../../should.mts"]
+}

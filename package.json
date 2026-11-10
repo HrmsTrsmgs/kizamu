@@ -1,0 +1,19 @@
+{
+  "name": "kizamu-workspace",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "src/domains/typescript",
+    "tests/domains/typescript",
+    "src/frontends/react",
+    "tests/frontends/react",
+    "src/backends/node",
+    "tests/backends/node"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=kizamu-frontend-react",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present && node node_modules/eslint/bin/eslint.js --config tests/domains/typescript/eslint.config.js tests/should.mts",
+    "test": "npm run test --workspaces --if-present"
+  }
+}

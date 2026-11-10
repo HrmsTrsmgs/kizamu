@@ -1,18 +1,52 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Kizamu.Application/Kizamu.Application.csproj" />
-    <Project Path="src/Kizamu.Client/Kizamu.Client.esproj">
+  <Folder Name="/Frontends/Blazor/">
+    <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/Kizamu.Frontend.Blazor.Presentation.csproj" />
+    <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/Kizamu.Frontend.Blazor.Infrastructure.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/Kizamu.Frontend.Blazor.Presentation.Tests.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/Kizamu.Frontend.Blazor.Infrastructure.Tests.csproj" />
+    <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Client/Kizamu.Frontend.Blazor.Client.csproj" />
+    <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Server/Kizamu.Frontend.Blazor.Server.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Server.Tests/Kizamu.Frontend.Blazor.Server.Tests.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/Kizamu.Frontend.Blazor.Client.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Frontends/React/">
+    <Project Path="src/frontends/react/kizamu-frontend-react.esproj">
       <Build />
       <Deploy />
     </Project>
-    <Project Path="src/Kizamu.Domain/Kizamu.Domain.csproj" />
-    <Project Path="src/Kizamu.Infrastructure/Kizamu.Infrastructure.csproj" />
-    <Project Path="src/Kizamu.Server/Kizamu.Server.csproj" />
+    <Project Path="tests/frontends/react/kizamu-frontend-react-tests.esproj">
+      <Build />
+      <Deploy />
+    </Project>
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Kizamu.Application.Tests/Kizamu.Application.Tests.csproj" />
-    <Project Path="tests/Kizamu.Domain.Tests/Kizamu.Domain.Tests.csproj" />
-    <Project Path="tests/Kizamu.Infrastructure.Tests/Kizamu.Infrastructure.Tests.csproj" />
-    <Project Path="tests/Kizamu.Server.Tests/Kizamu.Server.Tests.csproj" />
+  <Folder Name="/Backends/ASP.NET Core/">
+    <Project Path="src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/Kizamu.Backend.AspNetCore.Application.csproj" />
+    <Project Path="src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure/Kizamu.Backend.AspNetCore.Infrastructure.csproj" />
+    <Project Path="src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Kizamu.Backend.AspNetCore.Api.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/Kizamu.Backend.AspNetCore.Application.Tests.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Kizamu.Backend.AspNetCore.Infrastructure.Tests.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Kizamu.Backend.AspNetCore.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Domains/.NET/">
+    <Project Path="src/domains/dotnet/Kizamu.Domain/Kizamu.Domain.csproj" />
+    <Project Path="tests/domains/dotnet/Kizamu.Domain.Tests/Kizamu.Domain.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Domains/TypeScript/">
+    <Project Path="src/domains/typescript/kizamu-domain-typescript.esproj">
+      <Build Project="true" />
+    </Project>
+    <Project Path="tests/domains/typescript/kizamu-domain-typescript-tests.esproj">
+      <Build />
+      <Deploy />
+    </Project>
+  </Folder>
+  <Folder Name="/Backends/Node/">
+    <Project Path="src/backends/node/kizamu-backend-node.esproj">
+      <Build Project="true" />
+    </Project>
+    <Project Path="tests/backends/node/kizamu-backend-node-tests.esproj">
+      <Build />
+      <Deploy />
+    </Project>
   </Folder>
 </Solution>

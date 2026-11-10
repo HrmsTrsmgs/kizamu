@@ -1,6 +1,0 @@
-@Kizamu.Server_HostAddress = http://localhost:5213
-
-GET {{Kizamu.Server_HostAddress}}/api/health
-Accept: application/json
-
-###

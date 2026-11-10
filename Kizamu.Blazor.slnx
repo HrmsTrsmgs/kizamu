@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/Frontends/Blazor/">
+    <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/Kizamu.Frontend.Blazor.Presentation.csproj" />
+    <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/Kizamu.Frontend.Blazor.Infrastructure.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/Kizamu.Frontend.Blazor.Presentation.Tests.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/Kizamu.Frontend.Blazor.Infrastructure.Tests.csproj" />
+    <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Client/Kizamu.Frontend.Blazor.Client.csproj" />
+    <Project Path="src/frontends/blazor/Kizamu.Frontend.Blazor.Server/Kizamu.Frontend.Blazor.Server.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Server.Tests/Kizamu.Frontend.Blazor.Server.Tests.csproj" />
+    <Project Path="tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/Kizamu.Frontend.Blazor.Client.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Backends/ASP.NET Core/">
+    <Project Path="src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/Kizamu.Backend.AspNetCore.Application.csproj" />
+    <Project Path="src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure/Kizamu.Backend.AspNetCore.Infrastructure.csproj" />
+    <Project Path="src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Kizamu.Backend.AspNetCore.Api.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/Kizamu.Backend.AspNetCore.Application.Tests.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Kizamu.Backend.AspNetCore.Infrastructure.Tests.csproj" />
+    <Project Path="tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Kizamu.Backend.AspNetCore.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Domains/.NET/">
+    <Project Path="src/domains/dotnet/Kizamu.Domain/Kizamu.Domain.csproj" />
+    <Project Path="tests/domains/dotnet/Kizamu.Domain.Tests/Kizamu.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

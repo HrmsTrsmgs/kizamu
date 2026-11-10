@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.6165494">
+
+  <PropertyGroup>
+    <StartupCommand>npm run dev</StartupCommand>
+    <ShouldRunBuildScript>true</ShouldRunBuildScript>
+    <ShouldRunNpmInstall>false</ShouldRunNpmInstall>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../domains/typescript/kizamu-domain-typescript.esproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

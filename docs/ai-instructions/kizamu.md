@@ -4,7 +4,7 @@
 
 Kizamuを第三者がビルド、テスト、利用、レビューできるアプリケーションとして整備する。
 機能数より、記録操作の軽さ、理解しやすいUI、責務分離、変更箇所の局所化、テスト可能性を優先する。
-詳細な製品コンセプトは `docs/concept.md`、MVPまでの暫定的な実装順序は `docs/roadmap.md`、現在の具体的な作業順は `docs/mvp-implementation-plan.md` を参照する。
+詳細な製品コンセプトは `docs/concept.md`、MVPまでの暫定的な実装順序は `docs/roadmap.md`、現在の具体的な作業順は `ai-notes/mvp-implementation-plan.md` を参照する。
 
 ## 製品設計
 
@@ -31,17 +31,49 @@ Kizamuを第三者がビルド、テスト、利用、レビューできるア�
 * 時間配分は補助機能であり、Kizamuの主機能として扱わない。
 * ClockifyをKizamuの前提にせず、Clockifyのデータ構造を内部モデルとして採用しない。
 * Clockify連携は、独立したKizamuが外部サービスとの相互運用性を持つものとして設計する。
+* AsData連携では、Excel向けのSpreadsheetAsDataとDOCX向けのDocumentAsDataの両方を確認する。名前だけで対応形式やブラウザー実行への適合を判断せず、採用前に各実装、既存テスト、制約を確認する。DocumentAsDataによるDOCXのデータ読み書きと、PDFレンダリング・レイアウト計算を混同しない。
 * MVPではKizamuで終了した記録だけをClockifyへ送信し、実行中の記録やClockifyからの取り込みは対象外とする。
 * 同時進行した記録の時間按分はMVPへ含めず、Clockifyへは元の開始時刻と終了時刻を保って送信し、重複時間による集計上の制約を明示する。
 * ローカル保存、サーバー永続化、ログイン、ユーザー管理は、仕様が確定するまで追加しない。
 
+## Domain・画面・テストの責務
+
+* プロジェクトや時間記録を扱う画面の状態と操作は、KizamuのDomainモデルを使って設計する。登録一覧から選択操作まで同じ業務対象を受け渡せるようにし、Projectを選ぶAPIにはProjectを渡す。利用側で対象を表すGuidや名前だけを組み立てる前に、Domainで何を表すかを定める。
+* 画面の状態に通信用DTOを保持せず、通信境界でDomainのモデルへ変換する。DTOの生成・読み取りと通信形式への依存はAPI呼び出し処理へ閉じ込める。
+* 画面は表示と入力イベントの接続を担い、画面状態・画面固有の操作はBlazorのViewModel、Reactの対応する状態・操作のモジュールに置く。業務規則はDomain、通信とDTO変換は通信サービスが担う。機能数の少なさだけを理由に既存の責務分離を保留しない。
+* テストの境界と準備は個人共通AGENTSのテスト方針、未導入時は [共通指示の参照版](common.md#テストの設計と準備) に従い、Kizamuでは次の配置を使う。工程別のAPI設計とSkipの扱いは共通TDDの工程共通規則を参照する。
+
+| 検証する内容 | 主なテスト対象 |
+| --- | --- |
+| 業務モデルの規則と状態遷移 | Domain |
+| 選択対象、画面状態、操作の調整 | PresentationのViewModel等 |
+| HTTPの経路・形式とDTO変換 | InfrastructureやAPI境界 |
+| 表示、入力、操作とViewModelの代表的な接続 | Clientの画面・コンポーネント |
+
+* ViewModelの追加時には、状態仕様の検証も内側へ集約する。画面テストとViewModelテストに同じケースを一律に並べず、画面側に残す固有の検証と接続を確認する。モックや準備が増えて可読性を落とす場合は境界を再検討し、検証内容を保って整理する。
+* 設計理由は [D003](../decisions.md#d003画面の状態はdomainで扱いdtoは通信境界で変換する) と [D008](../decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする) を参照する。
+
 ## 開発環境と文書
 
-* ASP.NET CoreとReactは責務を分離しつつ、標準的なVisual Studio、Vite、SPA proxyの統合を優先する。
+* 単一リポジトリの最上位で `src/` と `tests/` を分け、それぞれを役割と実装技術で整理する。業務APIは `src/backends/<技術名>/`、UIは `src/frontends/<技術名>/`、共用可能なDomainは `src/domains/<言語・実行基盤>/` に置き、テストは対応する `tests/` 配下へ置く。実装ごとに独立してビルド、テストできる構成を保つ。
+* MVPの第一実装はASP.NET CoreとBlazor WebAssemblyとする。まず既存の開始、終了、一覧、時間表示をBlazorへ移してから、残りのMVP機能へ進む。
+* バックエンドの修正はASP.NET CoreとNodeを、フロントエンドの修正はBlazorとReactをセットで扱い、対応する実装とテストを確認する。片方を先に進めた場合、次の作業に移る前にもう片方の確認と必要な対応から始める。.NETの業務APIと画面配信サーバーの分離を維持し、Nodeも業務APIだけを担当する。
+* 実装間の互換性は言語非依存のHTTP API契約で扱う。共通契約を `contracts/openapi.yaml` に定義し、通信用DTOを各言語向けに生成する方針とする。生成物は `src/api/<言語・実行基盤>/` に置き、Domainとは分離する。未導入の契約や生成物を、構成整理のためだけに先行実装しない。
+* API呼び出しコードの生成も検討対象とする。生成ツールは対象言語・ランタイムの進化への追随、機能対応の速度、拡張性、更新履歴、実際の生成結果で評価する。DTO生成への同意だけで呼び出しコード生成の採用を決めず、新しい依存関係を導入する前に確認する。
+* 同じ業務ロジックが必要なら、ブラウザーで動作する.NETのDomainをASP.NET CoreとBlazorで、実行環境に依存しないTypeScriptのDomainをNodeとReactで共用してよい。ApplicationやInfrastructureの共用、全利用側への同じ内部モデルの強制、異なる言語間での直接ライブラリ参照は前提にしない。Domainを通信用DTOへ依存させない。
+* .NETの実装固有プロジェクト名と名前空間は `Kizamu.<所属>.<技術>.<役割>` に揃える。ASP.NET Coreは `Kizamu.Backend.AspNetCore.Api`、`Application`、`Infrastructure`、Blazorは `Kizamu.Frontend.Blazor.Client`、`Server`、`Presentation`、`Infrastructure` とする。ClientとServerは同じUI実装内の対として扱い、業務APIをServerと呼んで混同しない。共用Domainは `Kizamu.Domain`、将来の通信用DTOは `Kizamu.Api.Contracts` として別の所属にする。
+* npmパッケージ名は `kizamu-frontend-react`、`kizamu-backend-node`、将来の `kizamu-domain-typescript`、`kizamu-api-typescript` のように小文字のハイフン区切りにする。テスト名は.NETの `.Tests`、npmの `-tests` とし、`.esproj` 名もnpmパッケージ名に揃える。予定の名前を決めただけで空プロジェクトを作らない。
+* フロントエンドはブラウザーだけを意味しない。画面配信・API中継サーバーはフロント側へ置き、業務APIとは別の起動・配備単位にする。Blazor ServerはYARPで `/api/...` を中継し、バックエンド実装を参照せず接続先URLだけを設定する。Reactも同じ責務分担とし、開発時はVite proxy、公開時の配信・中継サーバーは未実装として扱う。SSR・Autoへの変更はこの分離とは別に判断する。
+* npmの製品・テストパッケージはルートのworkspacesで管理し、依存関係のインストールとlockfile更新はルートで行う。個別の `.esproj` で自動 `npm install` を実行してlockfileを分散させない。
+* リポジトリの物理配置、Visual Studioのソリューション表示、公開時の組み合わせを別の関心事として扱う。
+* 日常の開発、差分レビュー、デバッグ、テスト確認はVisual Studioを基本とする。ReactやNodeを含め、サーバーとクライアントの技術や組み合わせによってIDEを使い分けることを前提にしない。
+* Visual Studio Codeでの作業も考慮する。ビルドとテストの本体は `dotnet` や `npm` のコマンドとして実行できるように保ち、IDE固有の設定はその操作を補助するものとする。別のIDEを使うために、製品のソースやビルド手順を二重に持たない。
+* 業務APIがフロントの開発サーバーを起動するSPA proxy連携は使わず、IDEの複数プロジェクト起動等で組み合わせを管理する。ReactのVite proxyによるAPI中継は維持する。起動・配備の分離を理由に記録操作や画面表示を変えない。
+* 公開時は実装単体の成果物と利用者向けの組み合わせを区別し、最初はASP.NET CoreとBlazorの組み合わせを配布する方針とする。未実装の配布処理や未検証の組み合わせを利用可能と記載しない。
 * 独自の複雑な起動基盤や将来用の共通ライブラリを作らない。
 * PR作成前に対象をビルドし、関連テストと静的検査を実行する。コード・設定・実行条件が変わらなければ、マージ時にはその検証結果を使う。
 * PRは原則として作成後、検証結果とマージ可能な状態を確認し、速やかにマージする。
 * READMEの起動、ビルド、テスト、Lint手順は、実際に確認した構成と一致させる。
 * 利用者向け文書と画面表示は日本語にし、プロダクトコードの識別子は各言語の標準的な英語命名規則に従う。テストコードの日本語識別子は、技術別指示に従って仕様の読みやすさを優先する。
 * 未実装機能をREADMEや画面で利用可能なように見せない。
-* 次の実装対象は `docs/roadmap.md` と `docs/mvp-implementation-plan.md` の順序と現在の到達点を確認し、小さな単位で仕様を確定してから進める。
+* 次の実装対象は `docs/roadmap.md` と `ai-notes/mvp-implementation-plan.md` の順序と現在の到達点を確認し、小さな単位で仕様を確定してから進める。

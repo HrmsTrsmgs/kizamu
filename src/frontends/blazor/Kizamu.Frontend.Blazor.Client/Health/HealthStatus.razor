@@ -1,0 +1,19 @@
+@inject HealthApi Api
+
+<p aria-live="polite">サーバー接続: @status</p>
+
+@code {
+    string status = "確認中";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            status = await Api.CheckHealthAsync() ? "正常" : "失敗";
+        }
+        catch
+        {
+            status = "失敗";
+        }
+    }
+}

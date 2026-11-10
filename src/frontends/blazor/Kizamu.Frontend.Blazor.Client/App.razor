@@ -1,0 +1,39 @@
+@inject ProjectTabsViewModel ViewModel
+
+<main>
+    <header class="app-header">
+        <h1>Kizamu</h1>
+        <p class="app-description">作業時間を記録します。</p>
+    </header>
+    <section class="project-toolbar" aria-labelledby="projects-title">
+        <div class="project-toolbar-heading">
+            <h2 id="projects-title">プロジェクト</h2>
+            <button class="project-add-button" type="button" @onclick="ViewModel.OpenProjectDialog">追加</button>
+        </div>
+        <div class="project-tabs" role="tablist" aria-label="プロジェクト">
+            <span class="project-default">未指定</span>
+            @foreach (var project in ViewModel.Projects)
+            {
+                <button class="project-tab" role="tab" type="button" disabled title="切り替え機能は開発中です">@project.Name</button>
+            }
+        </div>
+    </section>
+    <TimeRecorder />
+    @if (ViewModel.ShowProjectDialog)
+    {
+        <div class="project-dialog-overlay">
+            <div class="project-dialog" role="dialog" aria-labelledby="project-dialog-title">
+                <h2 id="project-dialog-title">プロジェクトを追加</h2>
+                <label for="project-name">プロジェクト名</label>
+                <input id="project-name" @bind="ViewModel.ProjectName" />
+                <div class="project-dialog-actions">
+                    <button class="project-cancel-button" type="button" @onclick="ViewModel.CancelProjectDialog">キャンセル</button>
+                    <button class="project-register-button" type="button" @onclick="ViewModel.RegisterProject">登録</button>
+                </div>
+            </div>
+        </div>
+    }
+    <footer class="app-footer">
+        <HealthStatus />
+    </footer>
+</main>

@@ -1,5 +1,9 @@
 # TypeScript/React開発指示
 
+通常の技術規約は共通Skill `typescript-react-conventions` を使う。この文書の共通規約は未導入環境向けの参照版。UIの日本語表示、Vitest・React Testing Library、npm workspaces、Vite・Visual Studioの起動統合はKizamu固有の補足として維持する。
+
+Nodeの業務APIはFastifyを使い、HTTP契約はVitestとFastifyの `inject` で検証する。対象パッケージは `kizamu-backend-node` と `kizamu-backend-node-tests`。ルートのlint・test・buildにはReactとNodeの両方を含める。Nodeへ画面配信やフロント側のAPI中継を持ち込まない。
+
 ## TypeScriptとReact
 
 * TypeScriptのstrict設定、既存ESLint設定、Reactの標準的な英語命名規則に従う。
@@ -14,6 +18,8 @@
 ## テスト
 
 * VitestとReact Testing Libraryを使い、利用者が観測する表示と操作を優先して検証する。
+* テストの記述は、[可読性の優先順位](../testing-style.md#可読性の優先順位)と[検証対象を直接アサーションへ渡す](../testing-style.md#検証対象を直接アサーションへ渡す)の方針に従う。
+* アサーションは「対象 → should → 期待すること」の順で記述する。記法を揃えるために、クラス復元の厳密比較やDOM・モック専用の検証を弱めない。
 * 通信境界を差し替え、テストから実際の外部通信を行わない。
 * 実時間待機、テスト実行順序、開発者固有の環境へ依存しない。
 * 実装内部のstateやprivate相当の処理を直接検査するために設計を歪めない。
