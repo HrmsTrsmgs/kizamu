@@ -19,7 +19,7 @@ public sealed class TimeRecorderViewModelTests
         tested = new(service);
     }
 
-    [Fact(Skip = "プロジェクト別の記録操作を実装するとき解除します。")]
+    [Fact]
     public async Task 異なるプロジェクトの記録を同時に開始できる()
     {
         var プロジェクトA = new Project("プロジェクトA");

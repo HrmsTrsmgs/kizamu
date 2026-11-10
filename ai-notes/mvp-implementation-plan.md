@@ -468,7 +468,7 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 * 目的はプロジェクト単位の複数同時記録。作業ツリーは `codex/project-tabs`、登録ポップアップと名前付きタブは `5e7d454` でコミット済み。
 * 画面状態・操作はPresentationのViewModelへ分離済み。登録後のタブ自動選択は未決定。記録データとの結び付きとタブ切替は未実装。
-* 対象切替時の記録中ID保持は 545d000、開始応答前の切替に関する修正は e191c20 でコミット済み。ID更新の重複を整理したRefactorは 3827621 でコミット済み。[TimeRecorderViewModelTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) の残り2件と画面の切替テスト1件はSkip。
+* 対象切替時の記録中ID保持は 545d000、開始応答前の切替に関する修正は e191c20 でコミット済み。ID更新の重複を整理したRefactorは 3827621 でコミット済み。[TimeRecorderViewModelTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) の「異なるプロジェクトの記録を同時に開始できる」は既存実装で成功したためSkipを解除し、未コミット・レビュー待ち。残る1件と画面の切替テスト1件はSkip。
 
 * 設計方針を共通正本とKizamuの参照版・固有指示へ整理した（D008参照）。今回の共通正本の文書差分は 94ead29 でコミット済み。先行する別の共通指示2行は未コミット。共通指示・Skillのインストール先への再配布は未実施。
 
@@ -479,6 +479,8 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 * 登録後に前のプロジェクト名が残る不具合はViewModelのRedで再現し、登録後に入力名を空にする修正を追加。対象3件・画面24件成功、全体は既存成果物で82件成功・4件Skip。稼働中サーバーによるDLLロックで全体の再ビルドは未完了。中央ポップアップの位置については開発者から勘違いだったとの回答あり。
 
 ### 検証と次の着手点
+
+* 今回のSkip解除後、PresentationのReleaseテストは15件成功・1件Skip、解析付き非増分ビルドは警告0で成功。formatは残りSkipのxUnit1004で失敗。実サービス結合と再読み込みは未検証。
 
 * DomainのProjectを使う変更後、Blazor全体テストは79件成功・4件Skip。解析付き非増分ビルド成功、既存依存のNU1903警告4件。formatは維持したSkipのxUnit1004と既存ASP0027・IDE0290の診断で終了2、差分の空白検査は成功。
 * Refactor後のRelease全体テストは84件成功・3件Skip、解析付き非増分ビルド成功（既存NU1903警告4件）。Debug全体テストは稼働中サーバーのDLLロックでビルド失敗。formatは既存診断等で失敗し、今回の変更箇所への指摘はなし。
