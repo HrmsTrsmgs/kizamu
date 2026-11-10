@@ -1,10 +1,22 @@
 using AwesomeAssertions;
+using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Presentation.Projects;
 
 namespace Kizamu.Frontend.Blazor.Presentation.Tests.Projects;
 
 public sealed class ProjectTabsViewModelTests
 {
+    [Fact]
+    public void プロジェクトを選択すると選択したプロジェクトを保持する()
+    {
+        var tested = new ProjectTabsViewModel();
+        var プロジェクト = new Project("プロジェクトA");
+
+        tested.SelectProject(プロジェクト);
+
+        tested.SelectedProject.Should().BeSameAs(プロジェクト);
+    }
+
     [Fact]
     public void 追加をキャンセルすると登録せずダイアログを閉じる()
     {

@@ -10,6 +10,12 @@ public sealed class ProjectTabsViewModel
     /// <summary>登録したプロジェクトを取得します。</summary>
     public IReadOnlyList<Project> Projects => projects;
 
+    /// <summary>選択したプロジェクトを取得します。</summary>
+    public Project? SelectedProject { get; private set; }
+
+    /// <summary>表示するプロジェクトを選択します。</summary>
+    public void SelectProject(Project project) => SelectedProject = project;
+
     /// <summary>登録ダイアログを表示するかどうかを取得します。</summary>
     public bool ShowProjectDialog { get; private set; }
 

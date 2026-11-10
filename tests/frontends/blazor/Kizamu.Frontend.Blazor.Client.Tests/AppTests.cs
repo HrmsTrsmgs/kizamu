@@ -79,6 +79,17 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
+    public void 登録済みプロジェクトを選ぶと記録欄にプロジェクト名を表示します()
+    {
+        var tested = context.Render<Client.App>();
+        プロジェクトを登録する(tested, "プロジェクトA");
+
+        プロジェクトを選ぶ(tested, "プロジェクトA");
+
+        tested.Find(".recorder-panel h2").TextContent.Should().Be("プロジェクトA");
+    }
+
+    [Fact]
     public void プロジェクトを指定せずに記録を開始できます()
     {
         context.Services.AddSingleton<ITimeRecordService>(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
@@ -90,7 +101,7 @@ public sealed class AppTests : IDisposable
         tested.FindAll("ul[aria-label='作業記録一覧'] li").Should().ContainSingle();
     }
 
-    [Fact(Skip = "プロジェクトごとの記録画面を扱う実装に着手するとき解除します。")]
+    [Fact]
     public void タブを切り替えて戻ると記録中の対象には終了操作を表示します()
     {
         context.Services.AddSingleton<ITimeRecordService>(new StubTimeRecordService(一つ目の記録, 一つ目の記録));

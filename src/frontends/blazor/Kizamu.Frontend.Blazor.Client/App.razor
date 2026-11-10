@@ -14,11 +14,11 @@
             <span class="project-default">未指定</span>
             @foreach (var project in ViewModel.Projects)
             {
-                <button class="project-tab" role="tab" type="button" disabled title="切り替え機能は開発中です">@project.Name</button>
+                <button class="project-tab" role="tab" type="button" @onclick="() => selectedProject = project">@project.Name</button>
             }
         </div>
     </section>
-    <TimeRecorder />
+    <TimeRecorder SelectedProject="selectedProject" />
     @if (ViewModel.ShowProjectDialog)
     {
         <div class="project-dialog-overlay">
@@ -37,3 +37,7 @@
         <HealthStatus />
     </footer>
 </main>
+
+@code {
+    Project? selectedProject;
+}
