@@ -11,12 +11,13 @@ sealed class StubTimeRecordService(TimeRecord startedRecord, TimeRecord endedRec
 {
     public ImmutableArray<TimeRecord> Records { get; set; } = [];
     public TimeRecord StartedRecord { get; set; } = startedRecord;
+    public Task<TimeRecord>? StartResponse { get; set; }
     public TimeRecord EndedRecord { get; } = endedRecord;
     public List<Guid> EndedIds { get; } = [];
 
     public Task<ImmutableArray<TimeRecord>> GetTimeRecordsAsync() => Task.FromResult(Records);
 
-    public Task<TimeRecord> StartTimeRecordAsync() => Task.FromResult(StartedRecord);
+    public Task<TimeRecord> StartTimeRecordAsync() => StartResponse ?? Task.FromResult(StartedRecord);
 
     public Task<TimeRecord> EndTimeRecordAsync(Guid id)
     {
