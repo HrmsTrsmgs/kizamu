@@ -18,6 +18,11 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service)
     /// <summary>操作した直近の記録を取得します。終了後も結果を残し、再開始時に差し替えます。</summary>
     public TimeRecord? DisplayedRecord { get; private set; }
 
+    /// <summary>記録操作の対象プロジェクトを選択します。nullはプロジェクト未指定を表します。</summary>
+    /// <param name="project">対象プロジェクト。未指定の場合はnull。</param>
+    /// <exception cref="NotImplementedException">現在は未実装のため、常にスローされます。</exception>
+    public void SelectProject(Project? project) => throw new NotImplementedException();
+
     /// <summary>一覧を読み込み、最初の記録中の作業を終了操作の対象にします。</summary>
     /// <returns>読み込みと画面状態の更新の完了。</returns>
     public async Task LoadAsync()
