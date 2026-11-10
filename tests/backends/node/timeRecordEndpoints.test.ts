@@ -57,13 +57,9 @@ test('まだ開始していないときに一覧を取得すると空の配列�
 })
 
 test('二件の記録を開始した後に一覧を取得すると開始した順に両方が返されます', async () => {
-  const firstStartResponse = await app.inject({ method: 'POST', url: '/api/time-records/start' })
-  firstStartResponse.statusCode.should.equal(201)
-  const firstRecord = firstStartResponse.json<TimeRecordResponse>()
+  const firstRecord = await prepareStartedRecord(app)
   vi.setSystemTime(終了時刻)
-  const secondStartResponse = await app.inject({ method: 'POST', url: '/api/time-records/start' })
-  secondStartResponse.statusCode.should.equal(201)
-  const secondRecord = secondStartResponse.json<TimeRecordResponse>()
+  const secondRecord = await prepareStartedRecord(app)
   secondRecord.id.should.not.equal(firstRecord.id)
 
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })
