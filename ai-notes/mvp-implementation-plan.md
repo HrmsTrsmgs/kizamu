@@ -466,23 +466,24 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### 目的と現在位置
 
-* 基準コミット：`eab248a`。ブランチは `codex/node-backend`。Blazor分離は `9c58bda`、ASP.NET整理は `8b523fd`、Reactの責務分離・Node／React共通Domain・TypeScriptのshould統一は `eab248a` に保存済み。設計理由は [D008](../docs/decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする) とD003、構成・実行方法は [README](../README.md#ビルドと検証) を参照する。
-* 今回は全8.NETテストプロジェクトのxUnit v3移行。2026-11-06に `xunit.v3.mtp-off` 4.0.2と `xunit.runner.visualstudio` 4.0.1への更新を承認済み。既存のVSTest経路を維持するためMTPを含まない構成を選択し、Microsoft.NET.Test.Sdk・coverlet・AwesomeAssertions・bUnitは維持した。テストプロジェクトを実行可能形式にしたが、製品の配布構成は変更していない。
-* 2列TheoryDataのタプルコレクション式、単一列の型解決の明示、HTTP呼び出しへのテスト用CancellationTokenを適用。追加レビュー指示により、取得処理を [TestCancellation](../tests/TestSupport/TestCancellation.cs) の `CancellationToken` プロパティ1箇所に集約し、2テストプロジェクトへソースリンクした。5クラスは名前空間内の `using static` で読み込み、同名の型との衝突を避けている。アクセス時のテストコンテキストを参照し、キャッシュせず、既存ハンドラーの引数tokenは維持。名前・条件・期待値・ケース数・Should句・Dispose経路は維持し、製品コード・TypeScriptは変更していない。方針は [C#指示](../docs/ai-instructions/csharp.md#テスト記述) を参照する。
+* 目的はプロジェクト単位の複数同時記録。作業ツリーは `codex/project-tabs`、登録ポップアップと名前付きタブは `5e7d454` でコミット済み。
+* 画面状態・操作はPresentationのViewModelへ分離済み。登録後のタブ自動選択は未決定。記録データとの結び付きとタブ切替は未実装。
+* ViewModelの選択API案を了承し、対象別状態を検証する3件のSkipを [TimeRecorderViewModelTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) に追加。引数はDomainのProjectへ変更済み（D003参照）。SelectProjectはコンパイル用の仮実装で、呼び出すとNotImplementedExceptionを投げる。画面側はタブ切替後の表示を確認する1件のSkipに整理した。
 
-### 検証
+* 設計方針を共通正本とKizamuの参照版・固有指示へ整理した（D008参照）。共通正本の文書差分は未コミット。共通指示・Skillのインストール先への再配布は未実施。
 
-* 検証対象：`eab248a` にxUnit移行と `CancellationToken` プロパティの共通化を加えた本コミットのコード。共通化後は変更した2プロジェクトを直列に解析付き非増分ビルドし、Apiは13.63秒、Serverは21.75秒、いずれも終了0。共通ソースの両方でのコンパイルと、対象14件（Api8・Server6）の成功、失敗0／Skip0、終了0を確認した。
-* xUnit移行時の `Kizamu.Blazor.slnx` 全体ビルドは終了0、55.54秒、既存NU1903警告4件のみ。全.NETテストはVSTest Adapter 4.0.1で75件成功（Api8・Application7・Infra5・Domain6・Client21・Presentation9・FrontInfra13・Server6）。短縮で変更していない6プロジェクトはこの結果を引き継ぐ。
-* 短縮後の対象プロジェクトの `dotnet format` は既存IDE0290計3件で終了1。SARIFは既存Program.csのASP0027のみで、追加診断はない。移行時のNuGet復元の通常権限での出力なし終了1は、権限切分け後の同処理で終了0になった。単一列TheoryDataの型解決差も修正済み。
-* TypeScriptは未変更なので `eab248a` の74テスト・Lint・build成功を引き継ぎ、再実行していない。ブラウザー操作、Visual Studio Test Explorer、カバレッジ収集、Release publishは今回未確認。CLIでの検出・実行とIDEでの実操作を区別する。
+* 画面の手動動作確認用に scripts/Check-Blazor.ps1 を追加し、PowerShell 7でビルド・起動・正常性中継・画面URL・ポート競合時の中断・Enterでの停止を確認した。画面での操作は未確認。旧名で aa2d791、Check-Blazor.ps1への改名は 49858b9 でコミット済み。
 
-### レビュー境界と次回の着手点
+* プロジェクト欄を記録欄の前へ配置し、未指定表示と登録ポップアップのキャンセルを追加。ブラウザーで通常表示・ポップアップ・キャンセル・登録後を確認。対象画面テスト24件成功・1件Skip。画面・操作順の整理前のBlazor全体テストは81件成功・4件Skip。タブ切替は未実装で、登録タブは無効表示。
 
-* xUnit移行とCancellationToken共通化のレビューを完了し、開発者が `test: .NETテストをxUnit v3へ移行する` でのコミットを了承した。pushは指示されていない。
-* 次の対象は開発者の指示を受ける。Node全体のApplication／Infrastructure分離は未着手。仕様を追加する場合は別のRed→Greenとする。
-* 一覧取得の旧応答を無視する改善は今回に混ぜず、元の挙動を維持した。検討事項は [C003](development-candidates.md#c003reactの一覧取得で古い応答を反映する範囲) を参照する。
-* 既存NU1903警告への対応とIDE上の実機確認は残件。製品機能の開発順序は、今回の責務分離だけを理由に変更しない。
+* 登録後に前のプロジェクト名が残る不具合はViewModelのRedで再現し、登録後に入力名を空にする修正を追加。対象3件・画面24件成功、全体は既存成果物で82件成功・4件Skip。稼働中サーバーによるDLLロックで全体の再ビルドは未完了。中央ポップアップの位置については開発者から勘違いだったとの回答あり。
+
+### 検証と次の着手点
+
+* DomainのProjectを使う変更後、Blazor全体テストは79件成功・4件Skip。解析付き非増分ビルド成功、既存依存のNU1903警告4件。formatは維持したSkipのxUnit1004と既存ASP0027・IDE0290の診断で終了2、差分の空白検査は成功。
+* Skip本体は今回未実行。ViewModel選択APIは仮実装のため呼び出すと例外になる。サーバーでのプロジェクト対応付けとブラウザーでの実操作は未確認。
+* DomainのProjectとそのテスト、登録一覧・画面表示・選択APIとテストのProject化は 5e7d454 でコミット済み。設計理由はD003を参照。画面側での連続終了順序と開始サービスの呼び出し回数の直接検証は前回の整理で外した。
+* 次はユーザーの指示に従い、プロジェクト選択と対象別記録を小さい仕様単位で進める。既存の `Client/Properties/` は未追跡の個人設定で、今回の差分に含めない。
 
 ### ローカルで保持するもの
 
