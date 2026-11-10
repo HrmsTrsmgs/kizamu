@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using AwesomeAssertions;
 using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
@@ -68,18 +67,19 @@ public sealed class TimeRecorderViewModelTests
     public async Task 開始後に古い一覧が届いても過去の記録と開始した記録が残り終了できる()
     {
         var 過去の記録 = new TimeRecord(別の記録ID, 開始時刻, 終了時刻);
-        var delayedService = new DelayedListService(service);
-        var tested = new TimeRecorderViewModel(delayedService);
-        var load = tested.LoadAsync();
-        await tested.StartTimeRecordAsync();
+        var 初期一覧の応答 = service.DelayListResponse();
 
-        delayedService.List.SetResult([過去の記録]);
-        await load;
+        var 初期一覧の読み込み = tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        初期一覧の応答.SetResult([過去の記録]);
+        await 初期一覧の読み込み;
 
         tested.Records.Should().Equal(過去の記録, service.StartedRecord);
         tested.DisplayedRecord.Should().BeSameAs(service.StartedRecord);
         tested.IsRecording.Should().BeTrue();
+
         await tested.EndTimeRecordAsync();
+
         service.EndedIds.Should().Equal(記録ID);
         tested.Records.Should().Equal(過去の記録, service.EndedRecord);
         tested.IsRecording.Should().BeFalse();
@@ -98,6 +98,7 @@ public sealed class TimeRecorderViewModelTests
         tested.Records.Should().Equal(service.EndedRecord);
         tested.IsRecording.Should().BeFalse();
     }
+
     [Fact]
     public async Task 終了すると開始した記録だけが更新され操作結果が残る()
     {
@@ -151,13 +152,5 @@ public sealed class TimeRecorderViewModelTests
         tested.Records.Should().BeEmpty();
         tested.DisplayedRecord.Should().BeNull();
         tested.IsRecording.Should().BeFalse();
-    }
-
-    sealed class DelayedListService(StubTimeRecordService service) : ITimeRecordService
-    {
-        public TaskCompletionSource<ImmutableArray<TimeRecord>> List { get; } = new();
-        public Task<ImmutableArray<TimeRecord>> GetTimeRecordsAsync() => List.Task;
-        public Task<TimeRecord> StartTimeRecordAsync() => service.StartTimeRecordAsync();
-        public Task<TimeRecord> EndTimeRecordAsync(Guid id) => service.EndTimeRecordAsync(id);
     }
 }
