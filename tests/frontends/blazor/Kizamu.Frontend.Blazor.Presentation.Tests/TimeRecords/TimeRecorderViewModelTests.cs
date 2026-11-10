@@ -55,6 +55,25 @@ public sealed class TimeRecorderViewModelTests
         tested.IsRecording.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task 開始の応答前に対象を切り替えても開始元の記録中状態を更新する()
+    {
+        var プロジェクトA = new Project("プロジェクトA");
+        TaskCompletionSource<TimeRecord> 応答 = new();
+        service.StartResponse = 応答.Task;
+        tested.SelectProject(プロジェクトA);
+        var 開始操作 = tested.StartTimeRecordAsync();
+        tested.SelectProject(null);
+
+        応答.SetResult(service.StartedRecord);
+        await 開始操作;
+
+        tested.Records.Should().ContainSingle().Which.Should().BeSameAs(service.StartedRecord);
+        tested.IsRecording.Should().BeFalse();
+        tested.SelectProject(プロジェクトA);
+        tested.IsRecording.Should().BeTrue();
+    }
+
     [Theory(Skip = "プロジェクト別の記録操作を実装するとき解除します。")]
     [InlineData(false)]
     [InlineData(true)]

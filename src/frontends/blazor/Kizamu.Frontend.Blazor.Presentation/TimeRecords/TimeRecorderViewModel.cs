@@ -55,10 +55,18 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service)
     /// <returns>開始と画面状態の更新の完了。</returns>
     public async Task StartTimeRecordAsync()
     {
+        var project = selectedProject;
         var record = await service.StartTimeRecordAsync();
         records.Add(record);
         DisplayedRecord = record;
-        CurrentId = record.Id;
+        if (project is null)
+        {
+            unspecifiedCurrentId = record.Id;
+        }
+        else
+        {
+            projectCurrentIds[project] = record.Id;
+        }
     }
 
     /// <summary>操作対象の記録を終了し、一覧と、表示中であれば操作欄を更新します。対象がなければ何もしません。</summary>

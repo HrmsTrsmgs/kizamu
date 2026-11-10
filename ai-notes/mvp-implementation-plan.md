@@ -468,7 +468,7 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 * 目的はプロジェクト単位の複数同時記録。作業ツリーは `codex/project-tabs`、登録ポップアップと名前付きタブは `5e7d454` でコミット済み。
 * 画面状態・操作はPresentationのViewModelへ分離済み。登録後のタブ自動選択は未決定。記録データとの結び付きとタブ切替は未実装。
-* 対象切替のテストを1件解除し、ViewModel内で対象ごとの記録中IDを保持するGreen差分が未コミット・レビュー待ち。[TimeRecorderViewModelTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) の残り2件と画面の切替テスト1件はSkip。
+* 対象切替時の記録中ID保持は 545d000 でコミット済み。Refactorは検討の結果、変更なし。開始応答前に対象を切り替えた場合のRed・Greenが未コミットでレビュー待ち。[TimeRecorderViewModelTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) の残り2件と画面の切替テスト1件はSkip。
 
 * 設計方針を共通正本とKizamuの参照版・固有指示へ整理した（D008参照）。今回の共通正本の文書差分は 94ead29 でコミット済み。先行する別の共通指示2行は未コミット。共通指示・Skillのインストール先への再配布は未実施。
 
@@ -481,7 +481,7 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 ### 検証と次の着手点
 
 * DomainのProjectを使う変更後、Blazor全体テストは79件成功・4件Skip。解析付き非増分ビルド成功、既存依存のNU1903警告4件。formatは維持したSkipのxUnit1004と既存ASP0027・IDE0290の診断で終了2、差分の空白検査は成功。
-* 対象切替のRedは仮APIのNotImplementedExceptionで失敗し、期待値に未到達。Green後のPresentationテストは13件成功・2件Skip、解析付きビルドと対象formatは成功。Blazor全体テストは稼働中サーバーのDLLロックによりビルド失敗、全体formatは既存診断等で失敗。
+* 開始応答前の対象切替は、切替先が誤って記録中になるRedを確認。Green後のPresentationテスト14件成功・2件Skip、Clientテスト24件成功・1件Skip、DomainとApplication各7件、Infrastructure計18件は成功。Presentationの解析付き非増分ビルド成功。Blazor全体テストは稼働中サーバーのDLLロックでビルド失敗、ServerとAPIのテストは未完了。全体formatは既存診断等で失敗。
 * DomainのProjectとそのテスト、登録一覧・画面表示・選択APIとテストのProject化は 5e7d454 でコミット済み。設計理由はD003を参照。画面側での連続終了順序と開始サービスの呼び出し回数の直接検証は前回の整理で外した。
 * 現在の画面は選択APIを呼ばず、サービスはプロジェクトを保存しないため、実画面での切替と再読み込み後の対象別復元は未実現。Green差分のレビュー後に次の工程へ進む。既存の `Client/Properties/` は未追跡の個人設定で、今回の差分に含めない。
 
