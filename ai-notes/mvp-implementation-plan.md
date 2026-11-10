@@ -466,11 +466,11 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### このブランチの目的と停止位置
 
-* Node一覧APIテストの準備整理。ブランチ `codex/refactor-node-list-test-setup`、基準HEAD `5423097`、PR先はmain。
-* 二件開始後の一覧テスト1件に、承認済みの `prepareStartedRecord` を適用。開始順、時刻変更、識別子の違い、一覧の期待値は維持。開発者が差分を確認し、コミットを了承した。
+* Node終了後一覧テストの準備整理。ブランチ `codex/refactor-node-ended-list-test-setup`、基準HEAD `ce8c0d8`、PR先はmain。
+* 開始準備に既存ヘルパーを使い、終了要求と成功確認を `prepareEndedRecord` へ抽出。時刻、対象ID、一覧取得と期待値は本文に維持。開発者が差分を確認し、コミットを了承した。
 * Node全13テスト、Node・Domainビルド、テスト側の型チェックとLint、差分検査は成功。React・Domain単体テストと全体Lint・buildは未実行。
-* 前の代表例はPR #14でmainへマージ済み。個人用の未追跡設定は変更・コミット対象外。
-* コミットメッセージは `refactor: Node一覧APIテストの開始済み記録の準備を共通化`。以下は統合元の製品作業の参照記録である。
+* 前の一覧テスト整理はPR #15でmainへマージ済み。個人用の未追跡設定は変更・コミット対象外。
+* コミットメッセージは `refactor: Node終了後一覧テストの記録準備を整理`。以下は統合元の製品作業の参照記録である。
 ### 統合元の製品作業（参照）
 
 * 作業ブランチはcodex/fix-end-time-record-id。テスト可読性の整理をf88c04fに保存済み。開発者からコミット・PR作成・codex/node-backendへのマージまで指示されている。
