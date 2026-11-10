@@ -1,14 +1,13 @@
 import { test } from 'vitest'
 import { Temporal } from 'temporal-polyfill'
-import type { TimeRecord } from 'kizamu-domain-typescript'
+import { TimeRecord } from 'kizamu-domain-typescript'
 import { TimeRecords } from '../../../src/backends/node/application/timeRecords.js'
 import type { TimeRecordState } from '../../../src/backends/node/application/timeRecords.js'
 
 const 開始時刻 = Temporal.Instant.from('2026-08-01T09:00:00Z')
 const 終了時刻 = Temporal.Instant.from('2026-08-01T10:30:00Z')
 
-function createState(): TimeRecordState {
-  const records: TimeRecord[] = []
+function createState(records: TimeRecord[] = []): TimeRecordState {
   return {
     add: (record) => { records.push(record) },
     find: (id) => records.find((record) => record.id === id),
@@ -48,4 +47,17 @@ test('一件目を指定して終了すると二件目は変化しません', ()
   const expectedFirst = first.end(終了時刻)
   ;({ ended }).should.have.property('ended').that.deep.equal(expectedFirst)
   tested.list().should.deep.equal([expectedFirst, second])
+})
+
+test('終了済みの一件目を再度終了すると終了時刻が更新され二件目は変化しません', () => {
+  const 再終了時刻 = Temporal.Instant.from('2026-08-01T11:00:00Z')
+  const 二件目 = new TimeRecord('2', 開始時刻, null)
+  const tested = new TimeRecords(
+    createState([new TimeRecord('1', 開始時刻, 終了時刻), 二件目]),
+    { newId: () => '3', now: () => 再終了時刻 },
+  )
+  const 再終了後の一件目 = new TimeRecord('1', 開始時刻, 再終了時刻)
+
+  ;({ ended: tested.end('1') }).should.have.property('ended').that.deep.equal(再終了後の一件目)
+  tested.list().should.deep.equal([再終了後の一件目, 二件目])
 })

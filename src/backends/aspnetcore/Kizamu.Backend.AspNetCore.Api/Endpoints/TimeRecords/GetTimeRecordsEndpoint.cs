@@ -16,9 +16,9 @@ static class GetTimeRecordsEndpoint
         {
             self.MapGet(
                 "/api/time-records",
-                (GetTimeRecords getTimeRecords) =>
+                (TimeRecordReader timeRecordReader) =>
                     Results.Ok(
-                        getTimeRecords.Execute().Select(it =>
+                        timeRecordReader.Execute().Select(it =>
                             new TimeRecordResponse(it))));
         }
     }

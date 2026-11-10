@@ -14,10 +14,10 @@ static class StartTimeRecordEndpoint
         /// </summary>
         internal void MapStartTimeRecordEndpoint()
         {
-            self.MapPost("/api/time-records/start", (StartTimeRecord startTimeRecord) =>
+            self.MapPost("/api/time-records/start", (TimeRecordStartOperation timeRecordStartOperation) =>
                 Results.Json(
                     new TimeRecordResponse(
-                        startTimeRecord.Execute()),
+                        timeRecordStartOperation.Execute()),
                     statusCode: StatusCodes.Status201Created));
         }
     }

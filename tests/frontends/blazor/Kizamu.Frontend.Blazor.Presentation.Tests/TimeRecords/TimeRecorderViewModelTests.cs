@@ -146,6 +146,42 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task 開始後に古い一覧が届いても過去の記録と開始した記録が残り終了できる()
+    {
+        var 過去の記録 = new TimeRecord(別の記録ID, 開始時刻, 終了時刻);
+        var 初期一覧の応答 = service.DelayListResponse();
+
+        var 初期一覧の読み込み = tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        初期一覧の応答.SetResult([過去の記録]);
+        await 初期一覧の読み込み;
+
+        tested.Records.Should().Equal(過去の記録, service.StartedRecord);
+        tested.DisplayedRecord.Should().BeSameAs(service.StartedRecord);
+        tested.IsRecording.Should().BeTrue();
+
+        await tested.EndTimeRecordAsync();
+
+        service.EndedIds.Should().Equal(記録ID);
+        tested.Records.Should().Equal(過去の記録, service.EndedRecord);
+        tested.IsRecording.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task 操作後の再読み込みはサーバーの更新と削除を反映する()
+    {
+        service.Records = [new(別の記録ID, 開始時刻, 終了時刻)];
+        await tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        service.Records = [service.EndedRecord];
+
+        await tested.LoadAsync();
+
+        tested.Records.Should().Equal(service.EndedRecord);
+        tested.IsRecording.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task 終了すると開始した記録だけが更新され操作結果が残る()
     {
         service.Records = [new(別の記録ID, 開始時刻, 終了時刻)];

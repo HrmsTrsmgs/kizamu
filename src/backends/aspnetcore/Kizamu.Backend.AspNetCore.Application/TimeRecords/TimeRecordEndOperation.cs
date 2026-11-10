@@ -5,7 +5,7 @@ namespace Kizamu.Backend.AspNetCore.Application.TimeRecords;
 /// </summary>
 /// <param name="timeProvider">終了時刻の取得元。</param>
 /// <param name="timeRecordState">作業記録の状態取得元。</param>
-public sealed class EndTimeRecord(
+public sealed class TimeRecordEndOperation(
     TimeProvider timeProvider,
     ITimeRecordState timeRecordState)
 {
@@ -16,7 +16,7 @@ public sealed class EndTimeRecord(
     /// <returns>終了した作業記録。</returns>
     public EndTimeRecordResult Execute(Guid id)
     {
-        var timeRecord = timeRecordState.Current;
+        var timeRecord = timeRecordState.Find(id);
         var endedAt = timeProvider.GetUtcNow();
         if (timeRecord is null)
         {

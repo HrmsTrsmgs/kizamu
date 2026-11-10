@@ -4,7 +4,7 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Kizamu.Backend.AspNetCore.Application.Tests.TimeRecords;
 
-public sealed class StartTimeRecordTests
+public sealed class TimeRecordStartOperationTests
 {
     public static TheoryData<DateTimeOffset> 開始時刻の例 =>
     [
@@ -18,7 +18,7 @@ public sealed class StartTimeRecordTests
         DateTimeOffset startedAt)
     {
         var state = new FakeTimeRecordState();
-        var tested = new StartTimeRecord(new FakeTimeProvider(startedAt), state);
+        var tested = new TimeRecordStartOperation(new FakeTimeProvider(startedAt), state);
 
         var result = tested.Execute();
 
