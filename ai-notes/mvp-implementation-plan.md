@@ -21,7 +21,7 @@ Clockifyは外部連携先であり、Kizamuの内部モデル、保存形式、
 * 公開APIは、先に統合テストで利用側から見た振る舞いを示してから実装する。
 * クライアントの通信境界はテストで差し替え、通常のクライアントテストから外部通信を行わない。
 * MVPの第一実装はASP.NET CoreとBlazor WebAssemblyとする。既存React版の機能を移してから、MVP機能の追加を再開する。
-* Reactは現在の到達点で保持し、追加機能開発を保留する。Node版の業務API導入は前倒しした。.NETの業務APIと画面配信・API中継サーバーの分離を維持する（判断記録D007）。
+* バックエンドの修正はASP.NET CoreとNode、フロントエンドの修正はBlazorとReactをセットで扱う。片方を先に進めた場合は次の作業に移る前にもう片方を確認し、必要な対応を行う。.NETの業務APIと画面配信・API中継サーバーの分離を維持する（判断記録D007）。
 * Clockify連携はモックを中心に自動テストし、実アカウントとの結合テストは明示的に実行する確認として分離する。
 * 各段階で、ビルド、対象テスト、関連テスト、Lintを成功させてから次へ進む。
 
@@ -70,7 +70,7 @@ Clockifyは外部連携先であり、Kizamuの内部モデル、保存形式、
 * プロジェクト未指定の記録も一件だけを進行させること
 * 異なるプロジェクトの記録を同時に進行させること
 * 異なるプロジェクトの記録を開始しても他の記録を終了しないこと
-* 終了対象をどのように識別するか
+* 終了対象の識別は記録IDで行う（確定仕様は [D009](../docs/decisions.md#d009終了対象をidで取得し再終了では終了時刻を更新する)）。
 * 登録プロジェクト数と同時記録数の上限
 * 開始時刻と終了時刻の境界
 * UTCでの保持とローカル時刻表示の関係
@@ -107,9 +107,9 @@ Clockifyは外部連携先であり、Kizamuの内部モデル、保存形式、
 
 作業:
 
-* 識別した記録だけを終了する振る舞いを統合テストで示す。
+* 識別した記録だけを終了する振る舞いはApplicationの単体テストで示し、HTTP固有の接続は既存テストで確認する。
 * 終了時刻を確定し、完了記録として返す。
-* 完了済みまたは存在しない記録の終了仕様をテストして実装する。
+* 完了済み記録の再終了では終了時刻を更新する（D009）。存在しない記録への終了要求の扱いは引き続き確認してからテスト・実装する。
 
 完了条件:
 
@@ -462,33 +462,38 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ## 現在の次作業
 
-この節は再開用の短い引き継ぎであり、作業を区切る際に更新する。記録の入口は [一覧](README.md)、詳細な履歴はGit、設計理由は [判断記録](../docs/decisions.md)、未確定の議論は [開発候補](development-candidates.md) を参照する。再開時はブランチ・HEAD・差分を再確認し、この記録だけで状態を断定しない。
+この節は再開用の引き継ぎであり、作業を区切る際に更新する。再開時はブランチ・HEAD・差分を確認し、この記録と照合する。入口は [一覧](README.md)、設計理由は [判断記録](../docs/decisions.md)、未確定の議論は [開発候補](development-candidates.md) を参照する。
 
 ### 目的と現在位置
 
-* 基準コミット：`eab248a`。ブランチは `codex/node-backend`。Blazor分離は `9c58bda`、ASP.NET整理は `8b523fd`、Reactの責務分離・Node／React共通Domain・TypeScriptのshould統一は `eab248a` に保存済み。設計理由は [D008](../docs/decisions.md#d008viewmodelと通信サービスを分け内側の仕様を直接テストする) とD003、構成・実行方法は [README](../README.md#ビルドと検証) を参照する。
-* 今回は全8.NETテストプロジェクトのxUnit v3移行。2026-11-06に `xunit.v3.mtp-off` 4.0.2と `xunit.runner.visualstudio` 4.0.1への更新を承認済み。既存のVSTest経路を維持するためMTPを含まない構成を選択し、Microsoft.NET.Test.Sdk・coverlet・AwesomeAssertions・bUnitは維持した。テストプロジェクトを実行可能形式にしたが、製品の配布構成は変更していない。
-* 2列TheoryDataのタプルコレクション式、単一列の型解決の明示、HTTP呼び出しへのテスト用CancellationTokenを適用。追加レビュー指示により、取得処理を [TestCancellation](../tests/TestSupport/TestCancellation.cs) の `CancellationToken` プロパティ1箇所に集約し、2テストプロジェクトへソースリンクした。5クラスは名前空間内の `using static` で読み込み、同名の型との衝突を避けている。アクセス時のテストコンテキストを参照し、キャッシュせず、既存ハンドラーの引数tokenは維持。名前・条件・期待値・ケース数・Should句・Dispose経路は維持し、製品コード・TypeScriptは変更していない。方針は [C#指示](../docs/ai-instructions/csharp.md#テスト記述) を参照する。
+* 基準コミットはb991f90、ブランチはcodex/fix-end-time-record-id。全体レビューの指摘を順に扱い、対象ごとに検証・コミットする。作業ブランチからのpushは未実施。
+* ASP.NETの終了対象ID不一致は `5f0b887` で修正済み。続く開発者指示で、ASP.NETもID検索で取得した記録オブジェクトを終了するよう変更した。再終了時はNodeの現行動作と同じく終了時刻を更新する方針が確定した（D009）。この追加変更はGreen確認後、`a4f0ce3` にコミット済み。Refactorは検討の結果、変更なし。NodeもApplicationの単体テストで対象外の不変と再終了を確認した。
+* NodeのApi・Application・Infrastructure分離はPR #7でcodex/node-backendにマージされ、この作業ブランチにも取り込み済み。構成はREADME、理由はD008を参照する。
+* バックエンドとフロントエンドの対応実装をそれぞれセットで確認する方針、およびPR前検証とマージの方針はKizamu作業指示を参照する。
 
 ### 検証
 
-* 検証対象：`eab248a` にxUnit移行と `CancellationToken` プロパティの共通化を加えた本コミットのコード。共通化後は変更した2プロジェクトを直列に解析付き非増分ビルドし、Apiは13.63秒、Serverは21.75秒、いずれも終了0。共通ソースの両方でのコンパイルと、対象14件（Api8・Server6）の成功、失敗0／Skip0、終了0を確認した。
-* xUnit移行時の `Kizamu.Blazor.slnx` 全体ビルドは終了0、55.54秒、既存NU1903警告4件のみ。全.NETテストはVSTest Adapter 4.0.1で75件成功（Api8・Application7・Infra5・Domain6・Client21・Presentation9・FrontInfra13・Server6）。短縮で変更していない6プロジェクトはこの結果を引き継ぐ。
-* 短縮後の対象プロジェクトの `dotnet format` は既存IDE0290計3件で終了1。SARIFは既存Program.csのASP0027のみで、追加診断はない。移行時のNuGet復元の通常権限での出力なし終了1は、権限切分け後の同処理で終了0になった。単一列TheoryDataの型解決差も修正済み。
-* TypeScriptは未変更なので `eab248a` の74テスト・Lint・build成功を引き継ぎ、再実行していない。ブラウザー操作、Visual Studio Test Explorer、カバレッジ収集、Release publishは今回未確認。CLIでの検出・実行とIDEでの実操作を区別する。
+* Node分離時のルートbuild・lint・testは成功（Domain 12件、React 54件、Node 12件）。再終了テスト追加後はNode全13件とテスト側のLint・型チェックが成功。
+* ASP.NETのID検索対応では、Applicationの2件とInfrastructureの1件のRed失敗を確認後、Greenで `dotnet test Kizamu.AspNetCore.slnx --no-restore` が30件成功（失敗・Skip 0）。指定の非増分解析ビルドも15.98秒、警告・エラー0で成功。formatは既存IDE0290の2件とASP0027の1件で終了1、SARIFは既存Program.csのASP0027のみ。今回の変更箇所への指摘はない。
+* Nodeのビルド・起動経路は既存テストで確認。Visual Studio上の実操作、ブラウザー操作、公開成果物は今回未確認。Nodeのレイヤー依存方向を禁止する自動検査は未導入。
+* 既存ロックファイルに基づく `npm ci` は成功したが、既知脆弱性21件の報告がある。今回の分離では依存パッケージとlockfileを変更していない。
 
 ### レビュー境界と次回の着手点
 
-* xUnit移行とCancellationToken共通化のレビューを完了し、開発者が `test: .NETテストをxUnit v3へ移行する` でのコミットを了承した。pushは指示されていない。
-* 次の対象は開発者の指示を受ける。Node全体のApplication／Infrastructure分離は未着手。仕様を追加する場合は別のRed→Greenとする。
-* 一覧取得の旧応答を無視する改善は今回に混ぜず、元の挙動を維持した。検討事項は [C003](development-candidates.md#c003reactの一覧取得で古い応答を反映する範囲) を参照する。
-* 既存NU1903警告への対応とIDE上の実機確認は残件。製品機能の開発順序は、今回の責務分離だけを理由に変更しない。
+* クラス命名のRefactorはGetTimeRecordsからTimeRecordReaderへの変更を4812e2cに、StartTimeRecord・EndTimeRecordからTimeRecordStartOperation・TimeRecordEndOperationへの変更をd67ec9fにコミット済み。対象テスト7件とASP.NET全34テスト、解析付きビルドは成功。formatは既存診断3件で失敗。
+
+* 両UIで、一覧取得中に開始した記録が古い一覧応答で消える問題を修正。取得中に確定した操作結果を一覧に反映し、後続の通常の再取得ではサーバー側の更新・削除を反映する。通信を使わないPresentationのテストでRedを確認後、Blazor全85テストとReact全56テスト、両ビルドとReactのLintが成功。.NETのformatは既存診断4件で失敗。取得中に終了する場合と複数の一覧取得が重なる場合は個別テスト未実施。実装とテストの5ファイルは開発者の了承後に799b638へコミット済み。次は今回追加したテストの可読性を見直すRefactor。サービス切替後の旧応答はC003に残る。
+
+* ASP.NETの一覧は列挙直前にCopyAllで構成をコピーする。Allは従来どおり追加を反映し、メモリ実装はコピーと追加を同期する。ITimeRecordStateの公開メンバー追加により実装者の対応が必要。列挙中の追加で生じる例外のRedを確認後、全34テストと非増分解析ビルドが成功。formatは既存診断3件で失敗。並列実行そのものの安全性はテストで未証明。この修正はbdbb799にコミット済み。
+
+* Nodeのレイヤー分離はPR #7でcodex/node-backendにマージし、作業ブランチに取り込み済み。Nodeの再終了テストは開発者の了承後にb991f90へコミット済み。
+* Blazor WebAssembly.Serverは10.0.14へ更新し、4876d6fにコミット済み。Blazor全79テストと非増分解析ビルドが成功し、NuGetのServerプロジェクト脆弱性確認で報告なし。formatは既存診断4件で失敗。
+* 全体レビューの残件には、非成功HTTPの扱い、別オリジンの更新要求、多重操作と失敗表示、日時表記・コントラスト、Blazorの責務分離、TypeScriptの依存検査・共有契約テスト・Reactの重複key警告がある。未確定仕様や依存更新は個別に確認する。旧応答を反映する範囲の候補はC003を参照する。
 
 ### ローカルで保持するもの
 
-* Blazor Clientの `Properties/launchSettings.json` はユーザー側の未追跡設定であり、変更・コミット対象に含めない。
-* 適用済みの退避はGit stash `fe3f05fddcb9e6a0fffee3ebcc8a525e4f61c47c` に保持したまま。再適用しない。
-* 前回の.NET公開物、HTTPスモーク用 `verify-node-frontends.ps1` とログは `.artifacts/` にあるローカル成果物。今回のビルド診断も含め、生成物はGitへ含めない。
-* 個人共通の可読性・直接Assertの規則は、privateリポジトリ `codex-workflows` の `instructions/AGENTS.md` にも未コミットで保持している。配備先の共通指示・Skillには再配備しておらず、他プロジェクトへの自動反映はまだ行っていない。
+* この作業ツリーのBlazor Client `Properties/launchSettings.json` はユーザー側の未追跡設定であり、変更・コミット対象に含めない。
+* 元のチェックアウトにある未コミットのHTTP再現テスト、実装計画の差分、個人設定を保持している。元の差分の削除・移動やstashの再適用は行っていない。
+* 成果物はローカルの作業ツリーにあり、ビルド出力や診断用一時ファイルはGitに含めない。
 
 OpenAPI等の未導入部分の配置は [README](../README.md#今後追加する配置未実装)、公開成果物の組み立てはフェーズ6を参照する。

@@ -121,7 +121,7 @@ React版は同じ製品パッケージ内の `src/presentation/`（画面状態�
 
 通信用DTOは共通のOpenAPI契約から各言語向けに生成する方針です。API呼び出しコードの生成も検討対象とし、対象言語・ランタイムの進化への追随、必要な機能への対応速度、拡張性、実際の更新履歴と生成結果を確認して採否を決めます。生成ツールは未選定です。生成物は手書き部分と区別し、手修正せず、ツールのバージョンと設定を固定して再生成できるようにします。生成DTOと呼び出し処理のプロジェクト分割は、採用ツールの出力と依存関係を確認して決めます。
 
-ASP.NET Coreの開始・終了・一覧取得は `Kizamu.Backend.AspNetCore.Application` に置き、HTTPを使わずに時刻の取得、記録状態の更新、一覧の読取結果への変換を確認します。Apiはルート・状態コード・JSON応答への変換と起動時の構成、Infrastructureはメモリ上の記録保持を担当します。依存方向は `Api → Application / Infrastructure`、`Infrastructure → Application / Domain`、`Application → Domain` です。アセンブリ参照のテストでこの方向とApplication・DomainのHTTP/JSONからの独立を確認します。対象はコンパイル結果に残る参照であり、未使用の参照設定や動的ロードまでは検出しません。
+ASP.NET Coreの開始・終了・一覧取得は `Kizamu.Backend.AspNetCore.Application` に置き、HTTPを使わずに時刻の取得、記録状態の更新、一覧の読取結果への変換を確認します。終了時は指定IDで保存された記録を取得し、その記録オブジェクトを終了します。終了済み記録への再要求では終了時刻を更新し、対象外の記録は変更しません。Apiはルート・状態コード・JSON応答への変換と起動時の構成、Infrastructureはメモリ上の記録保持とID検索を担当します。依存方向は `Api → Application / Infrastructure`、`Infrastructure → Application / Domain`、`Application → Domain` です。アセンブリ参照のテストでこの方向とApplication・DomainのHTTP/JSONからの独立を確認します。対象はコンパイル結果に残る参照であり、未使用の参照設定や動的ロードまでは検出しません。
 
 Blazorの記録画面の状態と操作は `Kizamu.Frontend.Blazor.Presentation` に置き、Domainだけを参照する通常の.NETライブラリにしています。`ITimeRecordService` を通じて確定した作業記録を受け取り、HTMLやHTTPを準備せずにテストできます。ClientのRazorは表示と操作の接続を担当します。
 
