@@ -17,6 +17,7 @@ public sealed class AppTests : IDisposable
     static readonly TimeRecord 一つ目の記録 = new(Guid.Parse("019cde5b-4c00-7000-8000-000000000001"), DateTimeOffset.Parse("2026-08-01T09:00:00Z"), null);
     readonly BunitContext context = new();
     readonly HttpClient client;
+    readonly ProjectTabsViewModel projectTabs = new();
 
     public AppTests()
     {
@@ -33,7 +34,7 @@ public sealed class AppTests : IDisposable
         context.Services.AddSingleton(new HealthApi(client));
         context.Services.AddSingleton<ITimeRecordService>(new TimeRecordApi(client));
         context.Services.AddTransient<TimeRecorderViewModel>();
-        context.Services.AddTransient<ProjectTabsViewModel>();
+        context.Services.AddSingleton(projectTabs);
         context.Services.AddSingleton(TimeProvider.System);
     }
 
@@ -81,8 +82,8 @@ public sealed class AppTests : IDisposable
     [Fact]
     public void 登録済みプロジェクトを選ぶと記録欄にプロジェクト名を表示します()
     {
+        プロジェクトを登録する(projectTabs, "プロジェクトA");
         var tested = context.Render<Client.App>();
-        プロジェクトを登録する(tested, "プロジェクトA");
 
         プロジェクトを選ぶ(tested, "プロジェクトA");
 
@@ -105,9 +106,9 @@ public sealed class AppTests : IDisposable
     public void タブを切り替えて戻ると記録中の対象には終了操作を表示します()
     {
         context.Services.AddSingleton<ITimeRecordService>(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
+        プロジェクトを登録する(projectTabs, "プロジェクトA");
+        プロジェクトを登録する(projectTabs, "プロジェクトB");
         var tested = context.Render<Client.App>();
-        プロジェクトを登録する(tested, "プロジェクトA");
-        プロジェクトを登録する(tested, "プロジェクトB");
         プロジェクトを選ぶ(tested, "プロジェクトA");
         tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
 
@@ -117,14 +118,10 @@ public sealed class AppTests : IDisposable
         tested.FindAll("button").Select(it => it.TextContent).Should().NotContain("記録を開始").And.Contain("記録を終了");
     }
 
-    static void プロジェクトを登録する(IRenderedComponent<Client.App> tested, string name)
+    static void プロジェクトを登録する(ProjectTabsViewModel viewModel, string name)
     {
-        tested.FindAll("button").Single(it => it.TextContent == "追加").Click();
-        var popup = tested.Find("[role=dialog]");
-        var nameInput = popup.QuerySelector("input");
-        nameInput.Should().NotBeNull();
-        nameInput.Change(name);
-        popup.QuerySelectorAll("button").Single(it => it.TextContent == "登録").Click();
+        viewModel.ProjectName = name;
+        viewModel.RegisterProject();
     }
 
     static void プロジェクトを選ぶ(IRenderedComponent<Client.App> tested, string name) =>
