@@ -466,14 +466,11 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### このブランチの目的と停止位置
 
-* 2026-11-10の開発者指示により、テスト準備の整理は一単位ずつ小さなPRに分ける。今回はNode起動テストのURL待機と後始末だけを対象とする。
-* 作業ブランチは `codex/refactor-node-startup-test-setup`、基準HEADは `ee38058`、PR先は `main`。同じ `overall-refactoring` 作業ツリーを使用する。チャットの既定作業場所の関連付けは変更できていないため、操作時はこの作業ツリーを明示する。
-* Refactor工程は完了し、`serverStartup.test.ts` の `withListeningServer` に出力監視、URL待機、タイムアウトと後始末を抽出した。入口、空きポート、プロセス起動、HTTP要求と全アサーションは本文に残し、診断・イベント順・タイマー解除・killとclose待機を維持。テスト1ファイルとこの作業記録を確認し、開発者がコミットを了承した。
-* 検証対象は基準HEADに上記テスト差分を加えた版。既存lockfileのnpm ci成功。対象の起動テスト1件とNode全13テストが成功。Domain・Nodeビルド、Nodeテストの型チェック、Node本体とテストのLint、差分の空白検査が成功。npm ciは既存依存の脆弱性21件（moderate 14、high 7）を報告し、今回の整理で依存は変更していない。React・.NETの検査とIDE操作は対象外で未実行。
-* 前のAPI中継テストの整理は `d228a5a` にコミットし、最新統合元 `de89b51` への追従を `ee38058` に記録した。[PR #12](https://github.com/HrmsTrsmgs/kizamu/pull/12) はテストと記録の2ファイル、24行追加・11行削除で作成済み。テスト6件・解析付きビルド成功、formatは既存IDE0290の1件で失敗。PR先は開発者の指示によりmainへ変更し、mainとの差分も同じ2ファイルで競合がないことを確認した。PR #12はmainへマージ済み。このNode作業はその変更を含む版から分岐している。
-* 方針と全件精査結果の文書は [PR #9](https://github.com/HrmsTrsmgs/kizamu/pull/9) で、開発者の明示承認後にmainへマージ済み。
-* Node起動テストの差分を `refactor: Node起動テストのURL待機と後始末を抽出` でコミットし、main向けの小さなPRへ進める。個人用の未追跡 `Blazor.Client/Properties/` は保持し、今回の変更・コミット対象に含めない。以下は統合元の製品作業の参照記録である。
-
+* Node HTTPテストの準備整理を小さなPR単位で進める。ブランチ `codex/refactor-node-http-test-setup`、基準HEAD `4571f79`、PR先はmain。
+* 終了APIテスト1件の開始要求・成功確認・JSON取得を `prepareStartedRecord` に抽出した。時刻変更、終了操作と期待結果は本文に残し、他テストへの展開はしていない。代表例の差分は開発者が確認し、コミットを了承した。
+* 変更後のnpm testはDomain 12件・React 56件・Node 13件成功。npm run lint、npm run build、差分検査も成功。依存復元や変更は行っていない。
+* 前のNode起動テスト整理はPR #13でmainへマージ済み。個人用の未追跡設定は変更・コミット対象外。
+* 代表例のコミットメッセージは `refactor: Node終了APIテストの開始済み記録の準備を抽出`。次は同じ準備が残るテストへの適用を小さな単位で進める。以下は統合元の製品作業の参照記録である。
 ### 統合元の製品作業（参照）
 
 * 作業ブランチはcodex/fix-end-time-record-id。テスト可読性の整理をf88c04fに保存済み。開発者からコミット・PR作成・codex/node-backendへのマージまで指示されている。

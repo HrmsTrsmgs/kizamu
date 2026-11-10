@@ -35,9 +35,7 @@ test('記録を開始すると空でないGUIDとサーバーの開始時刻が�
 })
 
 test('記録を終了すると同じ識別子と元の開始時刻とサーバーの終了時刻が返されます', async () => {
-  const startResponse = await app.inject({ method: 'POST', url: '/api/time-records/start' })
-  startResponse.statusCode.should.equal(201)
-  const startedRecord = startResponse.json<TimeRecordResponse>()
+  const startedRecord = await prepareStartedRecord(app)
   vi.setSystemTime(終了時刻)
 
   const response = await app.inject({ method: 'POST', url: `/api/time-records/${startedRecord.id}/end` })
@@ -104,3 +102,9 @@ test('別のアプリで開始した記録は新しく生成したアプリの�
     await independentApp.close()
   }
 })
+
+async function prepareStartedRecord(app: ReturnType<typeof createApp>): Promise<TimeRecordResponse> {
+  const response = await app.inject({ method: 'POST', url: '/api/time-records/start' })
+  response.statusCode.should.equal(201)
+  return response.json<TimeRecordResponse>()
+}
