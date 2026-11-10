@@ -85,8 +85,41 @@ public sealed class TimeRecordApiTests : IDisposable
         受信した記録.Should().BeEquivalentTo(記録);
     }
 
-    void 応答する<T>(T body) => handler.Respond = it =>
-        Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(body) });
+    [Fact]
+    public async Task 作業記録一覧APIがHTTPエラーを返したら本文が正常でも失敗を通知します()
+    {
+        応答する<TimeRecordResponse[]>([new(記録ID, 開始時刻, null)], HttpStatusCode.InternalServerError);
+
+        var 操作 = () => tested.GetTimeRecordsAsync();
+
+        (await 操作.Should().ThrowAsync<HttpRequestException>())
+            .Which.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+    }
+
+    [Fact]
+    public async Task 記録開始APIがHTTPエラーを返したら本文が正常でも失敗を通知します()
+    {
+        応答する(new TimeRecordResponse(記録ID, 開始時刻, null), HttpStatusCode.InternalServerError);
+
+        var 操作 = () => tested.StartTimeRecordAsync();
+
+        (await 操作.Should().ThrowAsync<HttpRequestException>())
+            .Which.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+    }
+
+    [Fact]
+    public async Task 指定した記録の終了APIがHTTPエラーを返したら本文が正常でも失敗を通知します()
+    {
+        応答する(new TimeRecordResponse(記録ID, 開始時刻, 終了時刻), HttpStatusCode.InternalServerError);
+
+        var 操作 = () => tested.EndTimeRecordAsync(記録ID);
+
+        (await 操作.Should().ThrowAsync<HttpRequestException>())
+            .Which.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+    }
+
+    void 応答する<T>(T body, HttpStatusCode statusCode = HttpStatusCode.OK) => handler.Respond = it =>
+        Task.FromResult(new HttpResponseMessage(statusCode) { Content = JsonContent.Create(body) });
 
     public void Dispose() => client.Dispose();
 }

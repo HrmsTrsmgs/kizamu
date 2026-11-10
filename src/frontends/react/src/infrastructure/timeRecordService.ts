@@ -12,15 +12,24 @@ type TimeRecordResponse = {
 export const timeRecordService: TimeRecordService = {
   async getTimeRecords() {
     const response = await fetch('/api/time-records')
+    if (!response.ok) {
+      throw new Error()
+    }
     const records: TimeRecordResponse[] = await response.json()
     return records.map(toTimeRecord)
   },
   async startTimeRecord() {
     const response = await fetch('/api/time-records/start', { method: 'POST' })
+    if (!response.ok) {
+      throw new Error()
+    }
     return toTimeRecord(await response.json())
   },
   async endTimeRecord(id) {
     const response = await fetch(`/api/time-records/${id}/end`, { method: 'POST' })
+    if (!response.ok) {
+      throw new Error()
+    }
     return toTimeRecord(await response.json())
   },
 }

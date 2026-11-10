@@ -466,11 +466,12 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### このブランチの目的と停止位置
 
-* Node一覧APIテストの準備整理。ブランチ `codex/refactor-node-list-test-setup`、基準HEAD `5423097`、PR先はmain。
-* 二件開始後の一覧テスト1件に、承認済みの `prepareStartedRecord` を適用。開始順、時刻変更、識別子の違い、一覧の期待値は維持。開発者が差分を確認し、コミットを了承した。
-* Node全13テスト、Node・Domainビルド、テスト側の型チェックとLint、差分検査は成功。React・Domain単体テストと全体Lint・buildは未実行。
-* 前の代表例はPR #14でmainへマージ済み。個人用の未追跡設定は変更・コミット対象外。
-* コミットメッセージは `refactor: Node一覧APIテストの開始済み記録の準備を共通化`。以下は統合元の製品作業の参照記録である。
+* 次の全体レビュー指摘は、作業記録APIのHTTP非成功応答を成功扱いしないこと。復元したcodex/fix-end-time-record-idの作業ツリーで続け、基準HEADはce8c0d8。作業場所やブランチは変更せず、最新mainを早送りで取り込んだ。
+* 今回の期待結果：一覧・開始・指定IDの終了でHTTPが非2xxなら、本文が正常な記録JSONの形式でも成功結果を返さず、既存の非同期APIの失敗として伝える。BlazorとReactの通信境界をセットで扱い、実通信をしない単体テストで確認する。画面の失敗表示やサーバーの未知IDへの応答仕様は、この変更で追加しない。
+* 正常JSONを持つHTTP 500のテストを両UIへ追加し、Blazorの開始・終了2経路とReactの3経路で意図したRedを確認した。Blazorの一覧は既にHTTPエラーを拒否しており、実装変更なし。Greenでは非成功応答を本文の読み取り前に拒否するよう、通信境界の2ファイルを修正した。
+* Greenの検証：BlazorはHTTP 500に対してHttpRequestExceptionとStatusCodeを3操作それぞれで確認し、Infrastructure.Tests全16件が成功。Reactは非成功応答のPromise拒否を確認し、全59件が成功。対象C#プロジェクトの非増分解析ビルドは警告・エラー0、関連SARIF診断なし。変更C#のformat、React製品・テスト双方のbuild・lintと差分検査が成功した。
+* 作業ツリー復元後、既存lockfileのnpm ciと.NET restoreは成功。npm ciの依存監査は既存構成に21件を報告したが、依存やlockfileを変更していない。個人用launchSettings.jsonは保全対象であり、変更・コミットへ含めない。
+* 開発者がGreen差分のコミットを了承した。対象は製品2ファイル・テスト2ファイルと本記録。次はRefactorを検討する。PR先は特別な指定がなければmain。
 ### 統合元の製品作業（参照）
 
 * 作業ブランチはcodex/fix-end-time-record-id。テスト可読性の整理をf88c04fに保存済み。開発者からコミット・PR作成・codex/node-backendへのマージまで指示されている。

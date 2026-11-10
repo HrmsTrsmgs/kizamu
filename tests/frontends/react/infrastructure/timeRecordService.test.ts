@@ -89,6 +89,30 @@ describe('timeRecordService', () => {
     endedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻), timestamp(終了時刻)))
   })
 
+  it('作業記録一覧APIがHTTPエラーを返したら本文が正常でも失敗を通知します', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => response([
+      { id: 記録ID, startedAt: 開始時刻, endedAt: null },
+    ], 500)))
+
+    await tested.getTimeRecords().should.rejects.toThrow()
+  })
+
+  it('記録開始APIがHTTPエラーを返したら本文が正常でも失敗を通知します', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => response({
+      id: 記録ID, startedAt: 開始時刻, endedAt: null,
+    }, 500)))
+
+    await tested.startTimeRecord().should.rejects.toThrow()
+  })
+
+  it('指定した記録の終了APIがHTTPエラーを返したら本文が正常でも失敗を通知します', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => response({
+      id: 記録ID, startedAt: 開始時刻, endedAt: 終了時刻,
+    }, 500)))
+
+    await tested.endTimeRecord(記録ID).should.rejects.toThrow()
+  })
+
   it('一覧のDTOから復元した記録は元を変更せず終了操作を利用できます', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => response([
       { id: 記録ID, startedAt: 開始時刻, endedAt: null },
@@ -117,8 +141,9 @@ describe('timeRecordService', () => {
   })
 })
 
-function response(body: unknown) {
+function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
+    status,
     headers: { 'Content-Type': 'application/json' },
   })
 }
