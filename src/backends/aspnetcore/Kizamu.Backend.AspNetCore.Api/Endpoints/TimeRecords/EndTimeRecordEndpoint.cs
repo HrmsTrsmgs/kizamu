@@ -14,10 +14,10 @@ static class EndTimeRecordEndpoint
         /// </summary>
         internal void MapEndTimeRecordEndpoint()
         {
-            self.MapPost("/api/time-records/{id:guid}/end", (Guid id, EndTimeRecord endTimeRecord) =>
+            self.MapPost("/api/time-records/{id:guid}/end", (Guid id, TimeRecordEndOperation timeRecordEndOperation) =>
                 Results.Ok(
                     new TimeRecordResponse(
-                        endTimeRecord.Execute(id))));
+                        timeRecordEndOperation.Execute(id))));
         }
     }
 }

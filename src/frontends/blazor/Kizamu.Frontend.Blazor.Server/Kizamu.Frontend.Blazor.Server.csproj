@@ -6,7 +6,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.10" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.14" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="../Kizamu.Frontend.Blazor.Client/Kizamu.Frontend.Blazor.Client.csproj" />
