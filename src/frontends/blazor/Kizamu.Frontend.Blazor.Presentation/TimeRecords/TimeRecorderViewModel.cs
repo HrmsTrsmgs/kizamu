@@ -14,16 +14,18 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service)
     Guid? CurrentId
     {
         get => selectedProject is null ? unspecifiedCurrentId : projectCurrentIds.GetValueOrDefault(selectedProject);
-        set
+        set => SetCurrentId(selectedProject, value);
+    }
+
+    void SetCurrentId(Project? project, Guid? id)
+    {
+        if (project is null)
         {
-            if (selectedProject is null)
-            {
-                unspecifiedCurrentId = value;
-            }
-            else
-            {
-                projectCurrentIds[selectedProject] = value;
-            }
+            unspecifiedCurrentId = id;
+        }
+        else
+        {
+            projectCurrentIds[project] = id;
         }
     }
 
@@ -59,14 +61,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service)
         var record = await service.StartTimeRecordAsync();
         records.Add(record);
         DisplayedRecord = record;
-        if (project is null)
-        {
-            unspecifiedCurrentId = record.Id;
-        }
-        else
-        {
-            projectCurrentIds[project] = record.Id;
-        }
+        SetCurrentId(project, record.Id);
     }
 
     /// <summary>操作対象の記録を終了し、一覧と、表示中であれば操作欄を更新します。対象がなければ何もしません。</summary>
