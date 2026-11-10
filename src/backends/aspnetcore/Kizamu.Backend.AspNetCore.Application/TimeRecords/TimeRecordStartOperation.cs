@@ -7,7 +7,7 @@ namespace Kizamu.Backend.AspNetCore.Application.TimeRecords;
 /// </summary>
 /// <param name="timeProvider">開始時刻の取得元。</param>
 /// <param name="timeRecordState">作業記録の状態保存先。</param>
-public sealed class StartTimeRecord(
+public sealed class TimeRecordStartOperation(
     TimeProvider timeProvider,
     ITimeRecordState timeRecordState)
 {

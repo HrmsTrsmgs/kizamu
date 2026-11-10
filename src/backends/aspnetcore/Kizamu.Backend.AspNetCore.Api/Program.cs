@@ -10,9 +10,9 @@ static WebApplication CreateApplication(string[] args)
 {
     var builder = WebApplication.CreateBuilder(args);
     builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
-    builder.Services.AddSingleton<StartTimeRecord>();
-    builder.Services.AddSingleton<EndTimeRecord>();
-    builder.Services.AddSingleton<GetTimeRecords>();
+    builder.Services.AddSingleton<TimeRecordStartOperation>();
+    builder.Services.AddSingleton<TimeRecordEndOperation>();
+    builder.Services.AddSingleton<TimeRecordReader>();
     builder.Services.AddSingleton<ITimeRecordState, InMemoryTimeRecordState>();
 
     var app = builder.Build();

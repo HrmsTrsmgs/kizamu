@@ -8,7 +8,7 @@ export type TimeRecorderState = Readonly<{
 }>
 
 export type TimeRecorderAction =
-  | { type: 'recordsLoaded', records: readonly TimeRecordPresentation[] }
+  | { type: 'recordsLoaded', records: readonly TimeRecordPresentation[], updatedRecords?: readonly TimeRecordPresentation[] }
   | { type: 'recordStarted', record: TimeRecordPresentation }
   | { type: 'recordEnded', record: TimeRecordPresentation }
 
@@ -24,13 +24,23 @@ export function timeRecorderReducer(
   action: TimeRecorderAction,
 ): TimeRecorderState {
   switch (action.type) {
-    case 'recordsLoaded':
+    case 'recordsLoaded': {
+      const updatedRecords = action.updatedRecords ?? []
+      const latestUpdates = [...updatedRecords].reverse()
+      const records = [
+        ...action.records.map(loaded => latestUpdates.find(({ record }) => record.id === loaded.record.id) ?? loaded),
+        ...updatedRecords.filter(({ record }, index) =>
+          !action.records.some(loaded => loaded.record.id === record.id)
+          && !updatedRecords.slice(index + 1).some(updated => updated.record.id === record.id)),
+      ]
       return {
         ...state,
-        records: action.records,
+        records,
         timeRecordId:
-          action.records.find(({ record }) => record.endedAt === null)?.record.id ?? null,
+          latestUpdates.find(({ record }) => record.id === state.timeRecordId && record.endedAt === null)?.record.id
+          ?? records.find(({ record }) => record.endedAt === null)?.record.id ?? null,
       }
+    }
     case 'recordStarted':
       return {
         ...state,
