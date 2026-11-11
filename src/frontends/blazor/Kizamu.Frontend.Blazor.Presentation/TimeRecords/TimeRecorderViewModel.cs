@@ -49,6 +49,14 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     public bool HasOperationFailed { get; private set; }
 
     /// <inheritdoc />
+    public TimeRecorderNotice Notice => (IsStateUnconfirmed, HasOperationFailed) switch
+    {
+        (true, _) => TimeRecorderNotice.StateUnconfirmed,
+        (_, true) => TimeRecorderNotice.OperationFailed,
+        _ => TimeRecorderNotice.None,
+    };
+
+    /// <inheritdoc />
     public async Task RunUserOperationAsync(Func<Task> operation)
     {
         try

@@ -17,14 +17,15 @@
             {
                 <button class="record-button is-active" type="button" disabled="@(!ViewModel.CanOperate)" @onclick="() => ViewModel.RunUserOperationAsync(ViewModel.EndTimeRecordAsync)">記録を終了</button>
             }
-            @if (ViewModel.IsStateUnconfirmed)
+            @switch (ViewModel.Notice)
             {
-                <p role="alert">最新状態を確認できません。再取得してください。</p>
-                <button type="button" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.RunUserOperationAsync(ViewModel.LoadAsync)">再取得</button>
-            }
-            else if (ViewModel.HasOperationFailed)
-            {
-                <p role="alert">記録操作に失敗しました。</p>
+                case TimeRecorderNotice.StateUnconfirmed:
+                    <p role="alert">最新状態を確認できません。再取得してください。</p>
+                    <button type="button" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.RunUserOperationAsync(ViewModel.LoadAsync)">再取得</button>
+                    break;
+                case TimeRecorderNotice.OperationFailed:
+                    <p role="alert">記録操作に失敗しました。</p>
+                    break;
             }
             @if (ViewModel.DisplayedRecord is { } displayed)
             {

@@ -40,6 +40,21 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task 最新状態が未確認の間は再取得を案内し回復後は以前の操作失敗を知らせる()
+    {
+        service.StartResponse = Task.FromException<TimeRecord>(new InvalidOperationException());
+        一覧取得を失敗させる(new InvalidOperationException());
+        tested.Notice.Should().Be(TimeRecorderNotice.None);
+
+        await tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+
+        tested.Notice.Should().Be(TimeRecorderNotice.StateUnconfirmed);
+        service.DelayListResponse().SetResult([]);
+        await tested.RunUserOperationAsync(tested.LoadAsync);
+        tested.Notice.Should().Be(TimeRecorderNotice.OperationFailed);
+    }
+
+    [Fact]
     public async Task 手動の再取得が失敗しても未確認状態と再取得操作を保つ()
     {
         await 開始失敗後の再取得にも失敗させる();

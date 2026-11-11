@@ -23,6 +23,9 @@ public interface ITimeRecorderViewModel
     /// <summary>利用者の操作で失敗が発生したかどうかを取得します。</summary>
     bool HasOperationFailed { get; }
 
+    /// <summary>操作欄に表示する通知を取得します。最新状態が未確認の間は再取得の案内を優先します。</summary>
+    TimeRecorderNotice Notice { get; }
+
     /// <summary>利用者が選んだ操作を実行し、失敗を画面に表示する状態として保持します。</summary>
     /// <param name="operation">開始、終了、または手動の一覧再取得。</param>
     Task RunUserOperationAsync(Func<Task> operation);

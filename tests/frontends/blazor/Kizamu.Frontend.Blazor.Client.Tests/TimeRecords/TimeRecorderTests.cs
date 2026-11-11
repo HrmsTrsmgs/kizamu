@@ -142,9 +142,8 @@ public sealed class TimeRecorderTests : IDisposable
     public void 最新状態を確認できないときは記録操作を無効にして再取得を案内します(bool 記録中, string 操作名)
     {
         記録中の状態を用意する(記録中);
-        未確認の状態を用意する(true);
+        再取得の案内を用意する();
         記録操作の可否を用意する(false);
-        操作失敗の状態を用意する();
 
         var tested = context.Render<TimeRecorder>();
 
@@ -156,7 +155,7 @@ public sealed class TimeRecorderTests : IDisposable
     [Fact]
     public async Task 再取得ボタンを押すと一覧読み込みを呼びます()
     {
-        未確認の状態を用意する(true);
+        再取得の案内を用意する();
         var tested = context.Render<TimeRecorder>();
 
         await tested.FindAll("button").Single(it => it.TextContent == "再取得").ClickAsync(new());
@@ -170,7 +169,7 @@ public sealed class TimeRecorderTests : IDisposable
     [Fact]
     public void 再取得の通信中は再取得ボタンを無効にします()
     {
-        未確認の状態を用意する(true);
+        再取得の案内を用意する();
         通信中の状態を用意する(true);
 
         var tested = context.Render<TimeRecorder>();
@@ -190,11 +189,10 @@ public sealed class TimeRecorderTests : IDisposable
 
     void 利用者の操作の呼び出しを確認する(Times times) =>
         recorder.Verify(it => it.RunUserOperationAsync(It.IsAny<Func<Task>>()), times);
-    void 未確認の状態を用意する(bool isStateUnconfirmed) => recorder.SetupGet(it => it.IsStateUnconfirmed).Returns(isStateUnconfirmed);
+    void 再取得の案内を用意する() => recorder.SetupGet(it => it.Notice).Returns(TimeRecorderNotice.StateUnconfirmed);
     void 一覧読み込みの呼び出しを確認する(Times times) => recorder.Verify(it => it.LoadAsync(), times);
     void 利用者の操作を記録処理へつなぐ() =>
         recorder.Setup(it => it.RunUserOperationAsync(It.IsAny<Func<Task>>())).Returns((Func<Task> operation) => operation());
-    void 操作失敗の状態を用意する() => recorder.SetupGet(it => it.HasOperationFailed).Returns(true);
     void 記録操作の可否を用意する(bool canOperate) => recorder.SetupGet(it => it.CanOperate).Returns(canOperate);
     void 記録一覧を用意する(IReadOnlyList<TimeRecord> records) => recorder.SetupGet(it => it.Records).Returns(records);
     void 記録中の状態を用意する(bool isRecording) => recorder.SetupGet(it => it.IsRecording).Returns(isRecording);
