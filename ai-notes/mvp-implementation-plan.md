@@ -481,9 +481,9 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### 検証と次の着手点
 
-現在は基準 `06b20ae` 上で、Blazorの登録・選択・対象別記録テストを独立した振る舞いへ分割したRefactorをこのコミットに含める。変更はProjectTabsViewModelTests・TimeRecorderViewModelTests・AppTestsのみで、製品実装と既存Reactの開始応答前切替の差分は維持。最終版の.NETテスト114件成功・Skipなし、Release解析ビルド警告0・エラー0。formatは既存IDE0290 3件・ASP0027 1件で失敗し、変更箇所の指摘はなし。次は中断していたReactの開始応答前切替のレビュー待ち差分から再開する。
+現在は基準 `06b20ae` 上で、Blazorの登録・選択・対象別記録テストを独立した振る舞いへ分割したRefactorをこのコミットに含める。変更はProjectTabsViewModelTests・TimeRecorderViewModelTests・AppTestsのみで、製品実装と既存Reactの開始応答前切替の差分は維持。最終版の.NETテスト114件成功・Skipなし、Release解析ビルド警告0・エラー0。formatは既存IDE0290 3件・ASP0027 1件で失敗し、変更箇所の指摘はなし。次はReactの対象別記録状態の残る振る舞いと画面接続に進む。
 
-* 基準 06b20ae のReact記録開始応答前の切替は、hookの選択操作未定義によるRedを確認後、開始元を保持する実装で成功。npm lint・全98テスト・build成功。hook・reducer・テストは未コミット・レビュー待ち。画面接続は未実装。
+* 基準 06b20ae のReact記録開始応答前の切替は、hookの選択操作未定義によるRedを確認後、開始元を保持する実装で成功。npm lint・全98テスト・build成功。hook・reducer・テストをこのコミットに含める。画面接続は未実装。
 
 * 基準 91ecd2b のReact未指定の記録状態は、未指定へ戻るとIDを失うRedを確認後、既存reducerの対象Mapで未指定も保持し成功。npm lint・全97テスト・build成功。reducerとテストをこのコミットに含める。hook・画面接続、他のBlazor対応ケースは未完了。
 
