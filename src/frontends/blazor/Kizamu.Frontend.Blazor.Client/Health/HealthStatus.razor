@@ -1,19 +1,14 @@
-@inject HealthApi Api
+@inject HealthStatusViewModel ViewModel
 
-<p aria-live="polite">サーバー接続: @status</p>
+<p aria-live="polite">サーバー接続: @StatusText</p>
 
 @code {
-    string status = "確認中";
-
-    protected override async Task OnInitializedAsync()
+    string StatusText => ViewModel.IsHealthy switch
     {
-        try
-        {
-            status = await Api.CheckHealthAsync() ? "正常" : "失敗";
-        }
-        catch
-        {
-            status = "失敗";
-        }
-    }
+        true => "正常",
+        false => "失敗",
+        null => "確認中",
+    };
+
+    protected override Task OnInitializedAsync() => ViewModel.CheckHealthAsync();
 }

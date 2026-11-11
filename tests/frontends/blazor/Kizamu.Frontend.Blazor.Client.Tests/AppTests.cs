@@ -1,9 +1,7 @@
-using System.Net;
-using System.Net.Http.Json;
 using AwesomeAssertions;
 using Bunit;
 using Kizamu.Domain;
-using Kizamu.Frontend.Blazor.Infrastructure.Health;
+using Kizamu.Frontend.Blazor.Presentation.Health;
 using Kizamu.Frontend.Blazor.Presentation.Projects;
 using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 using Kizamu.Frontend.Blazor.TestSupport;
@@ -15,21 +13,12 @@ public sealed class AppTests : IDisposable
 {
     static readonly TimeRecord 一つ目の記録 = new(Guid.Parse("019cde5b-4c00-7000-8000-000000000001"), DateTimeOffset.Parse("2026-08-01T09:00:00Z"), null);
     readonly BunitContext context = new();
-    readonly HttpClient client;
     readonly ProjectTabsViewModel projectTabs = new();
     readonly TimeRecorderViewModel timeRecorder = new(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
 
     public AppTests()
     {
-        var handler = new TestHttpMessageHandler()
-        {
-            Respond = _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = JsonContent.Create(new { status = "ok" })
-            })
-        };
-        client = new(handler) { BaseAddress = new("http://localhost/") };
-        context.Services.AddSingleton(new HealthApi(client));
+        context.Services.AddSingleton(new HealthStatusViewModel(new StubHealthService()));
         context.Services.AddSingleton<ITimeRecorderViewModel>(timeRecorder);
         context.Services.AddSingleton(projectTabs);
         context.Services.AddSingleton(TimeProvider.System);
@@ -199,9 +188,5 @@ public sealed class AppTests : IDisposable
     static void プロジェクトを選ぶ(IRenderedComponent<Client.App> tested, string name) =>
         tested.FindAll("[role=tab]").Single(it => it.TextContent == name).Click();
 
-    public void Dispose()
-    {
-        context.Dispose();
-        client.Dispose();
-    }
+    public void Dispose() => context.Dispose();
 }

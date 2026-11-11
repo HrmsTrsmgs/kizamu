@@ -22,6 +22,6 @@
         <Using Include="Xunit" />
         <ProjectReference Include="../../../../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/Kizamu.Frontend.Blazor.Client.csproj" />
         <Compile Include="../TestSupport/StubTimeRecordService.cs" Link="TestSupport/StubTimeRecordService.cs" />
-        <Compile Include="../TestSupport/TestHttpMessageHandler.cs" Link="TestSupport/TestHttpMessageHandler.cs" />
+        <Compile Include="../TestSupport/StubHealthService.cs" Link="TestSupport/StubHealthService.cs" />
     </ItemGroup>
 </Project>

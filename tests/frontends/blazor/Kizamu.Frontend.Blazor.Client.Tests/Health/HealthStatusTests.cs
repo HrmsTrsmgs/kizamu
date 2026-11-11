@@ -1,9 +1,7 @@
-using System.Net;
-using System.Net.Http.Json;
 using AwesomeAssertions;
 using Bunit;
 using Kizamu.Frontend.Blazor.Client.Health;
-using Kizamu.Frontend.Blazor.Infrastructure.Health;
+using Kizamu.Frontend.Blazor.Presentation.Health;
 using Kizamu.Frontend.Blazor.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,62 +10,25 @@ namespace Kizamu.Frontend.Blazor.Client.Tests.Health;
 public sealed class HealthStatusTests : IDisposable
 {
     readonly BunitContext context = new();
-    readonly TestHttpMessageHandler handler = new();
-    readonly HttpClient client;
+    readonly StubHealthService service = new();
 
-    public HealthStatusTests()
-    {
-        client = new(handler) { BaseAddress = new("http://localhost/") };
-        context.Services.AddSingleton(new HealthApi(client));
-    }
+    public HealthStatusTests() => context.Services.AddSingleton(new HealthStatusViewModel(service));
 
-    [Fact]
-    public void 正常な接続状態を表示します()
+    [Theory]
+    [InlineData(true, "正常")]
+    [InlineData(false, "失敗")]
+    public async Task 応答待ちの表示から確認結果の日本語表示に切り替わります(bool 正常, string 表示)
     {
-        handler.Respond = it => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = JsonContent.Create(new { status = "ok" })
-        });
+        var 応答 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        service.Response = 応答.Task;
 
         var tested = context.Render<HealthStatus>();
 
-        tested.Find("p").TextContent.Should().Be("サーバー接続: 正常");
+        tested.Find("p[aria-live='polite']").TextContent.Should().Be("サーバー接続: 確認中");
+        応答.SetResult(正常);
+        await tested.WaitForAssertionAsync(() =>
+            tested.Find("p[aria-live='polite']").TextContent.Should().Be($"サーバー接続: {表示}"));
     }
 
-    [Fact]
-    public void サーバーの応答が正常でない場合は失敗を表示します()
-    {
-        handler.Respond = it => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
-
-        var tested = context.Render<HealthStatus>();
-
-        tested.Find("p").TextContent.Should().Be("サーバー接続: 失敗");
-    }
-
-    [Fact]
-    public void APIに接続できない場合は失敗を表示します()
-    {
-        handler.Respond = it => throw new HttpRequestException("offline");
-
-        var tested = context.Render<HealthStatus>();
-
-        tested.Find("p").TextContent.Should().Be("サーバー接続: 失敗");
-    }
-
-    [Fact]
-    public void 応答待ちの間は確認中を表示します()
-    {
-        TaskCompletionSource<HttpResponseMessage> 応答 = new();
-        handler.Respond = it => 応答.Task;
-
-        var tested = context.Render<HealthStatus>();
-
-        tested.Find("p").TextContent.Should().Be("サーバー接続: 確認中");
-    }
-
-    public void Dispose()
-    {
-        context.Dispose();
-        client.Dispose();
-    }
+    public void Dispose() => context.Dispose();
 }
