@@ -16,6 +16,7 @@ export function useProjectTabs() {
 
   function registerProject(name: string) {
     setProjects(projects => [...projects, new Project(name)])
+    setProjectName('')
     setShowProjectDialog(false)
   }
 

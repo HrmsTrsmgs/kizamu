@@ -42,6 +42,17 @@ describe('useProjectTabs', () => {
     result.current.state.showProjectDialog.should.equal(false)
   })
 
+  it('登録後に追加を開くとプロジェクト名は空です', () => {
+    const { result } = renderHook(() => useProjectTabs())
+
+    act(() => result.current.openProjectDialog())
+    act(() => result.current.setProjectName('プロジェクトA'))
+    act(() => result.current.registerProject(result.current.state.projectName))
+    act(() => result.current.openProjectDialog())
+
+    result.current.state.projectName.should.equal('')
+  })
+
   it('登録したプロジェクトを一覧に保持します', () => {
     const { result } = renderHook(() => useProjectTabs())
 
