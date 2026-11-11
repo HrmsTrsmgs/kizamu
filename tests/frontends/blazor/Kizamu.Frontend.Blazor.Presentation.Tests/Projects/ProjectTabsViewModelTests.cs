@@ -31,18 +31,37 @@ public sealed class ProjectTabsViewModelTests
     }
 
     [Fact]
-    public void 追加を開いて名前を登録すると一覧に追加しダイアログを閉じる()
+    public void 追加を開くとダイアログを表示する()
     {
         var tested = new ProjectTabsViewModel();
 
         tested.OpenProjectDialog();
+
         tested.ShowProjectDialog.Should().BeTrue();
-        tested.ProjectName = "プロジェクトA";
+    }
+
+    [Fact]
+    public void 入力した名前を登録すると一覧に追加する()
+    {
+        var tested = new ProjectTabsViewModel { ProjectName = "プロジェクトA" };
+
         tested.RegisterProject();
 
         tested.Projects.Should().ContainSingle().Which.Name.Should().Be("プロジェクトA");
+    }
+
+    [Fact]
+    public void 追加画面から登録するとダイアログを閉じる()
+    {
+        var tested = new ProjectTabsViewModel();
+        tested.OpenProjectDialog();
+        tested.ProjectName = "プロジェクトA";
+
+        tested.RegisterProject();
+
         tested.ShowProjectDialog.Should().BeFalse();
     }
+
     [Fact]
     public void 登録後に追加を開くとプロジェクト名は空になる()
     {

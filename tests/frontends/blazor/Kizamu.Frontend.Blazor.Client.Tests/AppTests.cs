@@ -4,7 +4,6 @@ using AwesomeAssertions;
 using Bunit;
 using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Infrastructure.Health;
-using Kizamu.Frontend.Blazor.Infrastructure.TimeRecords;
 using Kizamu.Frontend.Blazor.Presentation.Projects;
 using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 using Kizamu.Frontend.Blazor.TestSupport;
@@ -18,22 +17,20 @@ public sealed class AppTests : IDisposable
     readonly BunitContext context = new();
     readonly HttpClient client;
     readonly ProjectTabsViewModel projectTabs = new();
+    readonly TimeRecorderViewModel timeRecorder = new(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
 
     public AppTests()
     {
         var handler = new TestHttpMessageHandler()
         {
-            Respond = it => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            Respond = _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = it.RequestUri?.AbsolutePath == "/api/health"
-                    ? JsonContent.Create(new { status = "ok" })
-                    : JsonContent.Create(Array.Empty<TimeRecordResponse>())
+                Content = JsonContent.Create(new { status = "ok" })
             })
         };
         client = new(handler) { BaseAddress = new("http://localhost/") };
         context.Services.AddSingleton(new HealthApi(client));
-        context.Services.AddSingleton<ITimeRecordService>(new TimeRecordApi(client));
-        context.Services.AddTransient<TimeRecorderViewModel>();
+        context.Services.AddSingleton(timeRecorder);
         context.Services.AddSingleton(projectTabs);
         context.Services.AddSingleton(TimeProvider.System);
     }
@@ -49,32 +46,60 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void プロジェクトの追加をキャンセルすると登録せずポップアップを閉じます()
+    public void 追加ボタンを押すとプロジェクト追加ポップアップを表示します()
     {
         var tested = context.Render<Client.App>();
 
         tested.FindAll("button").Single(it => it.TextContent == "追加").Click();
-        var popup = tested.Find("[role=dialog]");
-        var nameInput = popup.QuerySelector("input");
+
+        tested.FindAll("[role=dialog]").Should().ContainSingle();
+    }
+
+    [Fact]
+    public void プロジェクト追加ポップアップでプロジェクト名を入力できます()
+    {
+        projectTabs.OpenProjectDialog();
+        var tested = context.Render<Client.App>();
+        var nameInput = tested.Find("[role=dialog]").QuerySelector("input");
         nameInput.Should().NotBeNull();
+
         nameInput.Change("プロジェクトA");
-        popup.QuerySelectorAll("button").Single(it => it.TextContent == "キャンセル").Click();
+
+        tested.Find("[role=dialog] input").GetAttribute("value").Should().Be("プロジェクトA");
+    }
+
+    [Fact]
+    public void プロジェクトの追加をキャンセルするとポップアップを閉じます()
+    {
+        projectTabs.OpenProjectDialog();
+        projectTabs.ProjectName = "プロジェクトA";
+        var tested = context.Render<Client.App>();
+
+        tested.FindAll("[role=dialog] button").Single(it => it.TextContent == "キャンセル").Click();
 
         tested.FindAll("[role=dialog]").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void プロジェクトの追加をキャンセルすると入力した名前のタブを登録しません()
+    {
+        projectTabs.OpenProjectDialog();
+        projectTabs.ProjectName = "プロジェクトA";
+        var tested = context.Render<Client.App>();
+
+        tested.FindAll("[role=dialog] button").Single(it => it.TextContent == "キャンセル").Click();
+
         tested.FindAll("[role=tab]").Select(it => it.TextContent).Should().NotContain("プロジェクトA");
     }
 
     [Fact]
-    public void 追加ボタンで開いたポップアップにプロジェクト名を入力して登録するとタブを表示します()
+    public void 入力したプロジェクト名を登録するとタブを表示します()
     {
+        projectTabs.OpenProjectDialog();
         var tested = context.Render<Client.App>();
+        tested.Find("[role=dialog] input").Change("プロジェクトA");
 
-        tested.FindAll("button").Single(it => it.TextContent == "追加").Click();
-        var popup = tested.Find("[role=dialog]");
-        var nameInput = popup.QuerySelector("input");
-        nameInput.Should().NotBeNull();
-        nameInput.Change("プロジェクトA");
-        popup.QuerySelectorAll("button").Single(it => it.TextContent == "登録").Click();
+        tested.FindAll("[role=dialog] button").Single(it => it.TextContent == "登録").Click();
 
         tested.FindAll("[role=tab]").Select(it => it.TextContent).Should().Contain("プロジェクトA");
     }
@@ -91,7 +116,7 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void 登録済みプロジェクトを選ぶとそのタブが選択中になり未指定の選択が解除されます()
+    public void 登録済みプロジェクトを選ぶとそのタブが選択中になります()
     {
         プロジェクトを登録する(projectTabs, "プロジェクトA");
         var tested = context.Render<Client.App>();
@@ -99,35 +124,70 @@ public sealed class AppTests : IDisposable
         プロジェクトを選ぶ(tested, "プロジェクトA");
 
         tested.FindAll("[role=tab]").Single(it => it.TextContent == "プロジェクトA").GetAttribute("aria-selected").Should().Be("true");
+    }
+
+    [Fact]
+    public void 登録済みプロジェクトを選ぶと未指定の選択が解除されます()
+    {
+        プロジェクトを登録する(projectTabs, "プロジェクトA");
+        var tested = context.Render<Client.App>();
+
+        プロジェクトを選ぶ(tested, "プロジェクトA");
+
         tested.Find(".project-default").GetAttribute("aria-selected").Should().Be("false");
     }
 
     [Fact]
-    public void プロジェクトを指定せずに記録を開始できます()
+    public void プロジェクトを指定せずに記録を開始すると終了操作を表示します()
     {
-        context.Services.AddSingleton<ITimeRecordService>(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
         var tested = context.Render<Client.App>();
 
         tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
 
         tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を終了");
+    }
+
+    [Fact]
+    public void プロジェクトを指定せずに記録を開始すると一覧に記録を表示します()
+    {
+        var tested = context.Render<Client.App>();
+
+        tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
+
         tested.FindAll("ul[aria-label='作業記録一覧'] li").Should().ContainSingle();
     }
 
     [Fact]
-    public void タブを切り替えて戻ると記録中の対象には終了操作を表示します()
+    public async Task 記録していないプロジェクトへタブを切り替えると開始操作を表示します()
     {
-        context.Services.AddSingleton<ITimeRecordService>(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
-        プロジェクトを登録する(projectTabs, "プロジェクトA");
-        プロジェクトを登録する(projectTabs, "プロジェクトB");
-        var tested = context.Render<Client.App>();
-        プロジェクトを選ぶ(tested, "プロジェクトA");
-        tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
+        var tested = await プロジェクトAの記録を開始する();
 
         プロジェクトを選ぶ(tested, "プロジェクトB");
+
         tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を開始");
+    }
+
+    [Fact]
+    public async Task タブを切り替えて戻ると記録中の対象には終了操作を表示します()
+    {
+        var tested = await プロジェクトAの記録を開始する();
+        projectTabs.SelectProject(projectTabs.Projects[1]);
+        tested.Render(_ => { });
+
         プロジェクトを選ぶ(tested, "プロジェクトA");
+
         tested.FindAll("button").Select(it => it.TextContent).Should().NotContain("記録を開始").And.Contain("記録を終了");
+    }
+
+    async Task<IRenderedComponent<Client.App>> プロジェクトAの記録を開始する()
+    {
+        プロジェクトを登録する(projectTabs, "プロジェクトA");
+        プロジェクトを登録する(projectTabs, "プロジェクトB");
+        projectTabs.SelectProject(projectTabs.Projects[0]);
+        var tested = context.Render<Client.App>();
+        await timeRecorder.StartTimeRecordAsync();
+        tested.Render(_ => { });
+        return tested;
     }
 
     static void プロジェクトを登録する(ProjectTabsViewModel viewModel, string name)
