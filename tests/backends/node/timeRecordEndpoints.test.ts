@@ -106,9 +106,8 @@ test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
     })
     response.statusCode.should.equal(403)
 
-    const listResponse = await app.inject({ method: 'GET', url: '/api/time-records' })
-    listResponse.statusCode.should.equal(200)
-    listResponse.json<TimeRecordResponse[]>().should.deep.equal([])
+    const records = await readTimeRecords(app)
+    records.should.deep.equal([])
   },
 )
 
@@ -125,11 +124,16 @@ test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
     })
     response.statusCode.should.equal(403)
 
-    const listResponse = await app.inject({ method: 'GET', url: '/api/time-records' })
-    listResponse.statusCode.should.equal(200)
-    listResponse.json<TimeRecordResponse[]>().should.deep.equal([startedRecord])
+    const records = await readTimeRecords(app)
+    records.should.deep.equal([startedRecord])
   },
 )
+
+async function readTimeRecords(app: ReturnType<typeof createApp>): Promise<TimeRecordResponse[]> {
+  const response = await app.inject({ method: 'GET', url: '/api/time-records' })
+  response.statusCode.should.equal(200)
+  return response.json<TimeRecordResponse[]>()
+}
 
 function postFromSameOrigin(app: ReturnType<typeof createApp>, url: string) {
   return app.inject({
