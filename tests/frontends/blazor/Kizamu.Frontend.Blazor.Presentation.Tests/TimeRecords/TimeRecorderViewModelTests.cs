@@ -82,14 +82,7 @@ public sealed class TimeRecorderViewModelTests
         var プロジェクトA = new Project("プロジェクトA");
         var 終了する記録ID = プロジェクトを終了する ? 別の記録ID : 記録ID;
         var 残る記録ID = プロジェクトを終了する ? 記録ID : 別の記録ID;
-        var service = new StubTimeRecordService(
-            new(記録ID, 開始時刻, null), new(終了する記録ID, 開始時刻, 終了時刻));
-        var tested = new TimeRecorderViewModel(service);
-        tested.SelectProject(null);
-        await tested.StartTimeRecordAsync();
-        tested.SelectProject(プロジェクトA);
-        service.StartedRecord = new(別の記録ID, 開始時刻, null);
-        await tested.StartTimeRecordAsync();
+        var (tested, service) = await 未指定対象とプロジェクトで記録中の状態を用意する(プロジェクトA, 終了する記録ID);
         tested.SelectProject(プロジェクトを終了する ? プロジェクトA : null);
 
         await tested.EndTimeRecordAsync();
@@ -135,8 +128,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 開始すると確定した記録が一覧の末尾と操作欄に反映される()
     {
-        service.Records = [new(別の記録ID, 開始時刻, 終了時刻)];
-        await tested.LoadAsync();
+        await 終了済みの履歴を読み込む();
 
         await tested.StartTimeRecordAsync();
 
@@ -170,9 +162,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 操作後の再読み込みはサーバーの更新と削除を反映する()
     {
-        service.Records = [new(別の記録ID, 開始時刻, 終了時刻)];
-        await tested.LoadAsync();
-        await tested.StartTimeRecordAsync();
+        await 履歴がある状態で記録を開始する();
         service.Records = [service.EndedRecord];
 
         await tested.LoadAsync();
@@ -184,9 +174,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 終了すると開始した記録だけが更新され操作結果が残る()
     {
-        service.Records = [new(別の記録ID, 開始時刻, 終了時刻)];
-        await tested.LoadAsync();
-        await tested.StartTimeRecordAsync();
+        await 履歴がある状態で記録を開始する();
 
         await tested.EndTimeRecordAsync();
 
@@ -234,5 +222,31 @@ public sealed class TimeRecorderViewModelTests
         tested.Records.Should().BeEmpty();
         tested.DisplayedRecord.Should().BeNull();
         tested.IsRecording.Should().BeFalse();
+    }
+
+    async Task 終了済みの履歴を読み込む()
+    {
+        service.Records = [new(別の記録ID, 開始時刻, 終了時刻)];
+        await tested.LoadAsync();
+    }
+
+    async Task 履歴がある状態で記録を開始する()
+    {
+        await 終了済みの履歴を読み込む();
+        await tested.StartTimeRecordAsync();
+    }
+
+    static async Task<(TimeRecorderViewModel tested, StubTimeRecordService service)> 未指定対象とプロジェクトで記録中の状態を用意する(
+        Project プロジェクト, Guid 終了する記録ID)
+    {
+        var service = new StubTimeRecordService(
+            new(記録ID, 開始時刻, null), new(終了する記録ID, 開始時刻, 終了時刻));
+        var tested = new TimeRecorderViewModel(service);
+        tested.SelectProject(null);
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(プロジェクト);
+        service.StartedRecord = new(別の記録ID, 開始時刻, null);
+        await tested.StartTimeRecordAsync();
+        return (tested, service);
     }
 }

@@ -15,8 +15,8 @@ test('メモリ上の記録を識別子で取得し、置換しても順序を�
 
   tested.replace(ended)
 
-  ;({ record: tested.find('first') }).should.have.property('record').that.deep.equal(ended)
-  tested.all().should.deep.equal([ended, second])
+  ;({ record: tested.find('first') }).should.toStrictEqual({ record: ended })
+  tested.all().should.toStrictEqual([ended, second])
 })
 
 test('時刻と識別子を生成します', () => {
