@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { Project } from 'kizamu-domain-typescript'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Mock } from 'vitest'
 import type { TimeRecordService } from '../../../../src/frontends/react/src/presentation/timeRecordService'
@@ -245,6 +246,28 @@ describe('useTimeRecorder', () => {
     })
   })
 
+  it('開始の応答前に対象を切り替えても開始元の記録中状態を更新します', async () => {
+    const プロジェクトA = new Project('プロジェクトA')
+    const 応答 = deferred<typeof 記録>()
+    const service = createTimeRecordServiceStub({ startTimeRecord: () => 応答.promise })
+    const { result } = renderHook(() => useTimeRecorder(service))
+    await act(async () => {})
+
+    // 未確定の公開API案: DomainのProjectまたは未指定を選択します。
+    act(() => result.current.selectProject(プロジェクトA))
+    let 開始操作 = Promise.resolve()
+    act(() => { 開始操作 = result.current.startTimeRecord() })
+    act(() => result.current.selectProject(undefined))
+    await act(async () => {
+      応答.resolve(記録)
+      await 開始操作
+    })
+
+    result.current.state.records.should.deep.equal([記録])
+    result.current.state.should.have.property('timeRecordId', null)
+    act(() => result.current.selectProject(プロジェクトA))
+    result.current.state.should.have.property('timeRecordId', 記録ID)
+  })
   it('開始後に古い一覧が届いても過去の記録と開始した記録が残り終了できます', async () => {
     const 過去の記録 = presentedRecord(次の記録ID, 開始時刻, 終了時刻)
     const initialListResponse = deferred<(typeof 記録)[]>()

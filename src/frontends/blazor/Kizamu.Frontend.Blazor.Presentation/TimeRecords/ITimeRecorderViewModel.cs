@@ -20,6 +20,10 @@ public interface ITimeRecorderViewModel
     /// <summary>操作欄に表示する記録を取得します。</summary>
     TimeRecord? DisplayedRecord { get; }
 
+    /// <summary>記録対象のプロジェクトを選択します。</summary>
+    /// <param name="project">選択するプロジェクト。未指定の場合はnull。</param>
+    void SelectProject(Project? project);
+
     /// <summary>記録一覧を読み込みます。</summary>
     /// <returns>読み込みの完了。</returns>
     Task LoadAsync();

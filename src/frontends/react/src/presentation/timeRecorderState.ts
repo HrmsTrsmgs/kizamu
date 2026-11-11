@@ -1,6 +1,9 @@
+import type { Project } from 'kizamu-domain-typescript'
 import { getTimeRecordTimestamps, type RecordTimestamp, type TimeRecordPresentation } from './timeRecordPresentation'
 
 export type TimeRecorderState = Readonly<{
+  selectedProject?: Project
+  projectTimeRecordIds?: ReadonlyMap<Project | undefined, string | null>
   records: readonly TimeRecordPresentation[]
   timeRecordId: string | null
   startedAt: RecordTimestamp | null
@@ -8,8 +11,9 @@ export type TimeRecorderState = Readonly<{
 }>
 
 export type TimeRecorderAction =
+  | { type: 'projectSelected', project: Project | undefined }
   | { type: 'recordsLoaded', records: readonly TimeRecordPresentation[], updatedRecords?: readonly TimeRecordPresentation[] }
-  | { type: 'recordStarted', record: TimeRecordPresentation }
+  | { type: 'recordStarted', record: TimeRecordPresentation, project?: Project }
   | { type: 'recordEnded', record: TimeRecordPresentation }
 
 export const initialTimeRecorderState: TimeRecorderState = {
@@ -24,6 +28,16 @@ export function timeRecorderReducer(
   action: TimeRecorderAction,
 ): TimeRecorderState {
   switch (action.type) {
+    case 'projectSelected': {
+      const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
+      projectTimeRecordIds.set(state.selectedProject, state.timeRecordId)
+      return {
+        ...state,
+        selectedProject: action.project,
+        projectTimeRecordIds,
+        timeRecordId: projectTimeRecordIds.get(action.project) ?? null,
+      }
+    }
     case 'recordsLoaded': {
       const updatedRecords = action.updatedRecords ?? []
       const latestUpdates = [...updatedRecords].reverse()
@@ -42,6 +56,11 @@ export function timeRecorderReducer(
       }
     }
     case 'recordStarted':
+      if ('project' in action && action.project !== state.selectedProject) {
+        const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
+        projectTimeRecordIds.set(action.project, action.record.record.id)
+        return { ...state, records: [...state.records, action.record], projectTimeRecordIds }
+      }
       return {
         ...state,
         records: [...state.records, action.record],

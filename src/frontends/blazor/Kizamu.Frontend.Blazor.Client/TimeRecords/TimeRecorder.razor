@@ -3,7 +3,7 @@
 <div class="time-recorder">
     <section class="recorder-panel" aria-labelledby="recorder-title">
         <header class="panel-header">
-            <h2 id="recorder-title">プロジェクト未指定</h2>
+            <h2 id="recorder-title">@(SelectedProject?.Name ?? "プロジェクト未指定")</h2>
             <span class="status-badge @(ViewModel.IsRecording ? "is-active" : "")">
                 @(ViewModel.IsRecording ? "記録中" : "待機中")
             </span>
@@ -50,6 +50,10 @@
 </div>
 
 @code {
+    [Parameter]
+    public Project? SelectedProject { get; set; }
+
+    protected override void OnParametersSet() => ViewModel.SelectProject(SelectedProject);
     bool operationFailed;
 
     protected override Task OnInitializedAsync() => ViewModel.LoadAsync();
