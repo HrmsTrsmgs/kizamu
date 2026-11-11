@@ -20,6 +20,50 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task 利用者の操作が失敗しても完了しその後の成功で失敗表示は消えない()
+    {
+        var 応答 = new TaskCompletionSource<TimeRecord>();
+        service.StartResponse = 応答.Task;
+
+        var 開始 = tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+        tested.CanOperate.Should().BeFalse();
+        tested.HasOperationFailed.Should().BeFalse();
+        応答.SetException(new InvalidOperationException());
+        await 開始;
+
+        tested.HasOperationFailed.Should().BeTrue();
+        tested.CanOperate.Should().BeTrue();
+        service.StartResponse = null;
+        await tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+        tested.IsRecording.Should().BeTrue();
+        tested.HasOperationFailed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task 手動の再取得が失敗しても未確認状態と再取得操作を保つ()
+    {
+        await 開始失敗後の再取得にも失敗させる();
+
+        await tested.RunUserOperationAsync(tested.LoadAsync);
+
+        tested.HasOperationFailed.Should().BeTrue();
+        tested.IsStateUnconfirmed.Should().BeTrue();
+        tested.CanOperate.Should().BeFalse();
+        tested.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task 初回の一覧取得に失敗すると操作失敗の表示を付けず例外を返す()
+    {
+        var 取得失敗 = new InvalidOperationException();
+        一覧取得を失敗させる(取得失敗);
+
+        (await Assert.ThrowsAsync<InvalidOperationException>(tested.LoadAsync)).Should().BeSameAs(取得失敗);
+
+        tested.HasOperationFailed.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task 異なるプロジェクトの記録を同時に開始できる()
     {
         await 異なるプロジェクトの記録を開始する();

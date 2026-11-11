@@ -11,18 +11,18 @@
         <div class="recorder-action">
             @if (!ViewModel.IsRecording)
             {
-                <button class="record-button" type="button" disabled="@(ViewModel.IsBusy || ViewModel.IsStateUnconfirmed)" @onclick="StartTimeRecordAsync">記録を開始</button>
+                <button class="record-button" type="button" disabled="@(!ViewModel.CanOperate)" @onclick="() => ViewModel.RunUserOperationAsync(ViewModel.StartTimeRecordAsync)">記録を開始</button>
             }
             else
             {
-                <button class="record-button is-active" type="button" disabled="@(ViewModel.IsBusy || ViewModel.IsStateUnconfirmed)" @onclick="EndTimeRecordAsync">記録を終了</button>
+                <button class="record-button is-active" type="button" disabled="@(!ViewModel.CanOperate)" @onclick="() => ViewModel.RunUserOperationAsync(ViewModel.EndTimeRecordAsync)">記録を終了</button>
             }
             @if (ViewModel.IsStateUnconfirmed)
             {
                 <p role="alert">最新状態を確認できません。再取得してください。</p>
-                <button type="button" disabled="@ViewModel.IsBusy" @onclick="ReloadTimeRecordsAsync">再取得</button>
+                <button type="button" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.RunUserOperationAsync(ViewModel.LoadAsync)">再取得</button>
             }
-            else if (operationFailed)
+            else if (ViewModel.HasOperationFailed)
             {
                 <p role="alert">記録操作に失敗しました。</p>
             }
@@ -54,43 +54,6 @@
     public Project? SelectedProject { get; set; }
 
     protected override void OnParametersSet() => ViewModel.SelectProject(SelectedProject);
-    bool operationFailed;
 
     protected override Task OnInitializedAsync() => ViewModel.LoadAsync();
-
-    async Task ReloadTimeRecordsAsync()
-    {
-        try
-        {
-            await ViewModel.LoadAsync();
-        }
-        catch
-        {
-            operationFailed = true;
-        }
-    }
-
-    async Task StartTimeRecordAsync()
-    {
-        try
-        {
-            await ViewModel.StartTimeRecordAsync();
-        }
-        catch
-        {
-            operationFailed = true;
-        }
-    }
-
-    async Task EndTimeRecordAsync()
-    {
-        try
-        {
-            await ViewModel.EndTimeRecordAsync();
-        }
-        catch
-        {
-            operationFailed = true;
-        }
-    }
 }

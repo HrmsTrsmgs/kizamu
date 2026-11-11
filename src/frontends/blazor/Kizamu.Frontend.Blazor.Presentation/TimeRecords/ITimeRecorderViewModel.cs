@@ -17,6 +17,16 @@ public interface ITimeRecorderViewModel
     /// <summary>操作失敗後の最新状態を確認できていないかどうかを取得します。</summary>
     bool IsStateUnconfirmed { get; }
 
+    /// <summary>開始・終了操作を受け付ける状態かどうかを取得します。</summary>
+    bool CanOperate { get; }
+
+    /// <summary>利用者の操作で失敗が発生したかどうかを取得します。</summary>
+    bool HasOperationFailed { get; }
+
+    /// <summary>利用者が選んだ操作を実行し、失敗を画面に表示する状態として保持します。</summary>
+    /// <param name="operation">開始、終了、または手動の一覧再取得。</param>
+    Task RunUserOperationAsync(Func<Task> operation);
+
     /// <summary>操作欄に表示する記録を取得します。</summary>
     TimeRecord? DisplayedRecord { get; }
 

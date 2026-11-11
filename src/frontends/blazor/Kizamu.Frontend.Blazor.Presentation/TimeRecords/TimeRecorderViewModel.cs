@@ -42,6 +42,25 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     /// <summary>操作失敗後の最新状態を確認できていないかどうかを取得します。</summary>
     public bool IsStateUnconfirmed { get; private set; }
 
+    /// <inheritdoc />
+    public bool CanOperate => !IsBusy && !IsStateUnconfirmed;
+
+    /// <inheritdoc />
+    public bool HasOperationFailed { get; private set; }
+
+    /// <inheritdoc />
+    public async Task RunUserOperationAsync(Func<Task> operation)
+    {
+        try
+        {
+            await operation();
+        }
+        catch
+        {
+            HasOperationFailed = true;
+        }
+    }
+
     /// <summary>操作した直近の記録を取得します。終了後も結果を残し、再開始時に差し替えます。</summary>
     public TimeRecord? DisplayedRecord { get; private set; }
 
@@ -98,7 +117,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     /// <returns>開始と画面状態の更新の完了。</returns>
     public async Task StartTimeRecordAsync()
     {
-        if (IsBusy || IsStateUnconfirmed) return;
+        if (!CanOperate) return;
         IsBusy = true;
         try
         {
@@ -127,7 +146,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     /// <returns>終了と画面状態の更新の完了。</returns>
     public async Task EndTimeRecordAsync()
     {
-        if (IsBusy || IsStateUnconfirmed) return;
+        if (!CanOperate) return;
         if (CurrentId is { } id)
         {
             IsBusy = true;
