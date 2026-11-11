@@ -68,6 +68,22 @@ describe('App', () => {
     screen.getByRole('heading', { name: 'プロジェクトA', level: 2 }).should.toBeInTheDocument()
   })
 
+  it('タブを切り替えて戻ると記録中の対象には終了操作を表示します', async () => {
+    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+    プロジェクトを登録する('プロジェクトA')
+    プロジェクトを登録する('プロジェクトB')
+    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+    await screen.findByRole('button', { name: '記録を終了' })
+
+    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトB' }))
+
+    screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
+    screen.getByRole('button', { name: '記録を終了' }).should.toBeInTheDocument()
+    should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
+  })
+
   it('登録ボタンを押すとプロジェクト追加ダイアログを閉じます', () => {
     const health = { checkHealth: async () => true }
     const timeRecords = createTimeRecordServiceStub()
@@ -104,3 +120,9 @@ describe('App', () => {
     should.not.exist(screen.queryByText(/count is/i))
   })
 })
+
+function プロジェクトを登録する(name: string) {
+  fireEvent.click(screen.getByRole('button', { name: '追加' }))
+  fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: name } })
+  fireEvent.click(screen.getByRole('button', { name: '登録' }))
+}

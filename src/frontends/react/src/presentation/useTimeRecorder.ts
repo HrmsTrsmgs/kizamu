@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef } from 'react'
 import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from './timeRecordService'
 import type { TimeRecordPresentation } from './timeRecordPresentation'
@@ -38,9 +38,9 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     }
   }
 
-  function selectProject(project: Project | undefined) {
+  const selectProject = useCallback((project: Project | undefined) => {
     dispatch({ type: 'projectSelected', project })
-  }
+  }, [])
 
   return { state, selectProject, startTimeRecord, endTimeRecord }
 }

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from '../presentation/timeRecordService'
 import { useTimeRecorder } from '../presentation/useTimeRecorder'
@@ -10,7 +11,11 @@ type TimeRecorderProps = {
 }
 
 export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecorderProps) {
-  const { state, startTimeRecord, endTimeRecord } = useTimeRecorder(timeRecords)
+  const { state, selectProject, startTimeRecord, endTimeRecord } = useTimeRecorder(timeRecords)
+
+  useEffect(() => {
+    selectProject(selectedProject)
+  }, [selectedProject, selectProject])
 
   return (
     <div className="time-recorder">
