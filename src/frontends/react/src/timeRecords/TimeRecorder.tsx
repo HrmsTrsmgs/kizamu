@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from '../presentation/timeRecordService'
 import { useTimeRecorder } from '../presentation/useTimeRecorder'
+import type { TimeRecorderControls } from '../presentation/timeRecorderOperationState'
 import type { TimeRecorderState } from '../presentation/timeRecorderState'
 import { getTimeRecordTimestamps } from '../presentation/timeRecordPresentation'
 import TimeRecordTimes from './TimeRecordTimes'
@@ -12,7 +13,7 @@ type TimeRecorderProps = {
 }
 
 export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecorderProps) {
-  const { state, selectProject, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords } = useTimeRecorder(timeRecords)
+  const { state, selectProject, controls, startTimeRecord, endTimeRecord, reloadTimeRecords } = useTimeRecorder(timeRecords)
 
   useEffect(() => {
     selectProject(selectedProject)
@@ -21,8 +22,7 @@ export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecor
   return (
     <TimeRecorderView
       state={state}
-      isBusy={isBusy}
-      isStateUnconfirmed={isStateUnconfirmed}
+      controls={controls}
       startTimeRecord={startTimeRecord}
       endTimeRecord={endTimeRecord}
       reloadTimeRecords={reloadTimeRecords}
@@ -32,42 +32,41 @@ export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecor
 
 type TimeRecorderViewProps = {
   state: TimeRecorderState
-  isBusy: boolean
-  isStateUnconfirmed: boolean
-  startTimeRecord: () => Promise<void>
-  endTimeRecord: () => Promise<void>
-  reloadTimeRecords: () => Promise<void>
+  controls: TimeRecorderControls
+  startTimeRecord: () => void
+  endTimeRecord: () => void
+  reloadTimeRecords: () => void
 }
 
-export function TimeRecorderView({ state, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords }: TimeRecorderViewProps) {
-  const [operationFailed, setOperationFailed] = useState(false)
+export function TimeRecorderView({ state, controls, startTimeRecord, endTimeRecord, reloadTimeRecords }: TimeRecorderViewProps) {
+  const isRecording = state.timeRecordId !== null
 
   return (
     <div className="time-recorder">
       <section className="recorder-panel" aria-labelledby="recorder-title">
         <header className="panel-header">
           <h2 id="recorder-title">{state.selectedProject?.name ?? 'プロジェクト未指定'}</h2>
-          <span className={`status-badge ${state.timeRecordId === null ? '' : 'is-active'}`}>
-            {state.timeRecordId === null ? '待機中' : '記録中'}
+          <span className={`status-badge ${isRecording ? 'is-active' : ''}`}>
+            {isRecording ? '記録中' : '待機中'}
           </span>
         </header>
 
         <div className="recorder-action">
-          {state.timeRecordId === null ? (
-            <button className="record-button" type="button" disabled={isBusy || isStateUnconfirmed} onClick={() => { void startTimeRecord().catch(() => setOperationFailed(true)) }}>
-              記録を開始
-            </button>
-          ) : (
-            <button className="record-button is-active" type="button" disabled={isBusy || isStateUnconfirmed} onClick={() => { void endTimeRecord().catch(() => setOperationFailed(true)) }}>
-              記録を終了
-            </button>
-          )}
-          {isStateUnconfirmed ? (
+          <button
+            className={isRecording ? 'record-button is-active' : 'record-button'}
+            type="button"
+            disabled={!controls.canChangeRecord}
+            onClick={isRecording ? endTimeRecord : startTimeRecord}
+          >
+            {isRecording ? '記録を終了' : '記録を開始'}
+          </button>
+          {controls.notice === 'stateUnconfirmed' && (
             <>
               <p role="alert">最新状態を確認できません。再取得してください。</p>
-              <button type="button" disabled={isBusy} onClick={() => { void reloadTimeRecords().catch(() => setOperationFailed(true)) }}>再取得</button>
+              <button type="button" disabled={!controls.canReload} onClick={reloadTimeRecords}>再取得</button>
             </>
-          ) : operationFailed && <p role="alert">記録操作に失敗しました。</p>}
+          )}
+          {controls.notice === 'operationFailed' && <p role="alert">記録操作に失敗しました。</p>}
           {state.startedAt !== null && (
             <TimeRecordTimes
               startedAt={state.startedAt}
