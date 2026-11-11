@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, it } from 'vitest'
 import { should } from '../../should.mjs'
 import App from '../../../src/frontends/react/src/App'
@@ -14,6 +14,20 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: '追加' }))
 
     screen.getByRole('dialog', { name: 'プロジェクトを追加' }).should.toBeInTheDocument()
+  })
+
+  it('プロジェクト追加ダイアログでプロジェクト名を入力できます', () => {
+    const health = { checkHealth: async () => true }
+    const timeRecords = createTimeRecordServiceStub()
+
+    render(<App health={health} timeRecords={timeRecords} />)
+    fireEvent.click(screen.getByRole('button', { name: '追加' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'プロジェクトを追加' })
+    const projectName = within(dialog).getByRole('textbox', { name: 'プロジェクト名' })
+    fireEvent.change(projectName, { target: { value: 'プロジェクトA' } })
+
+    projectName.should.toHaveValue('プロジェクトA')
   })
 
   it('キャンセルボタンを押すとプロジェクト追加ダイアログを閉じます', () => {

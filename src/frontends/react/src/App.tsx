@@ -11,7 +11,7 @@ type AppProps = {
 }
 
 export default function App({ health, timeRecords }: AppProps) {
-  const { state, openProjectDialog, cancelProjectDialog } = useProjectTabs()
+  const { state, setProjectName, openProjectDialog, cancelProjectDialog } = useProjectTabs()
 
   return (
     <main>
@@ -30,6 +30,8 @@ export default function App({ health, timeRecords }: AppProps) {
         <div className="project-dialog-overlay">
           <div className="project-dialog" role="dialog" aria-labelledby="project-dialog-title">
             <h2 id="project-dialog-title">プロジェクトを追加</h2>
+            <label htmlFor="project-name">プロジェクト名</label>
+            <input id="project-name" value={state.projectName} onChange={event => setProjectName(event.target.value)} />
             <div className="project-dialog-actions">
               <button className="project-cancel-button" type="button" onClick={cancelProjectDialog}>キャンセル</button>
             </div>
