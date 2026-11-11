@@ -53,6 +53,17 @@ describe('useProjectTabs', () => {
     result.current.state.projectName.should.equal('')
   })
 
+  it('登録したプロジェクトを選択すると選択した対象を保持します', () => {
+    const { result } = renderHook(() => useProjectTabs())
+
+    act(() => result.current.registerProject('プロジェクトA'))
+    const project = result.current.state.projects[0]
+
+    act(() => result.current.selectProject(project))
+
+    result.current.state.should.have.property('selectedProject', project)
+  })
+
   it('登録したプロジェクトを一覧に保持します', () => {
     const { result } = renderHook(() => useProjectTabs())
 

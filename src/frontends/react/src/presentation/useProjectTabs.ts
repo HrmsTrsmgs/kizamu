@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 export function useProjectTabs() {
   const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<Project>()
   const [projectName, setProjectName] = useState('')
   const [showProjectDialog, setShowProjectDialog] = useState(false)
 
@@ -20,5 +21,5 @@ export function useProjectTabs() {
     setShowProjectDialog(false)
   }
 
-  return { state: { projects, projectName, showProjectDialog }, setProjectName, registerProject, openProjectDialog, cancelProjectDialog }
+  return { state: { projects, selectedProject, projectName, showProjectDialog }, setProjectName, registerProject, selectProject: setSelectedProject, openProjectDialog, cancelProjectDialog }
 }
