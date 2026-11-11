@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { TimeRecordService } from '../presentation/timeRecordService'
 import { useTimeRecorder } from '../presentation/useTimeRecorder'
 import type { TimeRecorderState } from '../presentation/timeRecorderState'
@@ -22,6 +23,8 @@ type TimeRecorderViewProps = {
 }
 
 export function TimeRecorderView({ state, isBusy, startTimeRecord, endTimeRecord }: TimeRecorderViewProps) {
+  const [operationFailed, setOperationFailed] = useState(false)
+
   return (
     <div className="time-recorder">
       <section className="recorder-panel" aria-labelledby="recorder-title">
@@ -34,14 +37,15 @@ export function TimeRecorderView({ state, isBusy, startTimeRecord, endTimeRecord
 
         <div className="recorder-action">
           {state.timeRecordId === null ? (
-            <button className="record-button" type="button" disabled={isBusy} onClick={() => { void startTimeRecord() }}>
+            <button className="record-button" type="button" disabled={isBusy} onClick={() => { void startTimeRecord().catch(() => setOperationFailed(true)) }}>
               記録を開始
             </button>
           ) : (
-            <button className="record-button is-active" type="button" disabled={isBusy} onClick={() => { void endTimeRecord() }}>
+            <button className="record-button is-active" type="button" disabled={isBusy} onClick={() => { void endTimeRecord().catch(() => setOperationFailed(true)) }}>
               記録を終了
             </button>
           )}
+          {operationFailed && <p role="alert">記録操作に失敗しました。</p>}
           {state.startedAt !== null && (
             <TimeRecordTimes
               startedAt={state.startedAt}

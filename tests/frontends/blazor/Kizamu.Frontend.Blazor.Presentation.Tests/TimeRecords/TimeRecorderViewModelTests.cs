@@ -159,6 +159,7 @@ public sealed class TimeRecorderViewModelTests
     public async Task 終了の通信中は追加操作を受け付けず失敗後に再終了できる()
     {
         await tested.StartTimeRecordAsync();
+        service.Records = [service.StartedRecord];
         TaskCompletionSource<TimeRecord> 応答 = new();
         service.EndResponse = 応答.Task;
         var 終了操作 = tested.EndTimeRecordAsync();
@@ -173,6 +174,33 @@ public sealed class TimeRecorderViewModelTests
         service.EndResponse = null;
         await tested.EndTimeRecordAsync();
         service.EndedIds.Should().Equal(記録ID, 記録ID);
+    }
+
+    [Fact]
+    public async Task 開始の通信に失敗すると一覧を再取得して反映する()
+    {
+        service.Records = [service.StartedRecord];
+        service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync());
+
+        service.ListCount.Should().Be(1);
+        tested.Records.Should().Equal(service.StartedRecord);
+        tested.IsRecording.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task 終了の通信に失敗すると一覧を再取得して反映する()
+    {
+        await tested.StartTimeRecordAsync();
+        service.Records = [service.EndedRecord];
+        service.EndResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync());
+
+        service.ListCount.Should().Be(1);
+        tested.Records.Should().Equal(service.EndedRecord);
+        tested.IsRecording.Should().BeFalse();
     }
 
     [Fact]

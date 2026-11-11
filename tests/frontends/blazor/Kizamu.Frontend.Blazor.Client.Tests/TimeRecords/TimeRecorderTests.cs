@@ -58,6 +58,17 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
+    public async Task 開始操作に失敗すると利用者に知らせます()
+    {
+        開始操作の失敗を用意する(new HttpRequestException());
+        var tested = context.Render<TimeRecorder>();
+
+        await tested.Find("button").ClickAsync(new());
+
+        tested.Find("[role='alert']").TextContent.Should().Contain("失敗");
+    }
+
+    [Fact]
     public void 開始済みの状態に開始時刻と終了操作を表示します()
     {
         記録中の状態を用意する(true);
@@ -122,6 +133,7 @@ public sealed class TimeRecorderTests : IDisposable
         tested.Find("button").HasAttribute("disabled").Should().BeFalse();
     }
 
+    void 開始操作の失敗を用意する(Exception error) => recorder.Setup(it => it.StartTimeRecordAsync()).ThrowsAsync(error);
     void 記録一覧を用意する(IReadOnlyList<TimeRecord> records) => recorder.SetupGet(it => it.Records).Returns(records);
     void 記録中の状態を用意する(bool isRecording) => recorder.SetupGet(it => it.IsRecording).Returns(isRecording);
     void 操作欄の記録を用意する(TimeRecord record) => recorder.SetupGet(it => it.DisplayedRecord).Returns(record);

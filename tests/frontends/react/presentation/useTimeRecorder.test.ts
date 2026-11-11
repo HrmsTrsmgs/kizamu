@@ -60,6 +60,36 @@ describe('useTimeRecorder', () => {
     endTimeRecord.should.have.callCount(2)
   })
 
+  it('開始の通信に失敗すると一覧を再取得して反映します', async () => {
+    const getTimeRecords = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([記録])
+    const service = createTimeRecordServiceStub({
+      getTimeRecords, startTimeRecord: async () => { throw new Error('failed') },
+    })
+    const { result } = renderHook(() => useTimeRecorder(service))
+    await waitFor(() => getTimeRecords.should.have.callCount(1))
+
+    await act(async () => { await expect(result.current.startTimeRecord()).rejects.toThrow('failed') })
+
+    getTimeRecords.should.have.callCount(2)
+    result.current.state.records.should.deep.equal([記録])
+    result.current.state.should.have.property('timeRecordId', 記録ID)
+  })
+
+  it('終了の通信に失敗すると一覧を再取得して反映します', async () => {
+    const getTimeRecords = vi.fn().mockResolvedValueOnce([記録]).mockResolvedValueOnce([終了済み記録])
+    const service = createTimeRecordServiceStub({
+      getTimeRecords, endTimeRecord: async () => { throw new Error('failed') },
+    })
+    const { result } = renderHook(() => useTimeRecorder(service))
+    await waitFor(() => result.current.state.should.have.property('timeRecordId', 記録ID))
+
+    await act(async () => { await expect(result.current.endTimeRecord()).rejects.toThrow('failed') })
+
+    getTimeRecords.should.have.callCount(2)
+    result.current.state.records.should.deep.equal([終了済み記録])
+    result.current.state.should.have.property('timeRecordId', null)
+  })
+
   it('初期化で一覧を一度要求し取得した記録と終了対象を公開します', async () => {
     const 一覧の記録中の記録 = presentedRecord(次の記録ID, 開始時刻)
     const getTimeRecords = vi.fn(async () => [終了済み記録, 一覧の記録中の記録])
@@ -204,7 +234,8 @@ function 終了応答を保留する() {
   const response = deferred<typeof 終了済み記録>()
   const startTimeRecord = vi.fn(async () => 記録)
   const endTimeRecord = vi.fn().mockReturnValueOnce(response.promise).mockResolvedValue(終了済み記録)
-  const service = createTimeRecordServiceStub({ startTimeRecord, endTimeRecord })
+  const getTimeRecords = vi.fn().mockResolvedValueOnce([]).mockResolvedValue([記録])
+  const service = createTimeRecordServiceStub({ getTimeRecords, startTimeRecord, endTimeRecord })
   const { result } = renderHook(() => useTimeRecorder(service))
   return { response, startTimeRecord, endTimeRecord, result }
 }

@@ -33,6 +33,17 @@ describe('TimeRecorder', () => {
     endTimeRecord.should.have.callCount(0)
   })
 
+  it('開始操作に失敗すると利用者に知らせます', async () => {
+    const failure = Promise.reject(new Error('failed'))
+    void failure.catch(() => {})
+    render(<TimeRecorderView state={initialTimeRecorderState} isBusy={false} startTimeRecord={() => failure} endTimeRecord={async () => {}} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+
+    const alert = await screen.findByRole('alert')
+    alert.should.toHaveTextContent('失敗')
+  })
+
   it('終了ボタンを押すと終了操作を呼びます', () => {
     const startTimeRecord = vi.fn(async () => {})
     const endTimeRecord = vi.fn(async () => {})

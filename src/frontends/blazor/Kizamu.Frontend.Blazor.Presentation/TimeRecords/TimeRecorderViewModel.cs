@@ -87,6 +87,11 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
             DisplayedRecord = record;
             SetCurrentId(project, record.Id);
         }
+        catch
+        {
+            await LoadAsync();
+            throw;
+        }
         finally
         {
             IsBusy = false;
@@ -114,6 +119,11 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
                     DisplayedRecord = record;
                 }
                 CurrentId = null;
+            }
+            catch
+            {
+                await LoadAsync();
+                throw;
             }
             finally
             {
