@@ -15,33 +15,14 @@ public sealed class TimeRecordTimesTests : IDisposable
     public TimeRecordTimesTests() => context.Services.AddSingleton<TimeProvider>(clock);
 
     [Fact]
-    public void 開始時刻と終了時刻を日本時間の年月日時分で表示します()
+    public void 時刻要素に開始時刻と終了時刻の表示と元の日時を設定します()
     {
         var tested = 表示する(開始時刻.AddMinutes(90));
+        var 時刻要素 = tested.FindAll("time");
 
-        tested.FindAll("time").Select(it => it.TextContent).Should().Equal("2026/08/01 18:00", "2026/08/01 19:30");
-    }
-
-    [Theory]
-    [InlineData(90, "1時間30分")]
-    [InlineData(135, "2時間15分")]
-    public void 終了済みの作業時間は開始から終了までの時間分で表示します(int 経過分, string 表示)
-    {
-        var tested = 表示する(開始時刻.AddMinutes(経過分));
-
-        tested.Find(".time-record-duration-value").TextContent.Should().Be(表示);
-    }
-
-    [Theory]
-    [InlineData(90, "1時間30分")]
-    [InlineData(135, "2時間15分")]
-    public void 記録中の作業時間は開始から現在までの時間分で表示します(int 経過分, string 表示)
-    {
-        clock.SetUtcNow(開始時刻.AddMinutes(経過分));
-
-        var tested = 表示する(null);
-
-        tested.Find(".time-record-duration-value").TextContent.Should().Be(表示);
+        時刻要素.Select(it => it.TextContent).Should().Equal("2026/08/01 18:00", "2026/08/01 19:30");
+        時刻要素.Select(it => it.GetAttribute("datetime")).Should().Equal(
+            "2026-08-01T09:00:00.0000000+00:00", "2026-08-01T10:30:00.0000000+00:00");
     }
 
     [Fact]

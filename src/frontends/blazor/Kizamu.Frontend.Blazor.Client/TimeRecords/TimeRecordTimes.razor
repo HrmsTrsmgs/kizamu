@@ -6,7 +6,7 @@
     <div class="record-time">
         <span>開始</span>
         <time aria-label="@(Labelled ? "開始時刻" : null)" datetime="@StartedAt.ToString("O", CultureInfo.InvariantCulture)">
-            @FormatDateTime(StartedAt)
+            @TimeRecordTimesFormatter.FormatDateTime(StartedAt)
         </time>
     </div>
     <div class="record-time">
@@ -14,7 +14,7 @@
         @if (EndedAt is { } endedAt)
         {
             <time aria-label="@(Labelled ? "終了時刻" : null)" datetime="@endedAt.ToString("O", CultureInfo.InvariantCulture)">
-                @FormatDateTime(endedAt)
+                @TimeRecordTimesFormatter.FormatDateTime(endedAt)
             </time>
         }
         else
@@ -24,7 +24,7 @@
     </div>
     <div class="record-time">
         <span>作業時間</span>
-        <span class="time-record-duration-value">@Duration</span>
+        <span class="time-record-duration-value">@TimeRecordTimesFormatter.FormatDuration(StartedAt, EndedAt, Clock.GetUtcNow)</span>
     </div>
 </div>
 
@@ -42,17 +42,6 @@
     public bool Labelled { get; set; }
 
     ITimer? timer;
-    string Duration
-    {
-        get
-        {
-            var elapsed = (EndedAt ?? Clock.GetUtcNow()) - StartedAt;
-            return $"{(long)elapsed.TotalHours}時間{elapsed.Minutes}分";
-        }
-    }
-
-    static string FormatDateTime(DateTimeOffset instant) =>
-        instant.ToOffset(TimeSpan.FromHours(9)).ToString("yyyy/MM/dd HH:mm", CultureInfo.InvariantCulture);
 
     protected override void OnParametersSet()
     {
