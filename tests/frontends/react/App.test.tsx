@@ -57,6 +57,17 @@ describe('App', () => {
     screen.getByRole('tab', { name: 'プロジェクトA' }).should.toHaveAttribute('aria-selected', 'true')
   })
 
+  it('プロジェクトを選ぶと記録欄の見出しに選択した名前を表示します', () => {
+    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+    fireEvent.click(screen.getByRole('button', { name: '追加' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
+    fireEvent.click(screen.getByRole('button', { name: '登録' }))
+
+    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
+
+    screen.getByRole('heading', { name: 'プロジェクトA', level: 2 }).should.toBeInTheDocument()
+  })
+
   it('登録ボタンを押すとプロジェクト追加ダイアログを閉じます', () => {
     const health = { checkHealth: async () => true }
     const timeRecords = createTimeRecordServiceStub()

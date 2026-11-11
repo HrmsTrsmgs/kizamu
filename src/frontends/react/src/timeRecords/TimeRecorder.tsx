@@ -1,3 +1,4 @@
+import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from '../presentation/timeRecordService'
 import { useTimeRecorder } from '../presentation/useTimeRecorder'
 import { getTimeRecordTimestamps } from '../presentation/timeRecordPresentation'
@@ -5,16 +6,17 @@ import TimeRecordTimes from './TimeRecordTimes'
 
 type TimeRecorderProps = {
   timeRecords: TimeRecordService
+  selectedProject?: Project
 }
 
-export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
+export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecorderProps) {
   const { state, startTimeRecord, endTimeRecord } = useTimeRecorder(timeRecords)
 
   return (
     <div className="time-recorder">
       <section className="recorder-panel" aria-labelledby="recorder-title">
         <header className="panel-header">
-          <h2 id="recorder-title">プロジェクト未登録</h2>
+          <h2 id="recorder-title">{selectedProject?.name ?? 'プロジェクト未指定'}</h2>
           <span className={`status-badge ${state.timeRecordId === null ? '' : 'is-active'}`}>
             {state.timeRecordId === null ? '待機中' : '記録中'}
           </span>

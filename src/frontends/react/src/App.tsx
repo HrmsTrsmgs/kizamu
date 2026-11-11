@@ -37,7 +37,7 @@ export default function App({ health, timeRecords }: AppProps) {
           ))}
         </div>
       </section>
-      <TimeRecorder timeRecords={timeRecords} />
+      <TimeRecorder timeRecords={timeRecords} selectedProject={state.selectedProject} />
       {state.showProjectDialog && (
         <div className="project-dialog-overlay">
           <div className="project-dialog" role="dialog" aria-labelledby="project-dialog-title">
