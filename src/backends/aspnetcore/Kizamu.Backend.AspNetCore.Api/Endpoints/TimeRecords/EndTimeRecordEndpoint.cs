@@ -10,14 +10,19 @@ static class EndTimeRecordEndpoint
     extension(WebApplication self)
     {
         /// <summary>
-        /// 記録終了APIをアプリケーションへ登録します。
+        /// 同一オリジンからの記録終了要求を受け付けるAPIをアプリケーションへ登録します。
         /// </summary>
         internal void MapEndTimeRecordEndpoint()
         {
-            self.MapPost("/api/time-records/{id:guid}/end", (Guid id, TimeRecordEndOperation timeRecordEndOperation) =>
-                Results.Ok(
+            self.MapPost("/api/time-records/{id:guid}/end", IResult (Guid id, HttpRequest request, TimeRecordEndOperation timeRecordEndOperation) =>
+            {
+                if (request.Headers["Sec-Fetch-Site"] != "same-origin")
+                    return Results.StatusCode(StatusCodes.Status403Forbidden);
+
+                return Results.Ok(
                     new TimeRecordResponse(
-                        timeRecordEndOperation.Execute(id))));
+                        timeRecordEndOperation.Execute(id)));
+            });
         }
     }
 }

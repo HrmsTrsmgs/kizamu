@@ -133,6 +133,10 @@ Blazorの記録画面の状態と操作は `Kizamu.Frontend.Blazor.Presentation`
 
 フロントエンドはブラウザーだけを意味しません。BlazorのServerは静的ファイル配信と `/api/...` の中継を担当し、記録処理は持ちません。業務APIへのプロジェクト参照はせず、接続先URLだけを設定します。SSR・Autoは採用しておらず、UIは引き続きWebAssemblyとしてブラウザー内で実行します。React公開時にもフロント側の配信・API中継サーバーを置く方針ですが、未実装です。開発時は既存のVite proxyが中継します。
 
+作業記録の開始・終了APIは、`Sec-Fetch-Site: same-origin` の要求だけを受け付けます。ASP.NET CoreとNodeのHTTP境界で検証し、情報の欠落や他の値では、記録を変更する前に `403 Forbidden` を返します。一覧とhealthのGETには、この制約を設けません。対応ブラウザーが標準情報を自動付与するため、BlazorやReactで独自ヘッダーを追加する必要はありません。
+
+公開環境はHTTPS、ローカル開発は `http://localhost` を使用し、Fetch Metadataに対応する現行の主要ブラウザーを対象とします。中継サーバーは元の `Sec-Fetch-Site` を追加・書き換えずに転送してください。画面の公開URLを業務APIへ登録する設定は不要です。この検証は別サイトからのブラウザー経由の更新を拒否するものであり、利用者認証やサーバー間認証の代わりにはなりません。判断理由は [D010](docs/decisions.md#d010画面用の更新apiはfetch-metadataで同一オリジンを検証する) を参照してください。
+
 Visual Studio用の共有一括起動設定は `Kizamu.slnLaunch` と `Kizamu.Blazor.slnLaunch` に置きます。全実装用の `Kizamu.slnx` では `Blazor + ASP.NET Core`、`React + ASP.NET Core`、`Blazor + Node`、`React + Node` の四つを定義しています。業務APIとフロント側サーバーを別プロセスで起動します。プロファイルや公開処理のためにソースを複製しません。IDEでの検出・起動操作はCLIとは別に確認が必要です。
 
 ## 実装とリリースの方針

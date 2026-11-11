@@ -118,3 +118,12 @@
 * 理由：内部では記録オブジェクトを中心に扱い、両バックエンドの対象の取得方法を揃えるという開発者の指示によります。再終了の扱いも、開発者がNodeの現行動作へ揃える方針を選択しました。
 * 検討した別案：最初の終了時刻を保持する案も確認しました。開発者は再要求時の時刻で更新する案を選択しました。
 * 根拠：開発者のASP.NETをNodeへ揃える指示と、再終了時刻の選択回答。確定仕様は [ロードマップ](roadmap.md#ステップ1-プロジェクト単位の複数同時記録)、実装の確認は両バックエンドのApplication単体テストを参照します。存在しないIDへのHTTP応答は未確定です。
+
+## D010：画面用の更新APIはFetch Metadataで同一オリジンを検証する
+
+* 確認日・状態：2026-11-11、方針とGreen差分を開発者が了承。
+* 決定：D007の同一オリジン構成を維持し、ASP.NET CoreとNodeの開始・終了APIは `Sec-Fetch-Site: same-origin` の要求だけを操作前に許可します。他の値や欠落は403で拒否します。GETの一覧とhealthは対象外です。公開時はHTTPS、ローカル開発はlocalhost、利用環境はFetch Metadata対応の現行主要ブラウザーを前提とします。
+* 理由：APIの接続先変更を中継設定へ閉じ込め、画面の公開URLをAPI側の許可リストへ同期する依存と、UIが独自ヘッダーを付ける通信契約を増やさないためです。CORSの許可設定とは独立して、HTTP境界で更新を拒否します。
+* 中継との契約：元のFetch Metadataを保持し、追加・書き換えずに転送します。情報が失われた場合も更新を拒否します。この契約を満たす必要はありますが、特定のプロキシ製品やバックエンド実装を相互参照しません。これはブラウザー経由の更新制約であり、認証を実装したことにはなりません。
+* 検討した別案：ブラウザーからAPIへ直接接続してCORSを許可する案は、画面専用APIという今回の前提に対し、APIの外向き接続先と画面の許可オリジンの対応管理が増えます。Origin照合は画面URLをAPI設定へ持たせる必要があります。独自ヘッダー方式はUIとAPIの通信契約が増え、中継側のCORS許可にも防御が依存するため、今回は採用しません。
+* 根拠：開発者の同一オリジン構成とFetch Metadata検証への実装指示。[OWASPのFetch Metadata対策](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#fetch-metadata-headers)、[MDNのSec-Fetch-Siteの説明](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-Fetch-Site)。動作仕様は [ASP.NETのAPIテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs) と [NodeのAPIテスト](../tests/backends/node/timeRecordEndpoints.test.ts) で確認します。
