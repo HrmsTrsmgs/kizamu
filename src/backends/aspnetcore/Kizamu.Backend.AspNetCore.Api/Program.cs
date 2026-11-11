@@ -39,5 +39,3 @@ static async ValueTask<object?> RequireSameOrigin(EndpointFilterInvocationContex
 
     return await next(context);
 }
-
-public partial class Program;
