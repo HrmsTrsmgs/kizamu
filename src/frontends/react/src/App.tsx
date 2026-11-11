@@ -1,6 +1,7 @@
+import { useReducer } from 'react'
 import HealthStatus from './health/HealthStatus'
 import TimeRecorder from './timeRecords/TimeRecorder'
-import { useProjectTabs } from './presentation/useProjectTabs'
+import { initialProjectTabsState, projectTabsReducer } from './presentation/projectTabsState'
 import type { HealthService } from './presentation/healthService'
 import type { TimeRecordService } from './presentation/timeRecordService'
 import './index.css'
@@ -11,7 +12,7 @@ type AppProps = {
 }
 
 export default function App({ health, timeRecords }: AppProps) {
-  const { state, setProjectName, registerProject, selectProject, openProjectDialog, cancelProjectDialog } = useProjectTabs()
+  const [state, dispatch] = useReducer(projectTabsReducer, initialProjectTabsState)
 
   return (
     <main>
@@ -22,7 +23,7 @@ export default function App({ health, timeRecords }: AppProps) {
       <section className="project-toolbar" aria-labelledby="projects-title">
         <div className="project-toolbar-heading">
           <h2 id="projects-title">プロジェクト</h2>
-          <button className="project-add-button" type="button" onClick={openProjectDialog}>追加</button>
+          <button className="project-add-button" type="button" onClick={() => dispatch({ type: 'dialogOpened' })}>追加</button>
         </div>
         <div className="project-tabs" role="tablist" aria-label="プロジェクト">
           <span className="project-default" aria-selected={state.selectedProject === undefined}>未指定</span>
@@ -33,7 +34,7 @@ export default function App({ health, timeRecords }: AppProps) {
               aria-selected={state.selectedProject === project}
               type="button"
               key={index}
-              onClick={() => selectProject(project)}
+              onClick={() => dispatch({ type: 'projectSelected', project })}
             >{project.name}</button>
           ))}
         </div>
@@ -44,10 +45,10 @@ export default function App({ health, timeRecords }: AppProps) {
           <div className="project-dialog" role="dialog" aria-labelledby="project-dialog-title">
             <h2 id="project-dialog-title">プロジェクトを追加</h2>
             <label htmlFor="project-name">プロジェクト名</label>
-            <input id="project-name" value={state.projectName} onChange={event => setProjectName(event.target.value)} />
+            <input id="project-name" value={state.projectName} onChange={event => dispatch({ type: 'projectNameChanged', name: event.target.value })} />
             <div className="project-dialog-actions">
-              <button className="project-cancel-button" type="button" onClick={cancelProjectDialog}>キャンセル</button>
-              <button className="project-register-button" type="button" onClick={() => registerProject(state.projectName)}>登録</button>
+              <button className="project-cancel-button" type="button" onClick={() => dispatch({ type: 'dialogCancelled' })}>キャンセル</button>
+              <button className="project-register-button" type="button" onClick={() => dispatch({ type: 'projectRegistered', name: state.projectName })}>登録</button>
             </div>
           </div>
         </div>

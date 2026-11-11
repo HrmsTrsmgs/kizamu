@@ -1,90 +1,50 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, it } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 import { should } from '../../should.mjs'
 import App from '../../../src/frontends/react/src/App'
 import { createTimeRecordServiceStub } from './test/createTimeRecordServiceStub'
 
 describe('App', () => {
+  beforeEach(() => {
+    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+  })
+
   it('追加ボタンを押すとプロジェクト追加ダイアログを表示します', () => {
-    const health = { checkHealth: async () => true }
-    const timeRecords = createTimeRecordServiceStub()
-
-    render(<App health={health} timeRecords={timeRecords} />)
-
     fireEvent.click(screen.getByRole('button', { name: '追加' }))
 
     screen.getByRole('dialog', { name: 'プロジェクトを追加' }).should.toBeInTheDocument()
   })
 
-  it('プロジェクト追加ダイアログでプロジェクト名を入力できます', () => {
-    const health = { checkHealth: async () => true }
-    const timeRecords = createTimeRecordServiceStub()
-
-    render(<App health={health} timeRecords={timeRecords} />)
+  it('入力したプロジェクト名がタブに表示されます', () => {
     fireEvent.click(screen.getByRole('button', { name: '追加' }))
-
     const dialog = screen.getByRole('dialog', { name: 'プロジェクトを追加' })
     const projectName = within(dialog).getByRole('textbox', { name: 'プロジェクト名' })
     fireEvent.change(projectName, { target: { value: 'プロジェクトA' } })
-
     projectName.should.toHaveValue('プロジェクトA')
-  })
 
-  it('入力したプロジェクト名がタブに表示されます', () => {
-    const health = { checkHealth: async () => true }
-    const timeRecords = createTimeRecordServiceStub()
-
-    render(<App health={health} timeRecords={timeRecords} />)
-    fireEvent.click(screen.getByRole('button', { name: '追加' }))
-    fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
-
-    fireEvent.click(screen.getByRole('button', { name: '登録' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '登録' }))
 
     screen.getByRole('tab', { name: 'プロジェクトA' }).should.toBeInTheDocument()
+    should.not.exist(screen.queryByRole('dialog', { name: 'プロジェクトを追加' }))
   })
 
   it('初期状態では未指定を選択中として表示します', () => {
-    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
-
     within(screen.getByRole('tablist', { name: 'プロジェクト' })).getByText('未指定').should.toHaveAttribute('aria-selected', 'true')
   })
 
-  it('登録済みプロジェクトを選ぶと未指定の選択が解除されます', () => {
-    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
-    プロジェクトを登録する('プロジェクトA')
-
-    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
-
-    within(screen.getByRole('tablist', { name: 'プロジェクト' })).getByText('未指定').should.toHaveAttribute('aria-selected', 'false')
-  })
-
   it('登録済みプロジェクトのタブを押すとそのタブが選択中として表示されます', () => {
-    const health = { checkHealth: async () => true }
-    const timeRecords = createTimeRecordServiceStub()
+    プロジェクトを登録する('プロジェクトA')
+    const tabs = within(screen.getByRole('tablist', { name: 'プロジェクト' }))
+    const project = tabs.getByRole('tab', { name: 'プロジェクトA' })
 
-    render(<App health={health} timeRecords={timeRecords} />)
-    fireEvent.click(screen.getByRole('button', { name: '追加' }))
-    fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
-    fireEvent.click(screen.getByRole('button', { name: '登録' }))
+    fireEvent.click(project)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
-
-    screen.getByRole('tab', { name: 'プロジェクトA' }).should.toHaveAttribute('aria-selected', 'true')
-  })
-
-  it('プロジェクトを選ぶと記録欄の見出しに選択した名前を表示します', () => {
-    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
-    fireEvent.click(screen.getByRole('button', { name: '追加' }))
-    fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
-    fireEvent.click(screen.getByRole('button', { name: '登録' }))
-
-    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
-
+    project.should.toHaveAttribute('aria-selected', 'true')
+    tabs.getByText('未指定').should.toHaveAttribute('aria-selected', 'false')
     screen.getByRole('heading', { name: 'プロジェクトA', level: 2 }).should.toBeInTheDocument()
   })
 
   it('タブを切り替えて戻ると記録中の対象には終了操作を表示します', async () => {
-    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
     プロジェクトを登録する('プロジェクトA')
     プロジェクトを登録する('プロジェクトB')
     fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
@@ -99,24 +59,7 @@ describe('App', () => {
     should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
   })
 
-  it('登録ボタンを押すとプロジェクト追加ダイアログを閉じます', () => {
-    const health = { checkHealth: async () => true }
-    const timeRecords = createTimeRecordServiceStub()
-
-    render(<App health={health} timeRecords={timeRecords} />)
-    fireEvent.click(screen.getByRole('button', { name: '追加' }))
-    fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
-
-    fireEvent.click(screen.getByRole('button', { name: '登録' }))
-
-    should.not.exist(screen.queryByRole('dialog', { name: 'プロジェクトを追加' }))
-  })
-
   it('キャンセルボタンを押すとプロジェクト追加ダイアログを閉じます', () => {
-    const health = { checkHealth: async () => true }
-    const timeRecords = createTimeRecordServiceStub()
-
-    render(<App health={health} timeRecords={timeRecords} />)
     fireEvent.click(screen.getByRole('button', { name: '追加' }))
 
     fireEvent.click(screen.getByRole('button', { name: 'キャンセル' }))
@@ -125,11 +68,6 @@ describe('App', () => {
   })
 
   it('準備完了画面を表示します', () => {
-    const health = { checkHealth: async () => true }
-    const timeRecords = createTimeRecordServiceStub()
-
-    render(<App health={health} timeRecords={timeRecords} />)
-
     screen.getByRole('heading', { name: 'Kizamu' }).should.toBeInTheDocument()
     screen.getByText('作業時間を記録します。').should.toBeInTheDocument()
     should.not.exist(screen.queryByText(/count is/i))
