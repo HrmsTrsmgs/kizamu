@@ -249,3 +249,31 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+.project-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 0.15rem 0 0.3rem;
+}
+
+.project-tab {
+  flex: none;
+  max-width: 15rem;
+  overflow: hidden;
+  border: 1px solid #cedbd3;
+  border-radius: 0.75rem;
+  background: #f7f9f7;
+  color: #67776e;
+  padding: 0.7rem 1.05rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-tab:disabled {
+  cursor: not-allowed;
+}

@@ -11,7 +11,7 @@ type AppProps = {
 }
 
 export default function App({ health, timeRecords }: AppProps) {
-  const { state, setProjectName, openProjectDialog, cancelProjectDialog } = useProjectTabs()
+  const { state, setProjectName, registerProject, openProjectDialog, cancelProjectDialog } = useProjectTabs()
 
   return (
     <main>
@@ -24,6 +24,11 @@ export default function App({ health, timeRecords }: AppProps) {
           <h2 id="projects-title">プロジェクト</h2>
           <button className="project-add-button" type="button" onClick={openProjectDialog}>追加</button>
         </div>
+        <div className="project-tabs" role="tablist" aria-label="プロジェクト">
+          {state.projects.map((project, index) => (
+            <button className="project-tab" role="tab" type="button" key={index} disabled>{project.name}</button>
+          ))}
+        </div>
       </section>
       <TimeRecorder timeRecords={timeRecords} />
       {state.showProjectDialog && (
@@ -33,6 +38,7 @@ export default function App({ health, timeRecords }: AppProps) {
             <label htmlFor="project-name">プロジェクト名</label>
             <input id="project-name" value={state.projectName} onChange={event => setProjectName(event.target.value)} />
             <div className="project-dialog-actions">
+              <button className="project-register-button" type="button" onClick={() => registerProject(state.projectName)}>登録</button>
               <button className="project-cancel-button" type="button" onClick={cancelProjectDialog}>キャンセル</button>
             </div>
           </div>

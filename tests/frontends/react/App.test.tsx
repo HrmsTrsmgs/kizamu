@@ -30,6 +30,32 @@ describe('App', () => {
     projectName.should.toHaveValue('プロジェクトA')
   })
 
+  it('入力したプロジェクト名が操作不可のタブとして表示されます', () => {
+    const health = { checkHealth: async () => true }
+    const timeRecords = createTimeRecordServiceStub()
+
+    render(<App health={health} timeRecords={timeRecords} />)
+    fireEvent.click(screen.getByRole('button', { name: '追加' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
+
+    fireEvent.click(screen.getByRole('button', { name: '登録' }))
+
+    screen.getByRole('tab', { name: 'プロジェクトA' }).should.toBeDisabled()
+  })
+
+  it('登録ボタンを押すとプロジェクト追加ダイアログを閉じます', () => {
+    const health = { checkHealth: async () => true }
+    const timeRecords = createTimeRecordServiceStub()
+
+    render(<App health={health} timeRecords={timeRecords} />)
+    fireEvent.click(screen.getByRole('button', { name: '追加' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
+
+    fireEvent.click(screen.getByRole('button', { name: '登録' }))
+
+    should.not.exist(screen.queryByRole('dialog', { name: 'プロジェクトを追加' }))
+  })
+
   it('キャンセルボタンを押すとプロジェクト追加ダイアログを閉じます', () => {
     const health = { checkHealth: async () => true }
     const timeRecords = createTimeRecordServiceStub()
