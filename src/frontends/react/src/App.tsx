@@ -11,7 +11,7 @@ type AppProps = {
 }
 
 export default function App({ health, timeRecords }: AppProps) {
-  const { state, openProjectDialog } = useProjectTabs()
+  const { state, openProjectDialog, cancelProjectDialog } = useProjectTabs()
 
   return (
     <main>
@@ -30,6 +30,9 @@ export default function App({ health, timeRecords }: AppProps) {
         <div className="project-dialog-overlay">
           <div className="project-dialog" role="dialog" aria-labelledby="project-dialog-title">
             <h2 id="project-dialog-title">プロジェクトを追加</h2>
+            <div className="project-dialog-actions">
+              <button className="project-cancel-button" type="button" onClick={cancelProjectDialog}>キャンセル</button>
+            </div>
           </div>
         </div>
       )}

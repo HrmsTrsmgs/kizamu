@@ -16,6 +16,18 @@ describe('App', () => {
     screen.getByRole('dialog', { name: 'プロジェクトを追加' }).should.toBeInTheDocument()
   })
 
+  it('キャンセルボタンを押すとプロジェクト追加ダイアログを閉じます', () => {
+    const health = { checkHealth: async () => true }
+    const timeRecords = createTimeRecordServiceStub()
+
+    render(<App health={health} timeRecords={timeRecords} />)
+    fireEvent.click(screen.getByRole('button', { name: '追加' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'キャンセル' }))
+
+    should.not.exist(screen.queryByRole('dialog', { name: 'プロジェクトを追加' }))
+  })
+
   it('準備完了画面を表示します', () => {
     const health = { checkHealth: async () => true }
     const timeRecords = createTimeRecordServiceStub()
