@@ -481,6 +481,8 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### 検証と次の着手点
 
+* 基準 2f220a7 のReact終了時の他対象保持は、名前付きプロジェクトを終了しても未指定が記録中である一方向のreducerテストが既存実装で成功。対象7テスト・Reactテストのlint・build成功。テストをこのコミットに含める。逆方向とhook・画面接続は引き続き未確認。
+
 現在は基準 `06b20ae` 上で、Blazorの登録・選択・対象別記録テストを独立した振る舞いへ分割したRefactorをこのコミットに含める。変更はProjectTabsViewModelTests・TimeRecorderViewModelTests・AppTestsのみで、製品実装と既存Reactの開始応答前切替の差分は維持。最終版の.NETテスト114件成功・Skipなし、Release解析ビルド警告0・エラー0。formatは既存IDE0290 3件・ASP0027 1件で失敗し、変更箇所の指摘はなし。次はReactの対象別記録状態の残る振る舞いと画面接続に進む。
 
 * 基準 06b20ae のReact記録開始応答前の切替は、hookの選択操作未定義によるRedを確認後、開始元を保持する実装で成功。npm lint・全98テスト・build成功。hook・reducer・テストをこのコミットに含める。画面接続は未実装。
