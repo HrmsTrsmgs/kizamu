@@ -4,14 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { test } from 'vitest'
 
 test('Nodeの起動入口を空きポートで実行すると出力されたURLで業務APIが応答します', async () => {
-  const serverEntry = fileURLToPath(new URL('../../../src/backends/node/dist/server.js', import.meta.url))
-  const server = spawn(process.execPath, [serverEntry], {
-    env: { ...process.env, PORT: '0' },
-    stdio: ['ignore', 'pipe', 'pipe'],
-    windowsHide: true,
-  })
-
-  await withListeningServer(server, async (listeningUrl) => {
+  await withListeningServer(async (listeningUrl) => {
     const response = await fetch(`${listeningUrl}/api/health`, { signal: AbortSignal.timeout(3000) })
 
     response.status.should.equal(200)
@@ -20,11 +13,24 @@ test('Nodeの起動入口を空きポートで実行すると出力されたURL�
   })
 }, 10000)
 
-async function withListeningServer(
-  server: ChildProcessByStdio<null, Readable, Readable>,
-  verify: (listeningUrl: string) => Promise<void>,
-) {
+async function withListeningServer(verify: (listeningUrl: string) => Promise<void>) {
+  const serverEntry = fileURLToPath(new URL('../../../src/backends/node/dist/server.js', import.meta.url))
+  const server = spawn(process.execPath, [serverEntry], {
+    env: { ...process.env, PORT: '0' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+  })
   const closed = new Promise<void>((resolve) => server.once('close', () => resolve()))
+  try {
+    const listeningUrl = await waitForListeningUrl(server)
+    await verify(listeningUrl)
+  } finally {
+    if (server.exitCode === null && server.signalCode === null) server.kill()
+    await closed
+  }
+}
+
+async function waitForListeningUrl(server: ChildProcessByStdio<null, Readable, Readable>): Promise<string> {
   let standardOutput = ''
   let standardError = ''
   server.stderr.setEncoding('utf8')
@@ -33,7 +39,7 @@ async function withListeningServer(
 
   let startupTimeout: ReturnType<typeof setTimeout> | undefined
   try {
-    const listeningUrl = await new Promise<string>((resolve, reject) => {
+    return await new Promise<string>((resolve, reject) => {
       startupTimeout = setTimeout(() => {
         reject(new Error(`起動URLが出力されませんでした。stdout: ${standardOutput}\nstderr: ${standardError}`))
       }, 5000)
@@ -47,12 +53,7 @@ async function withListeningServer(
         if (url) resolve(url)
       })
     })
-    clearTimeout(startupTimeout)
-
-    await verify(listeningUrl)
   } finally {
     clearTimeout(startupTimeout)
-    if (server.exitCode === null && server.signalCode === null) server.kill()
-    await closed
   }
 }
