@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, it, vi } from 'vitest'
+import { beforeEach, describe, it, vi, type Mock } from 'vitest'
+import type { TimeRecordService } from '../../../../src/frontends/react/src/presentation/timeRecordService'
 import { should } from '../../../should.mjs'
 import { createTimeRecordServiceStub } from '../test/createTimeRecordServiceStub'
 import { presentedRecord, timestamp } from '../test/timeRecords'
@@ -13,6 +14,19 @@ const 記録 = presentedRecord(記録ID, 開始時刻)
 const 終了済み記録 = presentedRecord(記録ID, 開始時刻, 終了時刻)
 
 describe('TimeRecorder', () => {
+  let getTimeRecords: Mock<TimeRecordService['getTimeRecords']>
+  let startTimeRecord: Mock<TimeRecordService['startTimeRecord']>
+  let endTimeRecord: Mock<TimeRecordService['endTimeRecord']>
+  let timeRecords: TimeRecordService
+
+  beforeEach(() => {
+    getTimeRecords = vi.fn<TimeRecordService['getTimeRecords']>().mockResolvedValue([])
+    startTimeRecord = vi.fn<TimeRecordService['startTimeRecord']>()
+    endTimeRecord = vi.fn<TimeRecordService['endTimeRecord']>()
+    timeRecords = createTimeRecordServiceStub({ getTimeRecords, startTimeRecord, endTimeRecord })
+  })
+
+
   it('通信中はボタンを無効にし完了後に有効にします', () => {
     const startTimeRecord = vi.fn(async () => {})
     const endTimeRecord = vi.fn(async () => {})
@@ -82,9 +96,8 @@ describe('TimeRecorder', () => {
   })
 
   it('開始と終了の操作を画面状態と時刻表示へ接続します', async () => {
-    const startTimeRecord = vi.fn(async () => 記録)
-    const endTimeRecord = vi.fn(async () => 終了済み記録)
-    const timeRecords = createTimeRecordServiceStub({ startTimeRecord, endTimeRecord })
+    startTimeRecord.mockResolvedValue(記録)
+    endTimeRecord.mockResolvedValue(終了済み記録)
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -106,10 +119,24 @@ describe('TimeRecorder', () => {
     screen.getByLabelText('終了時刻').should.toHaveTextContent('2026/08/01 19:30')
     screen.getByText('待機中').should.toBeInTheDocument()
     screen.getAllByText('1時間30分').should.have.lengthOf(2)
+  })
+
+  it('再開始すると直前の終了時刻を消します', async () => {
+    startTimeRecord.mockResolvedValue(記録)
+    endTimeRecord.mockResolvedValue(終了済み記録)
+    await 開始と終了を操作した画面を用意する()
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
     await screen.findByRole('button', { name: '記録を終了' })
 
     should.not.exist(screen.queryByLabelText('終了時刻'))
   })
+
+  async function 開始と終了を操作した画面を用意する() {
+    render(<TimeRecorder timeRecords={timeRecords} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+    fireEvent.click(await screen.findByRole('button', { name: '記録を終了' }))
+    await screen.findByLabelText('終了時刻')
+  }
 })

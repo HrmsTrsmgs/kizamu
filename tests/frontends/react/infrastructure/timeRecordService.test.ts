@@ -1,4 +1,4 @@
-import { afterEach, describe, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, it, vi, type Mock } from 'vitest'
 import { timeRecordService } from '../../../../src/frontends/react/src/infrastructure/timeRecordService'
 import { presentedRecord, timestamp } from '../test/timeRecords'
 
@@ -9,13 +9,19 @@ const 終了時刻 = '2026-08-01T10:30:00Z'
 const tested = timeRecordService
 
 describe('timeRecordService', () => {
+  let fetchMock: Mock<() => Promise<Response>>
+
+  beforeEach(() => {
+    fetchMock = vi.fn<() => Promise<Response>>()
+    vi.stubGlobal('fetch', fetchMock)
+  })
+
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
   it('作業記録一覧APIへGETします', async () => {
-    const fetchMock = vi.fn(async () => response([]))
-    vi.stubGlobal('fetch', fetchMock)
+    fetchMock.mockImplementation(async () => response([]))
 
     await tested.getTimeRecords()
 
@@ -28,7 +34,7 @@ describe('timeRecordService', () => {
       { id: 記録ID, startedAt: 開始時刻, endedAt: null },
       { id: 次の記録ID, startedAt: 開始時刻, endedAt: 終了時刻 },
     ]
-    vi.stubGlobal('fetch', vi.fn(async () => response(expected)))
+    fetchMock.mockImplementation(async () => response(expected))
 
     const records = await tested.getTimeRecords()
     records.should.toStrictEqual([
@@ -38,12 +44,11 @@ describe('timeRecordService', () => {
   })
 
   it('記録開始APIへPOSTします', async () => {
-    const fetchMock = vi.fn(async () => response({
+    fetchMock.mockImplementation(async () => response({
       id: 記録ID,
       startedAt: 開始時刻,
       endedAt: null,
     }))
-    vi.stubGlobal('fetch', fetchMock)
 
     await tested.startTimeRecord()
 
@@ -57,19 +62,18 @@ describe('timeRecordService', () => {
       startedAt: 開始時刻,
       endedAt: null,
     }
-    vi.stubGlobal('fetch', vi.fn(async () => response(expected)))
+    fetchMock.mockImplementation(async () => response(expected))
 
     const startedRecord = await tested.startTimeRecord()
     startedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻)))
   })
 
   it('指定した記録の終了APIへPOSTします', async () => {
-    const fetchMock = vi.fn(async () => response({
+    fetchMock.mockImplementation(async () => response({
       id: 記録ID,
       startedAt: 開始時刻,
       endedAt: 終了時刻,
     }))
-    vi.stubGlobal('fetch', fetchMock)
 
     await tested.endTimeRecord(記録ID)
 
@@ -83,7 +87,7 @@ describe('timeRecordService', () => {
       startedAt: 開始時刻,
       endedAt: 終了時刻,
     }
-    vi.stubGlobal('fetch', vi.fn(async () => response(expected)))
+    fetchMock.mockImplementation(async () => response(expected))
 
     const endedRecord = await tested.endTimeRecord(expected.id)
     endedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻), timestamp(終了時刻)))
@@ -114,9 +118,9 @@ describe('timeRecordService', () => {
   })
 
   it('一覧のDTOから復元した記録は元を変更せず終了操作を利用できます', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => response([
+    fetchMock.mockImplementation(async () => response([
       { id: 記録ID, startedAt: 開始時刻, endedAt: null },
-    ])))
+    ]))
     const [{ record }] = await tested.getTimeRecords()
 
     const endedRecord = record.end(timestamp(終了時刻).instant)
@@ -130,9 +134,9 @@ describe('timeRecordService', () => {
 
   it('応答の時差と小数秒の表記を保持して日時点に変換します', async () => {
     const 開始時刻の別表記 = '2026-08-01T18:00:00.0000000+09:00'
-    vi.stubGlobal('fetch', vi.fn(async () => response({
+    fetchMock.mockImplementation(async () => response({
       id: 記録ID, startedAt: 開始時刻の別表記, endedAt: null,
-    })))
+    }))
 
     const record = await tested.startTimeRecord()
 

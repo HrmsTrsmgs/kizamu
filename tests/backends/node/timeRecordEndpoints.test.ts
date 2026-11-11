@@ -70,12 +70,9 @@ test('二件の記録を開始した後に一覧を取得すると開始した�
 })
 
 test('記録を終了した後に一覧を取得するとその記録の終了時刻が反映されます', async () => {
-  const startResponse = await postFromSameOrigin(app, '/api/time-records/start')
-  startResponse.statusCode.should.equal(201)
-  const startedRecord = startResponse.json<TimeRecordResponse>()
+  const startedRecord = await prepareStartedRecord(app)
   vi.setSystemTime(終了時刻)
-  const endResponse = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`)
-  endResponse.statusCode.should.equal(200)
+  await prepareEndedRecord(app, startedRecord.id)
 
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })
 
@@ -144,4 +141,9 @@ async function prepareStartedRecord(app: ReturnType<typeof createApp>): Promise<
   const response = await postFromSameOrigin(app, '/api/time-records/start')
   response.statusCode.should.equal(201)
   return response.json<TimeRecordResponse>()
+}
+
+async function prepareEndedRecord(app: ReturnType<typeof createApp>, recordId: string): Promise<void> {
+  const response = await postFromSameOrigin(app, `/api/time-records/${recordId}/end`)
+  response.statusCode.should.equal(200)
 }
