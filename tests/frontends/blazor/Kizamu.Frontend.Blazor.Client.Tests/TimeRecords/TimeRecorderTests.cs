@@ -133,6 +133,63 @@ public sealed class TimeRecorderTests : IDisposable
         tested.Find("button").HasAttribute("disabled").Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData(false, "記録を開始")]
+    [InlineData(true, "記録を終了")]
+    public void 最新状態を確認できないときは記録操作を無効にして再取得を案内します(bool 記録中, string 操作名)
+    {
+        記録中の状態を用意する(記録中);
+        未確認の状態を用意する(true);
+
+        var tested = context.Render<TimeRecorder>();
+
+        tested.Find("[role='alert']").TextContent.Should().Contain("最新状態を確認できません");
+        tested.FindAll("button").Single(it => it.TextContent == 操作名).HasAttribute("disabled").Should().BeTrue();
+        tested.FindAll("button").Single(it => it.TextContent == "再取得").HasAttribute("disabled").Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task 再取得ボタンを押すと一覧読み込みを呼びます()
+    {
+        未確認の状態を用意する(true);
+        var tested = context.Render<TimeRecorder>();
+
+        await tested.FindAll("button").Single(it => it.TextContent == "再取得").ClickAsync(new());
+
+        一覧読み込みの呼び出しを確認する(Times.Exactly(2));
+        開始操作の呼び出しを確認する(Times.Never());
+        終了操作の呼び出しを確認する(Times.Never());
+    }
+
+    [Fact]
+    public void 再取得の通信中は再取得ボタンを無効にします()
+    {
+        未確認の状態を用意する(true);
+        通信中の状態を用意する(true);
+
+        var tested = context.Render<TimeRecorder>();
+
+        tested.FindAll("button").Single(it => it.TextContent == "再取得").HasAttribute("disabled").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task 再取得に失敗しても未確認の案内と再取得操作を表示します()
+    {
+        未確認の状態を用意する(true);
+        再取得の失敗を用意する(new HttpRequestException());
+        var tested = context.Render<TimeRecorder>();
+
+        await tested.FindAll("button").Single(it => it.TextContent == "再取得").ClickAsync(new());
+
+        tested.Find("[role='alert']").TextContent.Should().Contain("最新状態を確認できません");
+        tested.FindAll("button").Single(it => it.TextContent == "再取得").HasAttribute("disabled").Should().BeFalse();
+    }
+
+    void 未確認の状態を用意する(bool isStateUnconfirmed) => recorder.SetupGet(it => it.IsStateUnconfirmed).Returns(isStateUnconfirmed);
+    void 一覧読み込みの呼び出しを確認する(Times times) => recorder.Verify(it => it.LoadAsync(), times);
+    void 再取得の失敗を用意する(Exception error) =>
+        recorder.SetupSequence(it => it.LoadAsync()).Returns(Task.CompletedTask).ThrowsAsync(error);
+
     void 開始操作の失敗を用意する(Exception error) => recorder.Setup(it => it.StartTimeRecordAsync()).ThrowsAsync(error);
     void 記録一覧を用意する(IReadOnlyList<TimeRecord> records) => recorder.SetupGet(it => it.Records).Returns(records);
     void 記録中の状態を用意する(bool isRecording) => recorder.SetupGet(it => it.IsRecording).Returns(isRecording);

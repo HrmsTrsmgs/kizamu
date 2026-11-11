@@ -11,8 +11,11 @@ public interface ITimeRecorderViewModel
     /// <summary>記録中かどうかを取得します。</summary>
     bool IsRecording { get; }
 
-    /// <summary>記録操作の通信中かどうかを取得します。</summary>
+    /// <summary>記録操作または状態確認の通信中かどうかを取得します。</summary>
     bool IsBusy { get; }
+
+    /// <summary>操作失敗後の最新状態を確認できていないかどうかを取得します。</summary>
+    bool IsStateUnconfirmed { get; }
 
     /// <summary>操作欄に表示する記録を取得します。</summary>
     TimeRecord? DisplayedRecord { get; }

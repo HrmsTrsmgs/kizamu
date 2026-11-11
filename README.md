@@ -4,6 +4,10 @@
 
 現在はASP.NET Core／Nodeの業務APIと、Blazor WebAssembly／既存React版を組み合わせて、プロジェクト未指定の時間記録の開始、終了、一覧、開始・終了時刻、作業時間の表示を利用できます。記録は業務APIのメモリ上だけに保持し、そのサーバーを再起動すると失われます。
 
+開始・終了に失敗すると、失敗を表示して一覧を再取得します。その再取得にも失敗した場合は、最後に確認できた一覧を残して「最新状態を確認できません」と表示します。「再取得」で状態を確認できるまで開始・終了は停止し、再取得に成功すると操作を再開できます。
+
+既知の制約として、操作前に要求した初回一覧の応答が、操作と後続の一覧再取得の失敗後に届くと、未確認状態と操作停止が解除される問題が残っています。
+
 MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間記録機能をBlazorへ移し、Reactは現状を保持して追加開発を保留します。
 
 製品構想は [docs/concept.md](docs/concept.md)、MVPまでの暫定的な順序は [docs/roadmap.md](docs/roadmap.md)、具体的な作業計画は [ai-notes/mvp-implementation-plan.md](ai-notes/mvp-implementation-plan.md) を参照してください。

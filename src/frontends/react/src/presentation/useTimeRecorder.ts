@@ -6,6 +6,7 @@ import { initialTimeRecorderState, timeRecorderReducer } from './timeRecorderSta
 export function useTimeRecorder(timeRecords: TimeRecordService) {
   const [state, dispatch] = useReducer(timeRecorderReducer, initialTimeRecorderState)
   const [isBusy, setIsBusy] = useState(false)
+  const [isStateUnconfirmed, setIsStateUnconfirmed] = useState(false)
   const operationPending = useRef(false)
   const pendingLoads = useRef<TimeRecordPresentation[][]>([])
 
@@ -15,6 +16,7 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     try {
       const records = await timeRecords.getTimeRecords()
       dispatch({ type: 'recordsLoaded', records, updatedRecords })
+      setIsStateUnconfirmed(false)
     } finally {
       pendingLoads.current = pendingLoads.current.filter(pending => pending !== updatedRecords)
     }
@@ -24,8 +26,20 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     void getTimeRecords()
   }, [getTimeRecords])
 
-  async function startTimeRecord() {
+  async function reloadTimeRecords() {
     if (operationPending.current) return
+    operationPending.current = true
+    setIsBusy(true)
+    try {
+      await getTimeRecords()
+    } finally {
+      operationPending.current = false
+      setIsBusy(false)
+    }
+  }
+
+  async function startTimeRecord() {
+    if (operationPending.current || isStateUnconfirmed) return
     operationPending.current = true
     setIsBusy(true)
     try {
@@ -33,7 +47,12 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
       pendingLoads.current.forEach(pending => pending.push(record))
       dispatch({ type: 'recordStarted', record })
     } catch (error) {
-      await getTimeRecords()
+      try {
+        await getTimeRecords()
+      } catch (reloadError) {
+        setIsStateUnconfirmed(true)
+        throw reloadError
+      }
       throw error
     } finally {
       operationPending.current = false
@@ -42,7 +61,7 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
   }
 
   async function endTimeRecord() {
-    if (operationPending.current) return
+    if (operationPending.current || isStateUnconfirmed) return
     if (state.timeRecordId !== null) {
       operationPending.current = true
       setIsBusy(true)
@@ -51,7 +70,12 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
         pendingLoads.current.forEach(pending => pending.push(record))
         dispatch({ type: 'recordEnded', record })
       } catch (error) {
-        await getTimeRecords()
+        try {
+          await getTimeRecords()
+        } catch (reloadError) {
+          setIsStateUnconfirmed(true)
+          throw reloadError
+        }
         throw error
       } finally {
         operationPending.current = false
@@ -60,5 +84,5 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     }
   }
 
-  return { state, isBusy, startTimeRecord, endTimeRecord }
+  return { state, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords }
 }
