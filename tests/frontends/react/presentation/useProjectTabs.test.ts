@@ -24,6 +24,15 @@ describe('useProjectTabs', () => {
     result.current.state.projects.should.toStrictEqual([])
   })
 
+  it('追加画面から登録するとダイアログを閉じます', () => {
+    const { result } = renderHook(() => useProjectTabs())
+
+    act(() => result.current.openProjectDialog())
+    act(() => result.current.registerProject('プロジェクトA'))
+
+    result.current.state.showProjectDialog.should.equal(false)
+  })
+
   it('登録したプロジェクトを一覧に保持します', () => {
     const { result } = renderHook(() => useProjectTabs())
 
