@@ -173,9 +173,10 @@ public sealed class TimeRecorderViewModelTests
     public async Task 開始の通信に失敗すると一覧を再取得して反映する()
     {
         service.Records = [service.StartedRecord];
-        service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+        var 開始失敗 = new HttpRequestException();
+        service.StartResponse = Task.FromException<TimeRecord>(開始失敗);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync());
+        (await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync())).Should().BeSameAs(開始失敗);
 
         service.ListCount.Should().Be(1);
         tested.Records.Should().Equal(service.StartedRecord);
@@ -187,13 +188,138 @@ public sealed class TimeRecorderViewModelTests
     {
         await tested.StartTimeRecordAsync();
         service.Records = [service.EndedRecord];
-        service.EndResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+        var 終了失敗 = new HttpRequestException();
+        service.EndResponse = Task.FromException<TimeRecord>(終了失敗);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync());
+        (await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync())).Should().BeSameAs(終了失敗);
 
         service.ListCount.Should().Be(1);
         tested.Records.Should().Equal(service.EndedRecord);
         tested.IsRecording.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task 開始失敗後の一覧再取得にも失敗すると直前の一覧を残して未確認状態になる()
+    {
+        await 終了済みの履歴を読み込む();
+        service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+        var 再取得失敗 = new HttpRequestException();
+        一覧取得を失敗させる(再取得失敗);
+
+        (await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync())).Should().BeSameAs(再取得失敗);
+
+        tested.Records.Should().Equal(service.Records);
+        tested.IsStateUnconfirmed.Should().BeTrue();
+        tested.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task 終了失敗後の一覧再取得にも失敗すると直前の一覧を残して未確認状態になる()
+    {
+        await tested.StartTimeRecordAsync();
+        service.EndResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+        var 再取得失敗 = new HttpRequestException();
+        一覧取得を失敗させる(再取得失敗);
+
+        (await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync())).Should().BeSameAs(再取得失敗);
+
+        tested.Records.Should().Equal(service.StartedRecord);
+        tested.IsStateUnconfirmed.Should().BeTrue();
+        tested.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task 開始失敗後の状態を確認できるまでは追加の開始と終了を要求しない()
+    {
+        await 開始失敗後の再取得にも失敗させる();
+        service.StartResponse = null;
+
+        await tested.StartTimeRecordAsync();
+        await tested.EndTimeRecordAsync();
+
+        service.StartCount.Should().Be(1);
+        service.EndedIds.Should().BeEmpty();
+        service.ListCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task 終了失敗後の状態を確認できるまでは追加の終了と開始を要求しない()
+    {
+        await 終了失敗後の再取得にも失敗させる();
+        service.EndResponse = null;
+
+        await tested.EndTimeRecordAsync();
+        await tested.StartTimeRecordAsync();
+
+        service.EndedIds.Should().Equal(記録ID);
+        service.StartCount.Should().Be(1);
+        service.ListCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task 手動再取得に成功すると取得した記録を終了対象として操作を再開できる()
+    {
+        await 開始失敗後の再取得にも失敗させる();
+        service.DelayListResponse().SetResult([service.StartedRecord]);
+
+        await tested.LoadAsync();
+
+        tested.Records.Should().Equal(service.StartedRecord);
+        tested.IsStateUnconfirmed.Should().BeFalse();
+        tested.IsRecording.Should().BeTrue();
+        await tested.EndTimeRecordAsync();
+        service.EndedIds.Should().Equal(記録ID);
+    }
+
+    [Fact]
+    public async Task 手動再取得で終了済みの一覧を確認すると開始できる()
+    {
+        await 終了失敗後の再取得にも失敗させる();
+        service.DelayListResponse().SetResult([service.EndedRecord]);
+
+        await tested.LoadAsync();
+
+        tested.Records.Should().Equal(service.EndedRecord);
+        tested.IsStateUnconfirmed.Should().BeFalse();
+        tested.IsRecording.Should().BeFalse();
+        await tested.StartTimeRecordAsync();
+        service.StartCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task 手動再取得にも失敗すると直前の一覧と未確認状態を保つ()
+    {
+        await 終了済みの履歴を読み込む();
+        await 開始失敗後の再取得にも失敗させる();
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => tested.LoadAsync());
+
+        tested.Records.Should().Equal(service.Records);
+        tested.IsStateUnconfirmed.Should().BeTrue();
+        tested.IsBusy.Should().BeFalse();
+        service.ListCount.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task 手動再取得の通信中は再取得と開始と終了の追加要求を送らない()
+    {
+        await 開始失敗後の再取得にも失敗させる();
+        service.StartResponse = null;
+        var 応答 = service.DelayListResponse();
+
+        var 再取得 = tested.LoadAsync();
+        var 重複再取得 = tested.LoadAsync();
+        var 再取得中 = tested.IsBusy;
+        var 一覧要求数 = service.ListCount;
+        await tested.StartTimeRecordAsync();
+        await tested.EndTimeRecordAsync();
+        応答.SetResult([service.EndedRecord]);
+        await Task.WhenAll(再取得, 重複再取得);
+
+        再取得中.Should().BeTrue();
+        一覧要求数.Should().Be(2);
+        service.StartCount.Should().Be(1);
+        service.EndedIds.Should().BeEmpty();
     }
 
     [Fact]
@@ -324,6 +450,23 @@ public sealed class TimeRecorderViewModelTests
         tested.Records.Should().BeEmpty();
         tested.DisplayedRecord.Should().BeNull();
         tested.IsRecording.Should().BeFalse();
+    }
+
+    void 一覧取得を失敗させる(Exception error) => service.DelayListResponse().SetException(error);
+
+    async Task 開始失敗後の再取得にも失敗させる()
+    {
+        service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+        一覧取得を失敗させる(new HttpRequestException());
+        await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync());
+    }
+
+    async Task 終了失敗後の再取得にも失敗させる()
+    {
+        await tested.StartTimeRecordAsync();
+        service.EndResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+        一覧取得を失敗させる(new HttpRequestException());
+        await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync());
     }
 
     async Task 終了済みの履歴を読み込む()
