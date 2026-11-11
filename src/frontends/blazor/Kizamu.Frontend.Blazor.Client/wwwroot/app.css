@@ -22,7 +22,6 @@ main {
   padding: 4rem 0 2rem;
 }
 
-.app-header { margin-bottom: 2rem; }
 h1, h2, p { margin-top: 0; }
 
 h1 {
@@ -172,9 +171,6 @@ h1 {
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.project-default, .project-tab {
   background: #f7f9f7;
   color: #67776e;
 }
