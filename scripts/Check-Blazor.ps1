@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Wait-HealthEndpoint.ps1')
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $api = Join-Path $root 'src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api'
 $frontend = Join-Path $root 'src/frontends/blazor/Kizamu.Frontend.Blazor.Server'
@@ -23,14 +24,7 @@ try {
         $dll = Join-Path $item.Dir ("bin/Debug/net10.0/" + $item.Dll)
         $process = Start-Process -FilePath 'dotnet' -ArgumentList "`"$dll`" --urls http://localhost:$($item.Port) --environment Development" -WorkingDirectory $item.Dir -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logs "$($item.Name).out") -RedirectStandardError (Join-Path $logs "$($item.Name).err")
         $processes += $process
-        $ready = $false
-        for ($i = 0; $i -lt 60; $i++) {
-            if ($process.HasExited) { break }
-            try {
-                $response = Invoke-WebRequest -Uri $item.Check -UseBasicParsing -TimeoutSec 1
-                if ($response.StatusCode -eq 200) { $ready = $true; break }
-            } catch { Start-Sleep -Milliseconds 500 }
-        }
+        $ready = Wait-HealthEndpoint -Process $process -Uri $item.Check
         if (-not $ready) {
             Get-Content (Join-Path $logs "$($item.Name).out"), (Join-Path $logs "$($item.Name).err") -ErrorAction SilentlyContinue | Write-Host
             throw "$($item.Name) を起動できませんでした。"
