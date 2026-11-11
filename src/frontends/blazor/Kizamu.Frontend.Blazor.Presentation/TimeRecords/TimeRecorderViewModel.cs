@@ -135,21 +135,43 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
 
     /// <summary>記録を開始し、一覧と操作欄へ確定した結果を反映します。</summary>
     /// <returns>開始と画面状態の更新の完了。</returns>
-    public async Task StartTimeRecordAsync()
+    public Task StartTimeRecordAsync()
     {
-        if (!CanOperate) return;
+        if (!CanOperate) return Task.CompletedTask;
+        var project = selectedProject;
+        return RunRecordOperationAsync(service.StartTimeRecordAsync, record =>
+        {
+            records.Add(record);
+            TrackUpdateForPendingLoads(record);
+            DisplayedRecord = record;
+            SetCurrentId(project, record.Id);
+        });
+    }
+
+    /// <summary>操作対象の記録を終了し、一覧と、表示中であれば操作欄を更新します。対象がなければ何もしません。</summary>
+    /// <returns>終了と画面状態の更新の完了。</returns>
+    public Task EndTimeRecordAsync()
+    {
+        if (!CanOperate || CurrentId is not { } id) return Task.CompletedTask;
+        return RunRecordOperationAsync(() => service.EndTimeRecordAsync(id), record =>
+        {
+            records[records.FindIndex(it => it.Id == record.Id)] = record;
+            TrackUpdateForPendingLoads(record);
+            if (DisplayedRecord is not null)
+            {
+                DisplayedRecord = record;
+            }
+            CurrentId = null;
+        });
+    }
+
+    /// <summary>要求から状態反映まで二重操作を防ぎ、失敗した場合は一覧で結果を確認します。</summary>
+    async Task RunRecordOperationAsync(Func<Task<TimeRecord>> request, Action<TimeRecord> applyRecord)
+    {
         IsBusy = true;
         try
         {
-            var project = selectedProject;
-            var record = await service.StartTimeRecordAsync();
-            records.Add(record);
-            foreach (var pending in pendingLoads)
-            {
-                pending.Add(record);
-            }
-            DisplayedRecord = record;
-            SetCurrentId(project, record.Id);
+            applyRecord(await request());
         }
         catch
         {
@@ -162,37 +184,12 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         }
     }
 
-    /// <summary>操作対象の記録を終了し、一覧と、表示中であれば操作欄を更新します。対象がなければ何もしません。</summary>
-    /// <returns>終了と画面状態の更新の完了。</returns>
-    public async Task EndTimeRecordAsync()
+    /// <summary>応答待ちの各一覧に、この操作で確定した記録を引き継ぎます。</summary>
+    void TrackUpdateForPendingLoads(TimeRecord record)
     {
-        if (!CanOperate) return;
-        if (CurrentId is { } id)
+        foreach (var updates in pendingLoads)
         {
-            IsBusy = true;
-            try
-            {
-                var record = await service.EndTimeRecordAsync(id);
-                records[records.FindIndex(it => it.Id == record.Id)] = record;
-                foreach (var pending in pendingLoads)
-                {
-                    pending.Add(record);
-                }
-                if (DisplayedRecord is not null)
-                {
-                    DisplayedRecord = record;
-                }
-                CurrentId = null;
-            }
-            catch
-            {
-                await ReloadAfterOperationFailureAsync();
-                throw;
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            updates.Add(record);
         }
     }
 }
