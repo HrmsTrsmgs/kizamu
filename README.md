@@ -248,7 +248,7 @@ npm ci
 
 Visual Studioでは `Kizamu.slnx` を開き、共有起動プロファイル `React + ASP.NET Core` でAPIとReactを起動します。業務APIがViteを自動起動する以前のSPA proxy連携は廃止し、起動する組み合わせはIDE側で管理します。APIは `http://localhost:5213`、Viteは `http://localhost:5173` で、Viteの `/api` proxyが業務APIへ転送します。Blazorとのプロファイル切替時には、同じAPIプロセスを二重に起動しないでください。
 
-確認用に、依存関係の準備後にAPIとReactを起動するスクリプトを用意しています。ブラウザーを開き、Enterで終了する想定です。記録はメモリ上に保持され、終了時に失われます。ポート5213または5173の使用中は起動しません。スクリプト全体の起動から終了までは未検証です。
+確認用に、依存関係の準備後にAPIとReactを起動するスクリプトを用意しています。ブラウザーを開き、確認後にEnterを押すと終了します。記録はメモリ上に保持され、終了時に失われます。ポート5213または5173の使用中は起動しません。
 
 ```powershell
 .\scripts\Check-React.ps1

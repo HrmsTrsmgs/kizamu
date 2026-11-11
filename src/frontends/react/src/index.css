@@ -259,7 +259,7 @@ h1 {
   padding: 0.15rem 0 0.3rem;
 }
 
-.project-tab {
+.project-default, .project-tab {
   flex: none;
   max-width: 15rem;
   overflow: hidden;
@@ -274,7 +274,7 @@ h1 {
   white-space: nowrap;
 }
 
-.project-tab[aria-selected="true"] {
+.project-default[aria-selected="true"], .project-tab[aria-selected="true"] {
   border-color: #1f6b48;
   background: #1f6b48;
   color: #fff;

@@ -25,6 +25,7 @@ export default function App({ health, timeRecords }: AppProps) {
           <button className="project-add-button" type="button" onClick={openProjectDialog}>追加</button>
         </div>
         <div className="project-tabs" role="tablist" aria-label="プロジェクト">
+          <span className="project-default" aria-selected={state.selectedProject === undefined}>未指定</span>
           {state.projects.map((project, index) => (
             <button
               className="project-tab"
@@ -45,8 +46,8 @@ export default function App({ health, timeRecords }: AppProps) {
             <label htmlFor="project-name">プロジェクト名</label>
             <input id="project-name" value={state.projectName} onChange={event => setProjectName(event.target.value)} />
             <div className="project-dialog-actions">
-              <button className="project-register-button" type="button" onClick={() => registerProject(state.projectName)}>登録</button>
               <button className="project-cancel-button" type="button" onClick={cancelProjectDialog}>キャンセル</button>
+              <button className="project-register-button" type="button" onClick={() => registerProject(state.projectName)}>登録</button>
             </div>
           </div>
         </div>

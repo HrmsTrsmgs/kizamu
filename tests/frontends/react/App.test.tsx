@@ -43,6 +43,21 @@ describe('App', () => {
     screen.getByRole('tab', { name: 'プロジェクトA' }).should.toBeInTheDocument()
   })
 
+  it('初期状態では未指定を選択中として表示します', () => {
+    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+
+    within(screen.getByRole('tablist', { name: 'プロジェクト' })).getByText('未指定').should.toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('登録済みプロジェクトを選ぶと未指定の選択が解除されます', () => {
+    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+    プロジェクトを登録する('プロジェクトA')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
+
+    within(screen.getByRole('tablist', { name: 'プロジェクト' })).getByText('未指定').should.toHaveAttribute('aria-selected', 'false')
+  })
+
   it('登録済みプロジェクトのタブを押すとそのタブが選択中として表示されます', () => {
     const health = { checkHealth: async () => true }
     const timeRecords = createTimeRecordServiceStub()
