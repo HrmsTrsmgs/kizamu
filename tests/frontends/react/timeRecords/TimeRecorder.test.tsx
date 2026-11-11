@@ -84,10 +84,24 @@ describe('TimeRecorder', () => {
     screen.getByLabelText('終了時刻').should.toHaveTextContent('2026/08/01 19:30')
     screen.getByText('待機中').should.toBeInTheDocument()
     screen.getAllByText('1時間30分').should.have.lengthOf(2)
+  })
+
+  it('再開始すると直前の終了時刻を消します', async () => {
+    startTimeRecord.mockResolvedValue(記録)
+    endTimeRecord.mockResolvedValue(終了済み記録)
+    await 開始と終了を操作した画面を用意する()
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
     await screen.findByRole('button', { name: '記録を終了' })
 
     should.not.exist(screen.queryByLabelText('終了時刻'))
   })
+
+  async function 開始と終了を操作した画面を用意する() {
+    render(<TimeRecorder timeRecords={timeRecords} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+    fireEvent.click(await screen.findByRole('button', { name: '記録を終了' }))
+    await screen.findByLabelText('終了時刻')
+  }
 })
