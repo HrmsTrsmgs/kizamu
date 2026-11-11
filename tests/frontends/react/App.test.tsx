@@ -30,7 +30,7 @@ describe('App', () => {
     projectName.should.toHaveValue('プロジェクトA')
   })
 
-  it('入力したプロジェクト名が操作不可のタブとして表示されます', () => {
+  it('入力したプロジェクト名がタブに表示されます', () => {
     const health = { checkHealth: async () => true }
     const timeRecords = createTimeRecordServiceStub()
 
@@ -40,7 +40,21 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '登録' }))
 
-    screen.getByRole('tab', { name: 'プロジェクトA' }).should.toBeDisabled()
+    screen.getByRole('tab', { name: 'プロジェクトA' }).should.toBeInTheDocument()
+  })
+
+  it('登録済みプロジェクトのタブを押すとそのタブが選択中として表示されます', () => {
+    const health = { checkHealth: async () => true }
+    const timeRecords = createTimeRecordServiceStub()
+
+    render(<App health={health} timeRecords={timeRecords} />)
+    fireEvent.click(screen.getByRole('button', { name: '追加' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
+    fireEvent.click(screen.getByRole('button', { name: '登録' }))
+
+    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
+
+    screen.getByRole('tab', { name: 'プロジェクトA' }).should.toHaveAttribute('aria-selected', 'true')
   })
 
   it('登録ボタンを押すとプロジェクト追加ダイアログを閉じます', () => {

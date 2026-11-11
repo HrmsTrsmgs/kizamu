@@ -11,7 +11,7 @@ type AppProps = {
 }
 
 export default function App({ health, timeRecords }: AppProps) {
-  const { state, setProjectName, registerProject, openProjectDialog, cancelProjectDialog } = useProjectTabs()
+  const { state, setProjectName, registerProject, selectProject, openProjectDialog, cancelProjectDialog } = useProjectTabs()
 
   return (
     <main>
@@ -26,7 +26,14 @@ export default function App({ health, timeRecords }: AppProps) {
         </div>
         <div className="project-tabs" role="tablist" aria-label="プロジェクト">
           {state.projects.map((project, index) => (
-            <button className="project-tab" role="tab" type="button" key={index} disabled>{project.name}</button>
+            <button
+              className="project-tab"
+              role="tab"
+              aria-selected={state.selectedProject === project}
+              type="button"
+              key={index}
+              onClick={() => selectProject(project)}
+            >{project.name}</button>
           ))}
         </div>
       </section>
