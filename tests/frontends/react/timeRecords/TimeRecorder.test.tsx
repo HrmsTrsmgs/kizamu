@@ -121,8 +121,8 @@ describe('TimeRecorder', () => {
 
   beforeEach(() => {
     getTimeRecords = vi.fn<TimeRecordService['getTimeRecords']>().mockResolvedValue([])
-    startTimeRecord = vi.fn<TimeRecordService['startTimeRecord']>()
-    endTimeRecord = vi.fn<TimeRecordService['endTimeRecord']>()
+    startTimeRecord = vi.fn<TimeRecordService['startTimeRecord']>().mockResolvedValue(記録)
+    endTimeRecord = vi.fn<TimeRecordService['endTimeRecord']>().mockResolvedValue(終了済み記録)
     timeRecords = createTimeRecordServiceStub({ getTimeRecords, startTimeRecord, endTimeRecord })
   })
 
@@ -137,8 +137,6 @@ describe('TimeRecorder', () => {
   })
 
   it('開始と終了の操作を画面状態と時刻表示へ接続します', async () => {
-    startTimeRecord.mockResolvedValue(記録)
-    endTimeRecord.mockResolvedValue(終了済み記録)
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -163,8 +161,6 @@ describe('TimeRecorder', () => {
   })
 
   it('再開始すると直前の終了時刻を消します', async () => {
-    startTimeRecord.mockResolvedValue(記録)
-    endTimeRecord.mockResolvedValue(終了済み記録)
     await 開始と終了を操作した画面を用意する()
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
