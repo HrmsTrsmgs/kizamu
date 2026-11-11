@@ -466,13 +466,13 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### このブランチの目的と停止位置
 
-* 直前のレビュー対応はPR #18でmainへマージ済み（6b6dbf9）。今回のブランチはcodex/recover-time-record-state、基準HEADは6b6dbf9。既存のfix-end-time-record-id作業ツリーを継続使用し、移動・削除していない。
-* 開始・終了の失敗後に一覧の再取得も失敗した場合の復旧対応を、BlazorとReactの組でGreenまで実装した。仕様と判断理由は [D012](../docs/decisions.md#d012記録操作の結果が未確認なら一覧の再取得で復旧する)、利用者向けの説明は [README](../README.md) を参照。開発者が既知の指摘を残した状態でコミットし、次へ進むことを了承。
-* TDD工程には不足がある。複数の振る舞いをまとめてテスト追加・実装し、一件ずつのRed→Greenにはしていない。.NETのRedはAPI未存在によるコンパイル失敗までで、各振る舞いの失敗は未確認。Reactの追加13ケースの意図した失敗と、Greenでの対象・全体テスト成功は確認済み。開発者との確認により、今回の差分はレビューで確認し、その後コミットを了承された。
-* 検証対象は6b6dbf9＋今回の未コミット実装・テスト。Blazorソリューション全テストは130成功・既存Skip 3件・失敗0。npm testは118成功（Domain 12・React 83・Node 23）、npm build・lint成功。Blazor非増分解析ビルドは警告・エラー0、全16 SARIFは既存ASP0027 1件・既存Skip xUnit1004 3件のみ。変更C#4ファイルのformat検査は既存Skip 2箇所のxUnit1004で終了1、同診断だけを除外した検査は終了0。
-* 両フロントの実装5ファイル・既存テスト4ファイルとREADME・判断記録・本記録を、開発者の指示により本コミットへ保存する。実装・テストはUTF-8 BOMなし・CRLF、混在なし、diff --check成功。検証後のコード・設定は変わっておらず、同じ検証結果を使用する。
-* レビューで未解決の指摘1件を確認した。操作前から保留されていた初回一覧の応答が、操作と後続の一覧再取得の二重失敗後に届くと、両フロントで未確認状態が解除され、追加の開始要求を送れる。実装は [BlazorのLoadAsync](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs) と [ReactのgetTimeRecords](../src/frontends/react/src/presentation/useTimeRecorder.ts) の成功時の無条件解除。通信なしの一時的な再現確認で両方の問題を確認し、一時ファイルは削除した。実装・既存テストは変更していない。
-* 次の着手点は本コミットを基準にしたRefactorの検討。上記の応答順序の指摘は未修正のまま保持し、挙動変更をRefactorへ混ぜない。pushは未指示。実ブラウザー・Visual Studio実操作は未確認。
+* 作業ブランチはcodex/recover-time-record-state、GのHEADは21d73b765939f25f584300785b702eab6e6920bc。既存のfix-end-time-record-id作業ツリーを継続使用している。直前のレビュー対応はPR #18でmainへマージ済み（6b6dbf9）。
+* 開始・終了の失敗後に一覧の再取得も失敗した場合の復旧対応は、開発者の指示で21d73b7へコミット済み。仕様と判断理由は [D012](../docs/decisions.md#d012記録操作の結果が未確認なら一覧の再取得で復旧する)、利用者向けの説明と既知の制約は [README](../README.md) を参照する。初回TDD工程の不足とレビューでの取り扱いは、21d73b7の本記録に残している。
+* Refactorは、開始・終了で重複する失敗後の一覧再取得処理をBlazor VMとReact hook内の非公開メソッドへ集約する1単位まで実施した。既存の失敗テスト4ケースずつに例外同一性の検証を補い、抽出前にも通過を確認した。観測済みの例外選択を保護する検証であり、新たな製品仕様の確定ではない。追加の修正指示により、React画面テストのalert・propsを直接記述へ変更し、受け渡すだけの一時変数を削除した。開発者が差分のコミットを了承。
+* 検証対象は21d73b7＋本コミットの実装・テスト。一時変数の最終修正後、React全83テストとテスト側build（型検査）・Lintが成功した。C#・製品コードはその修正前のRefactor検証版から不変のため、前回のBlazor全テスト130成功・既存Skip 3件・失敗0、Domain 12件・Node 23件成功、製品build・Lint成功を引き継ぐ。Blazor非増分解析ビルドは警告・エラー0、全16 SARIFは既存ASP0027 1件・既存Skip xUnit1004 3件のみ。変更C#2ファイルのformat検査は既存Skip 2箇所のxUnit1004で終了2、同診断だけを除外した検査は終了0。
+* TimeRecorderViewModel.cs・useTimeRecorder.tsと対応する既存テスト2ファイル、React画面のTimeRecorder.test.tsx、本記録を、開発者の指示により本コミットへ保存する。変更ファイルはUTF-8 BOMなし・CRLF、混在なし、diff --check成功。検証後のコード・設定は変わっておらず、上記の検証結果を使用する。
+* 操作前の初回一覧の遅延応答で未確認状態が解除される指摘は、開発者の指示で未修正のまま引き継ぐ。今回のRefactorでは変更していない。
+* Refactorは本コミットで保存する。次の区切りはmain向けPRの作成とマージ。push・PR作成はまだ指示されていない。新たなSkip追加・既存Skip解除はない。実ブラウザー・Visual Studio実操作は未確認。
 
 ### 統合元の製品作業（参照）
 

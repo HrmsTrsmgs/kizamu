@@ -173,9 +173,10 @@ public sealed class TimeRecorderViewModelTests
     public async Task 開始の通信に失敗すると一覧を再取得して反映する()
     {
         service.Records = [service.StartedRecord];
-        service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+        var 開始失敗 = new HttpRequestException();
+        service.StartResponse = Task.FromException<TimeRecord>(開始失敗);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync());
+        (await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync())).Should().BeSameAs(開始失敗);
 
         service.ListCount.Should().Be(1);
         tested.Records.Should().Equal(service.StartedRecord);
@@ -187,9 +188,10 @@ public sealed class TimeRecorderViewModelTests
     {
         await tested.StartTimeRecordAsync();
         service.Records = [service.EndedRecord];
-        service.EndResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+        var 終了失敗 = new HttpRequestException();
+        service.EndResponse = Task.FromException<TimeRecord>(終了失敗);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync());
+        (await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync())).Should().BeSameAs(終了失敗);
 
         service.ListCount.Should().Be(1);
         tested.Records.Should().Equal(service.EndedRecord);
@@ -201,9 +203,10 @@ public sealed class TimeRecorderViewModelTests
     {
         await 終了済みの履歴を読み込む();
         service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
-        一覧取得を失敗させる();
+        var 再取得失敗 = new HttpRequestException();
+        一覧取得を失敗させる(再取得失敗);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync());
+        (await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync())).Should().BeSameAs(再取得失敗);
 
         tested.Records.Should().Equal(service.Records);
         tested.IsStateUnconfirmed.Should().BeTrue();
@@ -215,9 +218,10 @@ public sealed class TimeRecorderViewModelTests
     {
         await tested.StartTimeRecordAsync();
         service.EndResponse = Task.FromException<TimeRecord>(new HttpRequestException());
-        一覧取得を失敗させる();
+        var 再取得失敗 = new HttpRequestException();
+        一覧取得を失敗させる(再取得失敗);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync());
+        (await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync())).Should().BeSameAs(再取得失敗);
 
         tested.Records.Should().Equal(service.StartedRecord);
         tested.IsStateUnconfirmed.Should().BeTrue();
@@ -448,12 +452,12 @@ public sealed class TimeRecorderViewModelTests
         tested.IsRecording.Should().BeFalse();
     }
 
-    void 一覧取得を失敗させる() => service.DelayListResponse().SetException(new HttpRequestException());
+    void 一覧取得を失敗させる(Exception error) => service.DelayListResponse().SetException(error);
 
     async Task 開始失敗後の再取得にも失敗させる()
     {
         service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
-        一覧取得を失敗させる();
+        一覧取得を失敗させる(new HttpRequestException());
         await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync());
     }
 
@@ -461,7 +465,7 @@ public sealed class TimeRecorderViewModelTests
     {
         await tested.StartTimeRecordAsync();
         service.EndResponse = Task.FromException<TimeRecord>(new HttpRequestException());
-        一覧取得を失敗させる();
+        一覧取得を失敗させる(new HttpRequestException());
         await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync());
     }
 

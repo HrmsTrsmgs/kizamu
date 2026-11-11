@@ -173,21 +173,21 @@ describe('TimeRecorder', () => {
       fireEvent.click(screen.getByRole('button', { name: '再取得' }))
     })
 
-    const alert = await screen.findByRole('alert')
-    alert.should.toHaveTextContent('最新状態を確認できません')
+    ;(await screen.findByRole('alert')).should.toHaveTextContent('最新状態を確認できません')
     screen.getByRole('button', { name: '再取得' }).should.toBeEnabled()
   })
 
   function 未確認の画面を表示する(state: typeof initialTimeRecorderState, isBusy = false) {
-    const props = {
-      state,
-      isBusy,
-      isStateUnconfirmed: true,
-      startTimeRecord: retryStartTimeRecord,
-      endTimeRecord: retryEndTimeRecord,
-      reloadTimeRecords,
-    }
-    return render(<TimeRecorderView {...props} />)
+    return render(
+      <TimeRecorderView
+        state={state}
+        isBusy={isBusy}
+        isStateUnconfirmed={true}
+        startTimeRecord={retryStartTimeRecord}
+        endTimeRecord={retryEndTimeRecord}
+        reloadTimeRecords={reloadTimeRecords}
+      />,
+    )
   }
 
   async function 開始と終了を操作した画面を用意する() {

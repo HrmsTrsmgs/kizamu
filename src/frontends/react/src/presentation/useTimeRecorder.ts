@@ -38,6 +38,15 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     }
   }
 
+  async function reloadAfterOperationFailure() {
+    try {
+      await getTimeRecords()
+    } catch (error) {
+      setIsStateUnconfirmed(true)
+      throw error
+    }
+  }
+
   async function startTimeRecord() {
     if (operationPending.current || isStateUnconfirmed) return
     operationPending.current = true
@@ -47,12 +56,7 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
       pendingLoads.current.forEach(pending => pending.push(record))
       dispatch({ type: 'recordStarted', record })
     } catch (error) {
-      try {
-        await getTimeRecords()
-      } catch (reloadError) {
-        setIsStateUnconfirmed(true)
-        throw reloadError
-      }
+      await reloadAfterOperationFailure()
       throw error
     } finally {
       operationPending.current = false
@@ -70,12 +74,7 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
         pendingLoads.current.forEach(pending => pending.push(record))
         dispatch({ type: 'recordEnded', record })
       } catch (error) {
-        try {
-          await getTimeRecords()
-        } catch (reloadError) {
-          setIsStateUnconfirmed(true)
-          throw reloadError
-        }
+        await reloadAfterOperationFailure()
         throw error
       } finally {
         operationPending.current = false

@@ -80,6 +80,20 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         }
     }
 
+    /// <summary>操作の成否を一覧で確認し、再取得できなければ未確認状態として操作を止めます。</summary>
+    async Task ReloadAfterOperationFailureAsync()
+    {
+        try
+        {
+            await LoadAsync();
+        }
+        catch
+        {
+            IsStateUnconfirmed = true;
+            throw;
+        }
+    }
+
     /// <summary>記録を開始し、一覧と操作欄へ確定した結果を反映します。</summary>
     /// <returns>開始と画面状態の更新の完了。</returns>
     public async Task StartTimeRecordAsync()
@@ -100,15 +114,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         }
         catch
         {
-            try
-            {
-                await LoadAsync();
-            }
-            catch
-            {
-                IsStateUnconfirmed = true;
-                throw;
-            }
+            await ReloadAfterOperationFailureAsync();
             throw;
         }
         finally
@@ -141,15 +147,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
             }
             catch
             {
-                try
-                {
-                    await LoadAsync();
-                }
-                catch
-                {
-                    IsStateUnconfirmed = true;
-                    throw;
-                }
+                await ReloadAfterOperationFailureAsync();
                 throw;
             }
             finally
