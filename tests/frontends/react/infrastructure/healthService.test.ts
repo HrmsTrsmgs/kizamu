@@ -37,8 +37,8 @@ describe('healthService', () => {
     isHealthy.should.equal(false)
   })
 
-  it('正常でない内容を受け取るとfalseを返します', async () => {
-    fetchMock.mockImplementation(async () => Response.json({}))
+  it.each([{}, { status: 1 }])('正常でない内容を受け取るとfalseを返します（%j）', async body => {
+    fetchMock.mockImplementation(async () => Response.json(body))
 
     const isHealthy = await tested.checkHealth()
     isHealthy.should.equal(false)
