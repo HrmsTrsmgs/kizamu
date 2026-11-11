@@ -23,7 +23,7 @@ afterEach(async () => {
 })
 
 test('記録を開始すると空でないGUIDとサーバーの開始時刻があり終了時刻がない記録が返されます', async () => {
-  const response = await app.inject({ method: 'POST', url: '/api/time-records/start' })
+  const response = await postFromSameOrigin(app, '/api/time-records/start')
 
   response.statusCode.should.equal(201)
   const startedRecord = response.json<TimeRecordResponse>()
@@ -35,12 +35,10 @@ test('記録を開始すると空でないGUIDとサーバーの開始時刻が�
 })
 
 test('記録を終了すると同じ識別子と元の開始時刻とサーバーの終了時刻が返されます', async () => {
-  const startResponse = await app.inject({ method: 'POST', url: '/api/time-records/start' })
-  startResponse.statusCode.should.equal(201)
-  const startedRecord = startResponse.json<TimeRecordResponse>()
+  const startedRecord = await prepareStartedRecord(app)
   vi.setSystemTime(終了時刻)
 
-  const response = await app.inject({ method: 'POST', url: `/api/time-records/${startedRecord.id}/end` })
+  const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`)
 
   response.statusCode.should.equal(200)
   const endedRecord = response.json<TimeRecordResponse>()
@@ -59,13 +57,9 @@ test('まだ開始していないときに一覧を取得すると空の配列�
 })
 
 test('二件の記録を開始した後に一覧を取得すると開始した順に両方が返されます', async () => {
-  const firstStartResponse = await app.inject({ method: 'POST', url: '/api/time-records/start' })
-  firstStartResponse.statusCode.should.equal(201)
-  const firstRecord = firstStartResponse.json<TimeRecordResponse>()
+  const firstRecord = await prepareStartedRecord(app)
   vi.setSystemTime(終了時刻)
-  const secondStartResponse = await app.inject({ method: 'POST', url: '/api/time-records/start' })
-  secondStartResponse.statusCode.should.equal(201)
-  const secondRecord = secondStartResponse.json<TimeRecordResponse>()
+  const secondRecord = await prepareStartedRecord(app)
   secondRecord.id.should.not.equal(firstRecord.id)
 
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })
@@ -76,12 +70,9 @@ test('二件の記録を開始した後に一覧を取得すると開始した�
 })
 
 test('記録を終了した後に一覧を取得するとその記録の終了時刻が反映されます', async () => {
-  const startResponse = await app.inject({ method: 'POST', url: '/api/time-records/start' })
-  startResponse.statusCode.should.equal(201)
-  const startedRecord = startResponse.json<TimeRecordResponse>()
+  const startedRecord = await prepareStartedRecord(app)
   vi.setSystemTime(終了時刻)
-  const endResponse = await app.inject({ method: 'POST', url: `/api/time-records/${startedRecord.id}/end` })
-  endResponse.statusCode.should.equal(200)
+  await prepareEndedRecord(app, startedRecord.id)
 
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })
 
@@ -91,7 +82,7 @@ test('記録を終了した後に一覧を取得するとその記録の終了�
 })
 
 test('別のアプリで開始した記録は新しく生成したアプリの一覧には含まれません', async () => {
-  const startResponse = await app.inject({ method: 'POST', url: '/api/time-records/start' })
+  const startResponse = await postFromSameOrigin(app, '/api/time-records/start')
   startResponse.statusCode.should.equal(201)
   const independentApp = createApp()
   try {
@@ -104,3 +95,55 @@ test('別のアプリで開始した記録は新しく生成したアプリの�
     await independentApp.close()
   }
 })
+
+test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
+  'Sec-Fetch-Siteが同一オリジンを示さない開始要求は403になり記録が追加されません（%s）',
+  async (secFetchSite) => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/time-records/start',
+      headers: secFetchSite === undefined ? {} : { 'sec-fetch-site': secFetchSite },
+    })
+    response.statusCode.should.equal(403)
+
+    const listResponse = await app.inject({ method: 'GET', url: '/api/time-records' })
+    listResponse.statusCode.should.equal(200)
+    listResponse.json<TimeRecordResponse[]>().should.deep.equal([])
+  },
+)
+
+test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
+  'Sec-Fetch-Siteが同一オリジンを示さない終了要求は403になり記録が終了されません（%s）',
+  async (secFetchSite) => {
+    const startedRecord = await prepareStartedRecord(app)
+    vi.setSystemTime(終了時刻)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: `/api/time-records/${startedRecord.id}/end`,
+      headers: secFetchSite === undefined ? {} : { 'sec-fetch-site': secFetchSite },
+    })
+    response.statusCode.should.equal(403)
+
+    const listResponse = await app.inject({ method: 'GET', url: '/api/time-records' })
+    listResponse.statusCode.should.equal(200)
+    listResponse.json<TimeRecordResponse[]>().should.deep.equal([startedRecord])
+  },
+)
+
+function postFromSameOrigin(app: ReturnType<typeof createApp>, url: string) {
+  return app.inject({
+    method: 'POST', url, headers: { 'sec-fetch-site': 'same-origin' },
+  })
+}
+
+async function prepareStartedRecord(app: ReturnType<typeof createApp>): Promise<TimeRecordResponse> {
+  const response = await postFromSameOrigin(app, '/api/time-records/start')
+  response.statusCode.should.equal(201)
+  return response.json<TimeRecordResponse>()
+}
+
+async function prepareEndedRecord(app: ReturnType<typeof createApp>, recordId: string): Promise<void> {
+  const response = await postFromSameOrigin(app, `/api/time-records/${recordId}/end`)
+  response.statusCode.should.equal(200)
+}

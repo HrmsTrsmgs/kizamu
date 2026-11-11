@@ -1,4 +1,5 @@
-import { spawn } from 'node:child_process'
+import { spawn, type ChildProcessByStdio } from 'node:child_process'
+import type { Readable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 import { test } from 'vitest'
 
@@ -9,6 +10,20 @@ test('Nodeの起動入口を空きポートで実行すると出力されたURL�
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
+
+  await withListeningServer(server, async (listeningUrl) => {
+    const response = await fetch(`${listeningUrl}/api/health`, { signal: AbortSignal.timeout(3000) })
+
+    response.status.should.equal(200)
+    const content = { body: await response.json() }
+    content.should.have.property('body').that.deep.equal({ status: 'ok' })
+  })
+}, 10000)
+
+async function withListeningServer(
+  server: ChildProcessByStdio<null, Readable, Readable>,
+  verify: (listeningUrl: string) => Promise<void>,
+) {
   const closed = new Promise<void>((resolve) => server.once('close', () => resolve()))
   let standardOutput = ''
   let standardError = ''
@@ -34,14 +49,10 @@ test('Nodeの起動入口を空きポートで実行すると出力されたURL�
     })
     clearTimeout(startupTimeout)
 
-    const response = await fetch(`${listeningUrl}/api/health`, { signal: AbortSignal.timeout(3000) })
-
-    response.status.should.equal(200)
-    const content = { body: await response.json() }
-    content.should.have.property('body').that.deep.equal({ status: 'ok' })
+    await verify(listeningUrl)
   } finally {
     clearTimeout(startupTimeout)
     if (server.exitCode === null && server.signalCode === null) server.kill()
     await closed
   }
-}, 10000)
+}

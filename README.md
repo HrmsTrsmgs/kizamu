@@ -4,6 +4,10 @@
 
 現在はASP.NET Core／Nodeの業務APIと、Blazor WebAssembly／既存React版を組み合わせて、プロジェクト未指定の時間記録の開始、終了、一覧、開始・終了時刻、作業時間の表示を利用できます。記録は業務APIのメモリ上だけに保持し、そのサーバーを再起動すると失われます。
 
+開始・終了に失敗すると、失敗を表示して一覧を再取得します。その再取得にも失敗した場合は、最後に確認できた一覧を残して「最新状態を確認できません」と表示します。「再取得」で状態を確認できるまで開始・終了は停止し、再取得に成功すると操作を再開できます。
+
+既知の制約として、操作前に要求した初回一覧の応答が、操作と後続の一覧再取得の失敗後に届くと、未確認状態と操作停止が解除される問題が残っています。
+
 MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間記録機能をBlazorへ移し、Reactは現状を保持して追加開発を保留します。
 
 製品構想は [docs/concept.md](docs/concept.md)、MVPまでの暫定的な順序は [docs/roadmap.md](docs/roadmap.md)、具体的な作業計画は [ai-notes/mvp-implementation-plan.md](ai-notes/mvp-implementation-plan.md) を参照してください。
@@ -132,6 +136,10 @@ Blazorの記録画面の状態と操作は `Kizamu.Frontend.Blazor.Presentation`
 同じ業務ロジックが必要な場合、ASP.NET CoreとBlazorは.NET版、NodeとReactはTypeScript版のDomainを共用できます。異なる言語間で同じライブラリの直接参照は前提にせず、HTTP API契約で相互運用します。Domainが通信用DTOへ依存する構成にはしません。
 
 フロントエンドはブラウザーだけを意味しません。BlazorのServerは静的ファイル配信と `/api/...` の中継を担当し、記録処理は持ちません。業務APIへのプロジェクト参照はせず、接続先URLだけを設定します。SSR・Autoは採用しておらず、UIは引き続きWebAssemblyとしてブラウザー内で実行します。React公開時にもフロント側の配信・API中継サーバーを置く方針ですが、未実装です。開発時は既存のVite proxyが中継します。
+
+作業記録の開始・終了APIは、`Sec-Fetch-Site: same-origin` の要求だけを受け付けます。ASP.NET CoreとNodeのHTTP境界で検証し、情報の欠落や他の値では、記録を変更する前に `403 Forbidden` を返します。一覧とhealthのGETには、この制約を設けません。対応ブラウザーが標準情報を自動付与するため、BlazorやReactで独自ヘッダーを追加する必要はありません。
+
+公開環境はHTTPS、ローカル開発は `http://localhost` を使用し、Fetch Metadataに対応する現行の主要ブラウザーを対象とします。中継サーバーは元の `Sec-Fetch-Site` を追加・書き換えずに転送してください。画面の公開URLを業務APIへ登録する設定は不要です。この検証は別サイトからのブラウザー経由の更新を拒否するものであり、利用者認証やサーバー間認証の代わりにはなりません。判断理由は [D010](docs/decisions.md#d010画面用の更新apiはfetch-metadataで同一オリジンを検証する) を参照してください。
 
 Visual Studio用の共有一括起動設定は `Kizamu.slnLaunch` と `Kizamu.Blazor.slnLaunch` に置きます。全実装用の `Kizamu.slnx` では `Blazor + ASP.NET Core`、`React + ASP.NET Core`、`Blazor + Node`、`React + Node` の四つを定義しています。業務APIとフロント側サーバーを別プロセスで起動します。プロファイルや公開処理のためにソースを複製しません。IDEでの検出・起動操作はCLIとは別に確認が必要です。
 
