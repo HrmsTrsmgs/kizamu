@@ -78,25 +78,45 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
             if (IsBusy) return;
             IsBusy = true;
         }
-        List<TimeRecord> updatedRecords = [];
-        pendingLoads.Add(updatedRecords);
+        List<TimeRecord> updatesDuringLoad = [];
+        pendingLoads.Add(updatesDuringLoad);
         try
         {
             var loadedRecords = await service.GetTimeRecordsAsync();
-            records = [.. loadedRecords.Select(record => updatedRecords.LastOrDefault(it => it.Id == record.Id) ?? record)];
-            records.AddRange(updatedRecords.GroupBy(record => record.Id)
-                .Select(group => group.Last()).Where(record => !records.Exists(it => it.Id == record.Id)));
-            CurrentId = updatedRecords.LastOrDefault(it => it.Id == CurrentId && it.EndedAt is null)?.Id ??
-                (from record in records
-                 where record.EndedAt is null
-                 select (Guid?)record.Id).FirstOrDefault();
+            records = MergeLoadedRecords(loadedRecords, updatesDuringLoad);
+            CurrentId = FindCurrentIdAfterLoad(updatesDuringLoad);
             IsStateUnconfirmed = false;
         }
         finally
         {
-            pendingLoads.Remove(updatedRecords);
+            pendingLoads.Remove(updatesDuringLoad);
             if (isRecovery) IsBusy = false;
         }
+    }
+
+    /// <summary>応答の順序を保って同じIDを最新の操作結果に置き換え、応答にないIDは最初に操作した順に加えます。</summary>
+    static List<TimeRecord> MergeLoadedRecords(IReadOnlyList<TimeRecord> loadedRecords, IReadOnlyList<TimeRecord> updatesDuringLoad)
+    {
+        var recordsFromResponse =
+            from record in loadedRecords
+            select updatesDuringLoad.LastOrDefault(update => update.Id == record.Id) ?? record;
+
+        var recordsMissingFromResponse =
+            from update in updatesDuringLoad
+            group update by update.Id into updates
+            where !loadedRecords.Any(record => record.Id == updates.Key)
+            select updates.Last();
+
+        return [.. recordsFromResponse, .. recordsMissingFromResponse];
+    }
+
+    /// <summary>一覧取得中に操作した終了対象を優先し、それ以外は一覧の先頭の記録中項目を選びます。</summary>
+    Guid? FindCurrentIdAfterLoad(IReadOnlyList<TimeRecord> updatesDuringLoad)
+    {
+        var currentId = CurrentId;
+        return updatesDuringLoad.Any(record => record.Id == currentId && record.EndedAt is null)
+            ? currentId
+            : records.FirstOrDefault(record => record.EndedAt is null)?.Id;
     }
 
     /// <summary>操作の成否を一覧で確認し、再取得できなければ未確認状態として操作を止めます。</summary>

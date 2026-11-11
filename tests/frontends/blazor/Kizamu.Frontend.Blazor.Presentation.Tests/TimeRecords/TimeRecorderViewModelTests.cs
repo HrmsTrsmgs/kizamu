@@ -476,6 +476,55 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task 古い一覧と同じIDは最新の操作結果で置き換え一覧にない記録は後に加える()
+    {
+        var 先に開始した記録 = service.StartedRecord;
+        var 応答 = service.DelayListResponse();
+        var 読み込み = tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        await tested.EndTimeRecordAsync();
+        service.StartedRecord = new(別の記録ID, 終了時刻, null);
+        await tested.StartTimeRecordAsync();
+
+        応答.SetResult([先に開始した記録]);
+        await 読み込み;
+
+        tested.Records.Should().Equal(service.EndedRecord, service.StartedRecord);
+    }
+
+    [Fact]
+    public async Task 古い一覧にない記録は最新の更新を最初の操作順で残す()
+    {
+        var 応答 = service.DelayListResponse();
+        var 読み込み = tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(new("別のプロジェクト"));
+        service.StartedRecord = new(別の記録ID, 開始時刻, null);
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(null);
+        await tested.EndTimeRecordAsync();
+
+        応答.SetResult([]);
+        await 読み込み;
+
+        tested.Records.Should().Equal(service.EndedRecord, service.StartedRecord);
+    }
+
+    [Fact]
+    public async Task 古い一覧の先頭にも記録中の項目があれば取得中に開始した記録を先に終了する()
+    {
+        var 応答 = service.DelayListResponse();
+        var 読み込み = tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        応答.SetResult([new(別の記録ID, 開始時刻, null)]);
+        await 読み込み;
+
+        await tested.EndTimeRecordAsync();
+
+        service.EndedIds.Should().Equal(記録ID);
+    }
+
+    [Fact]
     public async Task 操作後の再読み込みはサーバーの更新と削除を反映する()
     {
         await 履歴がある状態で記録を開始する();
