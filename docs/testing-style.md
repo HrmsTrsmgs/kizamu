@@ -38,6 +38,8 @@ expect(record.startedAt.equals(開始時刻)).toBe(true)
 record.startedAt.should.deep.equal(開始時刻)
 ```
 
+Domainクラスの種類も保証する構造比較では、期待値にクラスのインスタンスを置き、配列や親オブジェクトごと `should.toStrictEqual(...)` で比較する。`should.deep.equal(...)` は同じプロパティを持つplain objectも等しいと扱うため、クラスの保証には使わない。`toStrictEqual` は `undefined` のキーや疎配列も区別するので、変更前後の検証内容を確認し、日時・期間などの値比較やJSONの比較を一律に置き換えない。
+
 `should` はテスト環境内だけで有効化する。基本の初期化と型宣言は [共通のテスト初期化](../tests/should.mts) に集約し、各テストプロジェクトから読み込む。JSDOMのDOMノードは別系統のオブジェクトであるため、[Reactのテスト初期化](../tests/frontends/react/test/setup.ts) でも標準の `should` getterを登録する。
 
 `null`／`undefined` には直接 `.should` をつなげられないため、nullableなプロパティは親オブジェクトから `should.have.property(...)` などで検証する。画面検索の不在確認には標準の `should.not.exist(...)` を使う。optional chainingで検証を飛ばしたり、非nullアサーションで回避したりしない。

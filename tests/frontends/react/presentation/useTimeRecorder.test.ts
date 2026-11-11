@@ -36,7 +36,7 @@ describe('useTimeRecorder', () => {
 
     await waitFor(() => result.current.state.records.should.have.lengthOf(2))
     getTimeRecords.should.have.callCount(1)
-    result.current.state.records.should.deep.equal([終了済み記録, 一覧の記録中の記録])
+    result.current.state.records.should.toStrictEqual([終了済み記録, 一覧の記録中の記録])
     result.current.state.should.have.property('timeRecordId', 次の記録ID)
   })
 
@@ -46,7 +46,7 @@ describe('useTimeRecorder', () => {
     await act(() => result.current.startTimeRecord())
 
     startTimeRecord.should.have.callCount(1)
-    result.current.state.should.deep.equal({
+    result.current.state.should.toStrictEqual({
       records: [記録], timeRecordId: 記録ID, startedAt: 開始時刻, endedAt: null,
     })
   })
@@ -63,7 +63,7 @@ describe('useTimeRecorder', () => {
       await initialListResponse.promise
     })
 
-    result.current.state.should.deep.equal({
+    result.current.state.should.toStrictEqual({
       records: [過去の記録, 記録],
       timeRecordId: 記録ID,
       startedAt: 開始時刻,
@@ -73,7 +73,7 @@ describe('useTimeRecorder', () => {
     await act(() => result.current.endTimeRecord())
 
     endTimeRecord.should.have.been.calledOnceWith(記録ID)
-    result.current.state.should.deep.equal({
+    result.current.state.should.toStrictEqual({
       records: [過去の記録, 終了済み記録],
       timeRecordId: null,
       startedAt: 開始時刻,
@@ -85,14 +85,14 @@ describe('useTimeRecorder', () => {
     const 過去の記録 = presentedRecord(次の記録ID, 開始時刻, 終了時刻)
     getTimeRecords.mockResolvedValue([過去の記録])
     const { result, rerender } = renderRecorder()
-    await waitFor(() => result.current.state.records.should.deep.equal([過去の記録]))
+    await waitFor(() => result.current.state.records.should.toStrictEqual([過去の記録]))
     await act(() => result.current.startTimeRecord())
 
     rerender({
       service: { ...service, getTimeRecords: async () => [終了済み記録] },
     })
 
-    await waitFor(() => result.current.state.records.should.deep.equal([終了済み記録]))
+    await waitFor(() => result.current.state.records.should.toStrictEqual([終了済み記録]))
     result.current.state.should.have.property('timeRecordId', null)
   })
 
@@ -102,7 +102,7 @@ describe('useTimeRecorder', () => {
     await act(() => result.current.endTimeRecord())
 
     endTimeRecord.should.have.been.calledOnceWith(記録ID)
-    result.current.state.should.deep.equal({
+    result.current.state.should.toStrictEqual({
       records: [終了済み記録], timeRecordId: null, startedAt: 開始時刻, endedAt: 終了時刻,
     })
   })
@@ -113,7 +113,7 @@ describe('useTimeRecorder', () => {
 
     await act(() => result.current.startTimeRecord())
 
-    result.current.state.should.deep.equal({
+    result.current.state.should.toStrictEqual({
       records: [終了済み記録, 次の記録], timeRecordId: 次の記録ID, startedAt: 次の開始時刻, endedAt: null,
     })
   })

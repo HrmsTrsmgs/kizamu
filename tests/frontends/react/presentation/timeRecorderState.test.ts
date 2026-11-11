@@ -19,7 +19,7 @@ describe('timeRecorderReducer', () => {
       records: [記録],
     })
 
-    result.should.deep.equal({
+    result.should.toStrictEqual({
       ...initialTimeRecorderState,
       records: [記録],
       timeRecordId: 記録ID,
@@ -51,7 +51,7 @@ describe('timeRecorderReducer', () => {
       record: 記録,
     })
 
-    result.should.deep.equal({
+    result.should.toStrictEqual({
       records: [記録],
       timeRecordId: 記録ID,
       startedAt: 開始時刻,
@@ -72,7 +72,7 @@ describe('timeRecorderReducer', () => {
       record: 終了済み記録,
     })
 
-    result.should.deep.equal({
+    result.should.toStrictEqual({
       records: [終了済み記録],
       timeRecordId: null,
       startedAt: 開始時刻,
