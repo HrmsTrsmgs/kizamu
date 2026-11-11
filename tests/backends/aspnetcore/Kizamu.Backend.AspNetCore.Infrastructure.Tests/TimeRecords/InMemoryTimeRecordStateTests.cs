@@ -8,12 +8,14 @@ public sealed class InMemoryTimeRecordStateTests
 {
     static readonly DateTimeOffset 開始時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 次の開始時刻 = new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero);
+    readonly InMemoryTimeRecordState tested;
+
+    public InMemoryTimeRecordStateTests() => tested = new();
 
     [Fact]
     public void 作業記録を保存すると同じ記録を取得できます()
     {
         var timeRecord = TimeRecord.Start(開始時刻);
-        var tested = new InMemoryTimeRecordState();
 
         tested.Add(timeRecord);
 
@@ -25,7 +27,6 @@ public sealed class InMemoryTimeRecordStateTests
     {
         var 最初の記録 = TimeRecord.Start(開始時刻);
         var 次の記録 = TimeRecord.Start(次の開始時刻);
-        var tested = new InMemoryTimeRecordState();
         tested.Add(最初の記録);
         tested.Add(次の記録);
 
@@ -35,8 +36,6 @@ public sealed class InMemoryTimeRecordStateTests
     [Fact]
     public void 作業記録を追加していない場合は空の一覧を取得できます()
     {
-        var tested = new InMemoryTimeRecordState();
-
         tested.All.Should().BeEmpty();
     }
 
@@ -44,7 +43,6 @@ public sealed class InMemoryTimeRecordStateTests
     public void 作業記録を一件追加すると追加した記録を取得できます()
     {
         var 追加する記録 = TimeRecord.Start(開始時刻);
-        var tested = new InMemoryTimeRecordState();
 
         tested.Add(追加する記録);
 
@@ -56,7 +54,6 @@ public sealed class InMemoryTimeRecordStateTests
     {
         var 最初の記録 = TimeRecord.Start(開始時刻);
         var 次の記録 = TimeRecord.Start(次の開始時刻);
-        var tested = new InMemoryTimeRecordState();
 
         tested.Add(最初の記録);
         tested.Add(次の記録);
@@ -69,7 +66,6 @@ public sealed class InMemoryTimeRecordStateTests
     {
         var 最初の記録 = TimeRecord.Start(開始時刻);
         var 次の記録 = TimeRecord.Start(次の開始時刻);
-        var tested = new InMemoryTimeRecordState();
         tested.Add(最初の記録);
         var 一覧 = tested.All;
 
@@ -82,7 +78,6 @@ public sealed class InMemoryTimeRecordStateTests
     [Fact]
     public void 同じ一覧を列挙するたびに列挙開始前に追加された記録を取得できます()
     {
-        var tested = new InMemoryTimeRecordState();
         var 一覧 = tested.All;
         var 最初の記録 = TimeRecord.Start(開始時刻);
         tested.Add(最初の記録);

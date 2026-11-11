@@ -6,6 +6,40 @@
 
 初回は方針の明文化とコードの精査を行った。その後の追加精査と適用状況は次節に記載する。精査だけで製品全体の正しさを保証するものではない。
 
+## C#の共通準備と個別準備の再精査（2026-11-11）
+
+基準は `codex/refactor-react-test-preparation` の `dd1785a24f2cd327f53f0692a9e72b0589d2e54b` と、作業中だったAppTests.csのキャンセル用タプル抽出。代表例1件で止まっていたため、Git追跡下のC#全25テストファイルと関連する補助コードを確認し、共通初期化と個別の準備を再精査した。Fact 73件・Theory 11件の計84定義（うちSkip 3定義）で、データ行の展開数ではない。
+
+| 領域 | 確認ファイル数 | テスト定義数 | 整理したファイル数 |
+| --- | ---: | ---: | ---: |
+| Backend API | 4 | 6 | 1 |
+| Backend Application | 4 | 10 | 2 |
+| Backend Infrastructure | 2 | 8 | 1 |
+| Domain | 3 | 6 | 0 |
+| Blazor Client | 4 | 22 | 1 |
+| Blazor Infrastructure | 3 | 11 | 0 |
+| Blazor Presentation | 3 | 18 | 2 |
+| Blazor Server | 2 | 3 | 0 |
+| 合計 | 25 | 84 | 7 |
+
+整理した7ファイルは以下のとおり。共通準備をコンストラクターへまとめ、個別の準備に複数の結果が必要なときだけ名前付きタプルで返す。結果が一つなら単一の戻り値を使い、共通フィールドだけで操作・検証できる準備は戻り値を増やさない。
+
+| ファイル | 整理した内容 |
+| --- | --- |
+| [TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs) | 一覧取得前の時計設定と終了要求を抽出。終了応答を単一値で返し、using・200確認・GET応答より後の破棄を本文に維持。 |
+| [TimeRecordEndOperationTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs) | 空のstateを共通化。開始時刻の異なる二件と、終了済み記録を含む二件の準備から、検証に使う記録二つをタプルで返す。生成・終了・保存の順序を維持。 |
+| [TimeRecordReaderTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordReaderTests.cs) | stateとtestedを共通化。記録中・終了済みの混在状態から記録二つをタプルで返す。列挙前・列挙中の追加と列挙子の破棄は本文に維持。 |
+| [InMemoryTimeRecordStateTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/TimeRecords/InMemoryTimeRecordStateTests.cs) | testedの反復生成をコンストラクターへ集約。追加・コピー・列挙の操作は本文に維持。 |
+| [AppTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs) | キャンセル用の画面・ポップアップのタプル抽出を保持。Skipのタブ切替テストでは記録中画面の準備を単一戻り値で抽出。 |
+| [ProjectTabsViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/Projects/ProjectTabsViewModelTests.cs) | testedを共通化。再表示テストの先行登録は戻り値なしの準備へ抽出。 |
+| [TimeRecorderViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) | 共通フィールドを使う履歴・記録中状態の準備はTaskの補助メソッドへ抽出。Skipの二対象終了テストで固有に生成するtestedとserviceはタプルで返す。識別子の分岐、対象選択、応答競合の順序は本文に維持。 |
+
+残る18ファイルも確認した。依存境界の6ファイルは依存一覧の取得が検証対象。Domainの2ファイルと開始操作の1ファイルは、生成・復元・開始と時刻がそれぞれ対象操作または入力条件である。ホスト・正常性・中継の4ファイル、Blazorの表示3ファイルと通信2ファイルは、コンストラクターや既存補助メソッドに生成・接続を集約済みで、残る応答内容・時計・描画・要求と破棄の順序を本文で追える構成を維持した。
+
+検証対象は基準HEADと7テストファイルの差分。テスト名・属性・データ指定・Skip理由・全アサーション文はHEADとの機械比較で一致した。Kizamu.Blazor.slnxの非増分build・解析は警告0・エラー0で成功、全.NET testは成功94・失敗0・既存Skip3（計97）。対象7ファイルのformat検査は既存SkipへのxUnit1004 info 3件で終了2。SARIFには同3件と対象外Program.csのASP0027 note 1件が残り、新しい補助メソッド・コンストラクターの診断はない。差分検査とUTF-8 BOMなし・CRLFを確認した。
+
+Skipは解除しておらず、その本体から抽出した準備の動作は実行検証されていない。製品コード・構成・TypeScriptは変更していないためnpm検証は再実行していない。開発者の差分確認とコミット了承を得て、このコミットに保存する。現在の停止位置は [現在の次作業](mvp-implementation-plan.md#現在の次作業) を参照する。
+
 ## beforeEachによる共通準備の追加精査（2026-11-11）
 
 基準は `codex/refactor-react-test-preparation` の `892aa7b6fc31508ebb85931f469137ad25eb5a01`。この追加確認の前に、今回の `beforeEach` 方針で確認・修正していたのは `useTimeRecorder.test.ts` だけだった。今回はGit追跡下のTypeScriptテスト全19ファイルを構文解析で列挙し、64件のテスト定義と関連する準備コードを読んだ。`it.each` のデータ行は展開せずに数えている。C#のコンストラクターへの共通化は、この追加精査の対象に含めていない。

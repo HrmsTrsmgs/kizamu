@@ -466,12 +466,12 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### このブランチの目的と停止位置
 
-* 構造比較でDomainクラスも保証する整理。ブランチ `codex/refactor-react-test-preparation`、基準HEAD `96be429`。ReactのuseTimeRecorder・timeRecorderState、NodeのtimeRecords・timeRecordInfrastructureの4テストファイルと記述方針、この記録の計6ファイルについて、開発者が差分とメッセージを確認し、コミットを了承した。このコミットに保存する。
-* Domainモデルを含む18箇所のdeep.equalと、開始結果2件のincludeをtoStrictEqualへ整理した。開始結果は期待するTimeRecordを直接示し、同じ戻り値を一覧期待値に利用するだけでは保証できないクラスも検査する。既存のID・時刻・順序・非同一参照等の検証を維持。Temporalの日時・期間、Date、HTTP JSON、Lint結果のdeep.equalはそれぞれの値比較として維持した。方針の正本は [記述方針](../docs/testing-style.md)。
-* 採用Vitest 4.1.10の一時probeで同値のTimeRecordと内包構造の一致、plain objectと内包plain objectの不一致、ID・開始・終了時刻の差異、undefinedキーと疎配列の拒否を確認し、一時ファイルは削除した。対象16件とルート全81件（Domain12・React56・Node13）、Lint、build／型検査、差分・UTF-8 BOMなし・CRLF検査が成功。新たな不足やSkip追加なし。
-* ユーザーのuseProjectTabs.test.tsは別のproject-tabs作業ツリーにある未追跡ファイルで、参照のみ。作業中に同ファイルへのダイアログ表示テスト追加と、この作業ツリーのdocs/ai-instructions/tdd-context/green.mdの対象外差分を観測した。どちらも今回の担当は変更しておらず、そのまま保持した。Project機能はこのブランチへ移していない。
-* コミットメッセージは `refactor: Domainモデルを含む構造比較を厳密化`。PRを作業単位ごとに作成しない方針を継続する。別ブランチの既存文書コミット `94659e8` は保持したまま。
-* 次の着手点は、残るBlazorの準備整理とReact画面の再開始仕様の分離。既存の精査候補に沿って扱う。
+* C#全体のテスト準備整理。ブランチ `codex/refactor-react-test-preparation`、基準HEAD `dd1785a`。全25ファイル・84定義を精査し、7テストファイルを整理した。テスト7ファイルと記述方針・精査・再開記録の3文書、計10ファイルについて開発者が差分とメッセージを確認し、コミットを了承した。このコミットに保存する。対象外のdocs/ai-instructions/tdd-context/green.md差分は保持している。
+* 代表例1件で止まっていた状態を改め、共通初期化はコンストラクターへ、個別の準備は必要な結果だけ返す補助メソッドへ整理した。複数の記録、固有のtested/service、画面とポップアップを返す名前付きタプルを使用。全件確認の内訳、変更7ファイルと維持18ファイルの理由は [精査記録](test-preparation-review.md) を正本とし、一般方針は [記述方針](../docs/testing-style.md#テストの準備と補助メソッド) を参照する。
+* 検証対象は基準HEADと7テストファイルの差分。全.NET testは成功94・失敗0・既存Skip3（計97）。全体の非増分build・解析は警告0・エラー0。対象7ファイルのformatは既存SkipへのxUnit1004 info 3件により終了2。SARIFには同3件と対象外Program.csのASP0027 note 1件が残り、変更箇所の新規診断はない。テスト名・属性・データ指定・Skip理由・全アサーション文の機械比較、差分・UTF-8 BOMなし・CRLF検査は成功。
+* Skipは解除しておらず、Skip本体から抽出した準備の動作は未実行。製品コード・構成・TypeScriptは変更していないためnpm検証は再実行していない。既存のgreen.md差分と別worktreeは変更していない。
+* コミットメッセージは `refactor: C#テストの共通準備と個別準備を整理する`。PRを作業単位ごとに作成しない方針を継続する。別ブランチの既存文書コミット `94659e8` は保持したまま。
+* C#の現行全件精査と今回の準備整理は完了。次の着手点は、既存の精査候補にあるReact画面の再開始仕様の分離。
 
 ### 統合元の製品作業（参照）
 

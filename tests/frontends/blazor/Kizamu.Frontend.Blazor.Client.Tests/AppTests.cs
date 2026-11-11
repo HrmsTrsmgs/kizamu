@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
 using Kizamu.Domain;
@@ -50,13 +51,8 @@ public sealed class AppTests : IDisposable
     [Fact]
     public void プロジェクトの追加をキャンセルすると登録せずポップアップを閉じます()
     {
-        var tested = context.Render<Client.App>();
+        var (tested, popup) = プロジェクト名を入力した追加ポップアップを用意する("プロジェクトA");
 
-        tested.FindAll("button").Single(it => it.TextContent == "追加").Click();
-        var popup = tested.Find("[role=dialog]");
-        var nameInput = popup.QuerySelector("input");
-        nameInput.Should().NotBeNull();
-        nameInput.Change("プロジェクトA");
         popup.QuerySelectorAll("button").Single(it => it.TextContent == "キャンセル").Click();
 
         tested.FindAll("[role=dialog]").Should().BeEmpty();
@@ -93,17 +89,36 @@ public sealed class AppTests : IDisposable
     [Fact(Skip = "プロジェクトごとの記録画面を扱う実装に着手するとき解除します。")]
     public void タブを切り替えて戻ると記録中の対象には終了操作を表示します()
     {
-        context.Services.AddSingleton<ITimeRecordService>(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
-        var tested = context.Render<Client.App>();
-        プロジェクトを登録する(tested, "プロジェクトA");
-        プロジェクトを登録する(tested, "プロジェクトB");
-        プロジェクトを選ぶ(tested, "プロジェクトA");
-        tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
+        var tested = 指定したプロジェクトで記録中の画面を用意する("プロジェクトA", "プロジェクトB");
 
         プロジェクトを選ぶ(tested, "プロジェクトB");
         tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を開始");
         プロジェクトを選ぶ(tested, "プロジェクトA");
         tested.FindAll("button").Select(it => it.TextContent).Should().NotContain("記録を開始").And.Contain("記録を終了");
+    }
+
+    (IRenderedComponent<Client.App> tested, IElement popup) プロジェクト名を入力した追加ポップアップを用意する(string name)
+    {
+        var tested = context.Render<Client.App>();
+
+        tested.FindAll("button").Single(it => it.TextContent == "追加").Click();
+        var popup = tested.Find("[role=dialog]");
+        var nameInput = popup.QuerySelector("input");
+        nameInput.Should().NotBeNull();
+        nameInput.Change(name);
+        return (tested, popup);
+    }
+
+    IRenderedComponent<Client.App> 指定したプロジェクトで記録中の画面を用意する(
+        string 記録中のプロジェクト名, string 他のプロジェクト名)
+    {
+        context.Services.AddSingleton<ITimeRecordService>(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
+        var tested = context.Render<Client.App>();
+        プロジェクトを登録する(tested, 記録中のプロジェクト名);
+        プロジェクトを登録する(tested, 他のプロジェクト名);
+        プロジェクトを選ぶ(tested, 記録中のプロジェクト名);
+        tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
+        return tested;
     }
 
     static void プロジェクトを登録する(IRenderedComponent<Client.App> tested, string name)
