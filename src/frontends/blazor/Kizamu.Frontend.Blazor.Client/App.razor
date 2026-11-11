@@ -11,10 +11,10 @@
             <button class="project-add-button" type="button" @onclick="ViewModel.OpenProjectDialog">追加</button>
         </div>
         <div class="project-tabs" role="tablist" aria-label="プロジェクト">
-            <span class="project-default">未指定</span>
+            <span class="project-default" aria-selected="@(ViewModel.SelectedProject is null ? "true" : "false")">未指定</span>
             @foreach (var project in ViewModel.Projects)
             {
-                <button class="project-tab" role="tab" type="button" @onclick="() => ViewModel.SelectProject(project)">@project.Name</button>
+                <button class="project-tab" role="tab" aria-selected="@(ViewModel.SelectedProject == project ? "true" : "false")" type="button" @onclick="() => ViewModel.SelectProject(project)">@project.Name</button>
             }
         </div>
     </section>

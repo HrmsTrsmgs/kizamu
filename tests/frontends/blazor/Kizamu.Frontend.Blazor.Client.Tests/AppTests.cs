@@ -91,6 +91,18 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
+    public void 登録済みプロジェクトを選ぶとそのタブが選択中になり未指定の選択が解除されます()
+    {
+        プロジェクトを登録する(projectTabs, "プロジェクトA");
+        var tested = context.Render<Client.App>();
+
+        プロジェクトを選ぶ(tested, "プロジェクトA");
+
+        tested.FindAll("[role=tab]").Single(it => it.TextContent == "プロジェクトA").GetAttribute("aria-selected").Should().Be("true");
+        tested.Find(".project-default").GetAttribute("aria-selected").Should().Be("false");
+    }
+
+    [Fact]
     public void プロジェクトを指定せずに記録を開始できます()
     {
         context.Services.AddSingleton<ITimeRecordService>(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
