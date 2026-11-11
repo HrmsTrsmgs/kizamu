@@ -120,6 +120,65 @@ describe('timeRecorderReducer', () => {
     result.should.have.property('timeRecordId', null)
   })
 
+  it('取得した一覧の各位置を保ち、同じIDの最後の更新と元のISO表記を使います', () => {
+    const 変更しない記録 = presentedRecord('保存済み', 開始時刻, 終了時刻)
+    const 別表記の開始時刻 = timestamp('2026-08-01T18:00:00.0000000+09:00')
+    const 最後の更新 = presentedRecord(記録ID, 別表記の開始時刻, 終了時刻)
+
+    const state = timeRecorderReducer(initialTimeRecorderState, {
+      type: 'recordsLoaded',
+      records: [記録, 変更しない記録, 記録],
+      updatedRecords: [記録, 最後の更新],
+    })
+
+    state.records.should.toStrictEqual([最後の更新, 変更しない記録, 最後の更新])
+    state.records[0].should.equal(最後の更新)
+    state.records[1].should.equal(変更しない記録)
+    state.records[2].should.equal(最後の更新)
+    state.records[0].isoText.startedAt.should.equal(別表記の開始時刻.isoText)
+  })
+
+  it('取得した一覧にない記録は各IDの最後の更新順に一度ずつ追加します', () => {
+    const 過去の記録 = presentedRecord('保存済み', 開始時刻, 終了時刻)
+    const 別の記録 = presentedRecord('別の記録', 開始時刻)
+    const 次の記録 = presentedRecord('次の記録', 開始時刻)
+
+    const state = timeRecorderReducer(initialTimeRecorderState, {
+      type: 'recordsLoaded',
+      records: [過去の記録],
+      updatedRecords: [記録, 別の記録, 記録, 次の記録, 終了済み記録, 終了済み記録],
+    })
+
+    state.records.should.toStrictEqual([過去の記録, 別の記録, 次の記録, 終了済み記録])
+    state.records[3].should.equal(終了済み記録)
+  })
+
+  it('直前の終了対象が取得中に記録中だった場合、一覧には最後の更新を使い終了対象にはそのIDを保持します', () => {
+    const 別の記録中の記録 = presentedRecord('別の記録', 開始時刻)
+
+    const state = timeRecorderReducer({ ...initialTimeRecorderState, timeRecordId: 記録ID }, {
+      type: 'recordsLoaded',
+      records: [別の記録中の記録, 記録],
+      updatedRecords: [記録, 終了済み記録],
+    })
+
+    state.records.should.toStrictEqual([別の記録中の記録, 終了済み記録])
+    state.should.have.property('timeRecordId', 記録ID)
+  })
+
+  it('直前の終了対象に記録中の更新がなければ、合成した一覧で最初の記録中のIDを使います', () => {
+    const 先の記録 = presentedRecord('先の記録', 開始時刻)
+    const 次の記録 = presentedRecord('次の記録', 開始時刻)
+
+    const state = timeRecorderReducer({ ...initialTimeRecorderState, timeRecordId: 記録ID }, {
+      type: 'recordsLoaded',
+      records: [記録, 先の記録, 次の記録],
+      updatedRecords: [終了済み記録],
+    })
+
+    state.should.have.property('timeRecordId', 先の記録.record.id)
+  })
+
   it('記録を開始すると一覧と現在の記録を更新して終了時刻を消去します', () => {
     const state: TimeRecorderState = {
       ...initialTimeRecorderState,
