@@ -27,12 +27,17 @@ describe('TimeRecord', () => {
     record.should.have.property('endedAt', null)
   })
 
-  it('既存の識別子と開始終了時刻から復元した記録も元を変更せず終了できます', () => {
+  it('既存の識別子と開始時刻と終了時刻から記録を復元できます', () => {
     const record = new TimeRecord(記録ID, 開始時刻, 終了時刻)
-    const 次の終了時刻 = Temporal.Instant.from('2026-08-01T11:00:00Z')
+
     record.id.should.equal(記録ID)
     record.startedAt.should.deep.equal(開始時刻)
     record.should.have.property('endedAt').that.deep.equal(終了時刻)
+  })
+
+  it('終了済みの記録を再び終了すると元の記録を変えずに終了時刻を更新した記録が返されます', () => {
+    const record = new TimeRecord(記録ID, 開始時刻, 終了時刻)
+    const 次の終了時刻 = Temporal.Instant.from('2026-08-01T11:00:00Z')
 
     const endedRecord = record.end(次の終了時刻)
 
