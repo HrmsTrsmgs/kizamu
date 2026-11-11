@@ -7,10 +7,10 @@ namespace Kizamu.Backend.AspNetCore.Api.Endpoints.TimeRecords;
 /// </summary>
 static class EndTimeRecordEndpoint
 {
-    extension(WebApplication self)
+    extension(RouteGroupBuilder self)
     {
         /// <summary>
-        /// 記録終了APIをアプリケーションへ登録します。
+        /// 記録終了APIをグループへ登録します。
         /// </summary>
         internal void MapEndTimeRecordEndpoint()
         {

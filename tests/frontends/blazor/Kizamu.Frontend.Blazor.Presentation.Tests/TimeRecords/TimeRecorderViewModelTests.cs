@@ -95,6 +95,108 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task 開始の通信中は追加操作を受け付けず成功後に終了できる()
+    {
+        TaskCompletionSource<TimeRecord> 応答 = new();
+        service.StartResponse = 応答.Task;
+        var 開始操作 = tested.StartTimeRecordAsync();
+        var 追加開始 = tested.StartTimeRecordAsync();
+        var 追加終了 = tested.EndTimeRecordAsync();
+        service.StartCount.Should().Be(1);
+        service.EndedIds.Should().BeEmpty();
+
+        応答.SetResult(service.StartedRecord);
+        await Task.WhenAll(開始操作, 追加開始, 追加終了);
+        await tested.EndTimeRecordAsync();
+        service.EndedIds.Should().Equal(記録ID);
+    }
+
+    [Fact]
+    public async Task 開始の通信中は追加操作を受け付けず失敗後に再開始できる()
+    {
+        TaskCompletionSource<TimeRecord> 応答 = new();
+        service.StartResponse = 応答.Task;
+        var 開始操作 = tested.StartTimeRecordAsync();
+        var 追加開始 = tested.StartTimeRecordAsync();
+        var 追加終了 = tested.EndTimeRecordAsync();
+        service.StartCount.Should().Be(1);
+        service.EndedIds.Should().BeEmpty();
+
+        応答.SetException(new InvalidOperationException());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => 開始操作);
+        await Task.WhenAll(追加開始, 追加終了);
+        service.StartResponse = null;
+        await tested.StartTimeRecordAsync();
+        service.StartCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task 終了の通信中は追加操作を受け付けず成功後に開始できる()
+    {
+        await tested.StartTimeRecordAsync();
+        TaskCompletionSource<TimeRecord> 応答 = new();
+        service.EndResponse = 応答.Task;
+        var 終了操作 = tested.EndTimeRecordAsync();
+        var 追加開始 = tested.StartTimeRecordAsync();
+        var 追加終了 = tested.EndTimeRecordAsync();
+        service.StartCount.Should().Be(1);
+        service.EndedIds.Should().Equal(記録ID);
+
+        応答.SetResult(service.EndedRecord);
+        await Task.WhenAll(終了操作, 追加開始, 追加終了);
+        await tested.StartTimeRecordAsync();
+        service.StartCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task 終了の通信中は追加操作を受け付けず失敗後に再終了できる()
+    {
+        await tested.StartTimeRecordAsync();
+        service.Records = [service.StartedRecord];
+        TaskCompletionSource<TimeRecord> 応答 = new();
+        service.EndResponse = 応答.Task;
+        var 終了操作 = tested.EndTimeRecordAsync();
+        var 追加開始 = tested.StartTimeRecordAsync();
+        var 追加終了 = tested.EndTimeRecordAsync();
+        service.StartCount.Should().Be(1);
+        service.EndedIds.Should().Equal(記録ID);
+
+        応答.SetException(new InvalidOperationException());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => 終了操作);
+        await Task.WhenAll(追加開始, 追加終了);
+        service.EndResponse = null;
+        await tested.EndTimeRecordAsync();
+        service.EndedIds.Should().Equal(記録ID, 記録ID);
+    }
+
+    [Fact]
+    public async Task 開始の通信に失敗すると一覧を再取得して反映する()
+    {
+        service.Records = [service.StartedRecord];
+        service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync());
+
+        service.ListCount.Should().Be(1);
+        tested.Records.Should().Equal(service.StartedRecord);
+        tested.IsRecording.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task 終了の通信に失敗すると一覧を再取得して反映する()
+    {
+        await tested.StartTimeRecordAsync();
+        service.Records = [service.EndedRecord];
+        service.EndResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync());
+
+        service.ListCount.Should().Be(1);
+        tested.Records.Should().Equal(service.EndedRecord);
+        tested.IsRecording.Should().BeFalse();
+    }
+
+    [Fact]
     public void 初期状態は空の一覧で操作結果がなく記録していない()
     {
         tested.Records.Should().BeEmpty();

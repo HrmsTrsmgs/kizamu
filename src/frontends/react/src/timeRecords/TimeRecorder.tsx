@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import type { TimeRecordService } from '../presentation/timeRecordService'
 import { useTimeRecorder } from '../presentation/useTimeRecorder'
+import type { TimeRecorderState } from '../presentation/timeRecorderState'
 import { getTimeRecordTimestamps } from '../presentation/timeRecordPresentation'
 import TimeRecordTimes from './TimeRecordTimes'
 
@@ -8,7 +10,20 @@ type TimeRecorderProps = {
 }
 
 export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
-  const { state, startTimeRecord, endTimeRecord } = useTimeRecorder(timeRecords)
+  const { state, isBusy, startTimeRecord, endTimeRecord } = useTimeRecorder(timeRecords)
+
+  return <TimeRecorderView state={state} isBusy={isBusy} startTimeRecord={startTimeRecord} endTimeRecord={endTimeRecord} />
+}
+
+type TimeRecorderViewProps = {
+  state: TimeRecorderState
+  isBusy: boolean
+  startTimeRecord: () => Promise<void>
+  endTimeRecord: () => Promise<void>
+}
+
+export function TimeRecorderView({ state, isBusy, startTimeRecord, endTimeRecord }: TimeRecorderViewProps) {
+  const [operationFailed, setOperationFailed] = useState(false)
 
   return (
     <div className="time-recorder">
@@ -22,14 +37,15 @@ export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
 
         <div className="recorder-action">
           {state.timeRecordId === null ? (
-            <button className="record-button" type="button" onClick={() => { void startTimeRecord() }}>
+            <button className="record-button" type="button" disabled={isBusy} onClick={() => { void startTimeRecord().catch(() => setOperationFailed(true)) }}>
               記録を開始
             </button>
           ) : (
-            <button className="record-button is-active" type="button" onClick={() => { void endTimeRecord() }}>
+            <button className="record-button is-active" type="button" disabled={isBusy} onClick={() => { void endTimeRecord().catch(() => setOperationFailed(true)) }}>
               記録を終了
             </button>
           )}
+          {operationFailed && <p role="alert">記録操作に失敗しました。</p>}
           {state.startedAt !== null && (
             <TimeRecordTimes
               startedAt={state.startedAt}

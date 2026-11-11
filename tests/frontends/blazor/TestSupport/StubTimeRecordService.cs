@@ -14,6 +14,9 @@ sealed class StubTimeRecordService(TimeRecord startedRecord, TimeRecord endedRec
     public ImmutableArray<TimeRecord> Records { get; set; } = [];
     public TimeRecord StartedRecord { get; set; } = startedRecord;
     public Task<TimeRecord>? StartResponse { get; set; }
+    public Task<TimeRecord>? EndResponse { get; set; }
+    public int StartCount { get; private set; }
+    public int ListCount { get; private set; }
     public TimeRecord EndedRecord { get; } = endedRecord;
     public List<Guid> EndedIds { get; } = [];
 
@@ -24,13 +27,21 @@ sealed class StubTimeRecordService(TimeRecord startedRecord, TimeRecord endedRec
         return listResponse;
     }
 
-    public Task<ImmutableArray<TimeRecord>> GetTimeRecordsAsync() => listResponse?.Task ?? Task.FromResult(Records);
+    public Task<ImmutableArray<TimeRecord>> GetTimeRecordsAsync()
+    {
+        ListCount++;
+        return listResponse?.Task ?? Task.FromResult(Records);
+    }
 
-    public Task<TimeRecord> StartTimeRecordAsync() => StartResponse ?? Task.FromResult(StartedRecord);
+    public Task<TimeRecord> StartTimeRecordAsync()
+    {
+        StartCount++;
+        return StartResponse ?? Task.FromResult(StartedRecord);
+    }
 
     public Task<TimeRecord> EndTimeRecordAsync(Guid id)
     {
         EndedIds.Add(id);
-        return Task.FromResult(EndedRecord);
+        return EndResponse ?? Task.FromResult(EndedRecord);
     }
 }

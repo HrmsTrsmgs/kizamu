@@ -33,7 +33,7 @@ public sealed class AppTests : IDisposable
         client = new(handler) { BaseAddress = new("http://localhost/") };
         context.Services.AddSingleton(new HealthApi(client));
         context.Services.AddSingleton<ITimeRecordService>(new TimeRecordApi(client));
-        context.Services.AddTransient<TimeRecorderViewModel>();
+        context.Services.AddTransient<ITimeRecorderViewModel, TimeRecorderViewModel>();
         context.Services.AddTransient<ProjectTabsViewModel>();
         context.Services.AddSingleton(TimeProvider.System);
     }

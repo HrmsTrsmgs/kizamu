@@ -17,8 +17,15 @@ static WebApplication CreateApplication(string[] args)
 
     var app = builder.Build();
     app.MapHealthEndpoint();
-    app.MapStartTimeRecordEndpoint();
-    app.MapEndTimeRecordEndpoint();
+    var sameOriginEndpoints = app.MapGroup("").AddEndpointFilter(async (context, next) =>
+    {
+        if (context.HttpContext.Request.Headers["Sec-Fetch-Site"] != "same-origin")
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+
+        return await next(context);
+    });
+    sameOriginEndpoints.MapStartTimeRecordEndpoint();
+    sameOriginEndpoints.MapEndTimeRecordEndpoint();
     app.MapGetTimeRecordsEndpoint();
 
     return app;

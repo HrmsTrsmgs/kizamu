@@ -1,10 +1,11 @@
 using AwesomeAssertions;
 using Bunit;
+using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Client.TimeRecords;
 using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
-using Kizamu.Frontend.Blazor.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
+using Moq;
 
 namespace Kizamu.Frontend.Blazor.Client.Tests.TimeRecords;
 
@@ -15,12 +16,12 @@ public sealed class TimeRecorderTests : IDisposable
     static readonly DateTimeOffset 開始時刻 = DateTimeOffset.Parse("2026-08-01T09:00:00Z");
     static readonly DateTimeOffset 終了時刻 = DateTimeOffset.Parse("2026-08-01T10:30:00Z");
     readonly BunitContext context = new();
-    readonly StubTimeRecordService service = new(new(記録ID, 開始時刻, null), new(記録ID, 開始時刻, 終了時刻));
+    readonly Mock<ITimeRecorderViewModel> recorder = new();
 
     public TimeRecorderTests()
     {
-        context.Services.AddSingleton<ITimeRecordService>(service);
-        context.Services.AddTransient<TimeRecorderViewModel>();
+        記録一覧を用意する([]);
+        context.Services.AddSingleton(recorder.Object);
         context.Services.AddSingleton<TimeProvider>(new FakeTimeProvider(終了時刻));
     }
 
@@ -36,7 +37,8 @@ public sealed class TimeRecorderTests : IDisposable
     [Fact]
     public void 読み込んだ記録の時刻と記録中の終了操作を表示します()
     {
-        service.Records = [new(記録ID, 開始時刻, null), new(別の記録ID, 開始時刻, 終了時刻)];
+        記録一覧を用意する([new(記録ID, 開始時刻, null), new(別の記録ID, 開始時刻, 終了時刻)]);
+        記録中の状態を用意する(true);
 
         var tested = context.Render<TimeRecorder>();
 
@@ -47,11 +49,33 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 開始ボタンを押すと開始時刻を日本時間で表示し終了操作に切り替えます()
+    public void 開始ボタンを押すと開始操作を呼びます()
     {
         var tested = context.Render<TimeRecorder>();
-
         tested.Find("button").Click();
+        開始操作の呼び出しを確認する(Times.Once());
+        終了操作の呼び出しを確認する(Times.Never());
+    }
+
+    [Fact]
+    public async Task 開始操作に失敗すると利用者に知らせます()
+    {
+        開始操作の失敗を用意する(new HttpRequestException());
+        var tested = context.Render<TimeRecorder>();
+
+        await tested.Find("button").ClickAsync(new());
+
+        tested.Find("[role='alert']").TextContent.Should().Contain("失敗");
+    }
+
+    [Fact]
+    public void 開始済みの状態に開始時刻と終了操作を表示します()
+    {
+        記録中の状態を用意する(true);
+        TimeRecord 記録 = new(記録ID, 開始時刻, null);
+        操作欄の記録を用意する(記録);
+        記録一覧を用意する([記録]);
+        var tested = context.Render<TimeRecorder>();
 
         tested.Find("time[aria-label='開始時刻']").TextContent.Should().Be("2026/08/01 18:00");
         DateTimeOffset.TryParse(tested.Find("time[aria-label='開始時刻']").GetAttribute("datetime"), out var timestamp).Should().BeTrue();
@@ -61,11 +85,24 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 終了ボタンを押すと終了時刻と作業時間を表示し開始操作に切り替えます()
+    public void 終了ボタンを押すと終了操作を呼びます()
     {
-        var tested = 開始する();
+        記録中の状態を用意する(true);
+        var tested = context.Render<TimeRecorder>();
 
         tested.Find("button").Click();
+
+        終了操作の呼び出しを確認する(Times.Once());
+        開始操作の呼び出しを確認する(Times.Never());
+    }
+
+    [Fact]
+    public void 終了済みの状態に終了時刻と作業時間と開始操作を表示します()
+    {
+        TimeRecord 記録 = new(記録ID, 開始時刻, 終了時刻);
+        操作欄の記録を用意する(記録);
+        記録一覧を用意する([記録]);
+        var tested = context.Render<TimeRecorder>();
 
         tested.Find("time[aria-label='終了時刻']").TextContent.Should().Be("2026/08/01 19:30");
         DateTimeOffset.TryParse(tested.Find("time[aria-label='終了時刻']").GetAttribute("datetime"), out var timestamp).Should().BeTrue();
@@ -76,25 +113,33 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 再び開始すると操作欄の終了時刻を消します()
+    public void 再開始済みの状態には終了時刻を表示しません()
     {
-        var tested = 開始する();
-        tested.Find("button").Click();
-        service.StartedRecord = new(別の記録ID, 終了時刻, null);
-
-        tested.Find("button").Click();
-
+        記録中の状態を用意する(true);
+        操作欄の記録を用意する(new(別の記録ID, 終了時刻, null));
+        var tested = context.Render<TimeRecorder>();
         tested.FindAll("time[aria-label='終了時刻']").Should().BeEmpty();
         tested.Find("time[aria-label='開始時刻']").TextContent.Should().Be("2026/08/01 19:30");
     }
 
-    // 終了操作の表示確認に必要な画面を準備します。状態遷移の詳細はViewModelの単体テストで確認します。
-    IRenderedComponent<TimeRecorder> 開始する()
+    [Fact]
+    public void 通信中はボタンを無効にし完了後に有効にします()
     {
+        通信中の状態を用意する(true);
         var tested = context.Render<TimeRecorder>();
-        tested.Find("button").Click();
-        return tested;
+        tested.Find("button").HasAttribute("disabled").Should().BeTrue();
+        通信中の状態を用意する(false);
+        tested.Render();
+        tested.Find("button").HasAttribute("disabled").Should().BeFalse();
     }
+
+    void 開始操作の失敗を用意する(Exception error) => recorder.Setup(it => it.StartTimeRecordAsync()).ThrowsAsync(error);
+    void 記録一覧を用意する(IReadOnlyList<TimeRecord> records) => recorder.SetupGet(it => it.Records).Returns(records);
+    void 記録中の状態を用意する(bool isRecording) => recorder.SetupGet(it => it.IsRecording).Returns(isRecording);
+    void 操作欄の記録を用意する(TimeRecord record) => recorder.SetupGet(it => it.DisplayedRecord).Returns(record);
+    void 通信中の状態を用意する(bool isBusy) => recorder.SetupGet(it => it.IsBusy).Returns(isBusy);
+    void 開始操作の呼び出しを確認する(Times times) => recorder.Verify(it => it.StartTimeRecordAsync(), times);
+    void 終了操作の呼び出しを確認する(Times times) => recorder.Verify(it => it.EndTimeRecordAsync(), times);
 
     public void Dispose() => context.Dispose();
 }

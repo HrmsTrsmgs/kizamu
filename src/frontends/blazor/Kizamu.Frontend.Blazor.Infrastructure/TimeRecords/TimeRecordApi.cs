@@ -27,10 +27,11 @@ public sealed partial class TimeRecordApi(HttpClient client) : ITimeRecordServic
     /// <returns>サーバーが確定した終了時刻を含む記録。</returns>
     public Task<TimeRecord> EndTimeRecordAsync(Guid id) => PostTimeRecordAsync($"api/time-records/{id}/end");
 
-    /// <summary>開始・終了で共通する応答の読み取りとHTTP応答の破棄を一か所で行います。</summary>
+    /// <summary>開始・終了で共通するHTTP応答の成功確認、読み取り、破棄を一か所で行います。</summary>
     async Task<TimeRecord> PostTimeRecordAsync(string endpoint)
     {
         using var response = await client.PostAsync(endpoint, null);
+        response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync(TimeRecordJsonContext.Default.TimeRecordResponse)).ToDomain();
     }
 

@@ -1,4 +1,4 @@
-@inject TimeRecorderViewModel ViewModel
+@inject ITimeRecorderViewModel ViewModel
 
 <div class="time-recorder">
     <section class="recorder-panel" aria-labelledby="recorder-title">
@@ -11,11 +11,15 @@
         <div class="recorder-action">
             @if (!ViewModel.IsRecording)
             {
-                <button class="record-button" type="button" @onclick="ViewModel.StartTimeRecordAsync">記録を開始</button>
+                <button class="record-button" type="button" disabled="@ViewModel.IsBusy" @onclick="StartTimeRecordAsync">記録を開始</button>
             }
             else
             {
-                <button class="record-button is-active" type="button" @onclick="ViewModel.EndTimeRecordAsync">記録を終了</button>
+                <button class="record-button is-active" type="button" disabled="@ViewModel.IsBusy" @onclick="EndTimeRecordAsync">記録を終了</button>
+            }
+            @if (operationFailed)
+            {
+                <p role="alert">記録操作に失敗しました。</p>
             }
             @if (ViewModel.DisplayedRecord is { } displayed)
             {
@@ -41,5 +45,31 @@
 </div>
 
 @code {
+    bool operationFailed;
+
     protected override Task OnInitializedAsync() => ViewModel.LoadAsync();
+
+    async Task StartTimeRecordAsync()
+    {
+        try
+        {
+            await ViewModel.StartTimeRecordAsync();
+        }
+        catch
+        {
+            operationFailed = true;
+        }
+    }
+
+    async Task EndTimeRecordAsync()
+    {
+        try
+        {
+            await ViewModel.EndTimeRecordAsync();
+        }
+        catch
+        {
+            operationFailed = true;
+        }
+    }
 }
