@@ -14,6 +14,16 @@ describe('useProjectTabs', () => {
     result.current.state.showProjectDialog.should.equal(true)
   })
 
+  it('追加をキャンセルすると登録せずダイアログを閉じます', () => {
+    const { result } = renderHook(() => useProjectTabs())
+
+    act(() => result.current.openProjectDialog())
+    act(() => result.current.cancelProjectDialog())
+
+    result.current.state.showProjectDialog.should.equal(false)
+    result.current.state.projects.should.toStrictEqual([])
+  })
+
   it('登録したプロジェクトを一覧に保持します', () => {
     const { result } = renderHook(() => useProjectTabs())
 

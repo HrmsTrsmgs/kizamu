@@ -9,9 +9,13 @@ export function useProjectTabs() {
     setShowProjectDialog(true)
   }
 
+  function cancelProjectDialog() {
+    setShowProjectDialog(false)
+  }
+
   function registerProject(name: string) {
     setProjects(projects => [...projects, new Project(name)])
   }
 
-  return { state: { projects, showProjectDialog }, registerProject, openProjectDialog }
+  return { state: { projects, showProjectDialog }, registerProject, openProjectDialog, cancelProjectDialog }
 }
