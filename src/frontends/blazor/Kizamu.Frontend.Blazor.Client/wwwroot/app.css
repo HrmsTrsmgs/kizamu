@@ -174,15 +174,15 @@ h1 {
   white-space: nowrap;
 }
 
-.project-default {
+.project-default, .project-tab {
+  background: #f7f9f7;
+  color: #67776e;
+}
+
+.project-default[aria-selected="true"], .project-tab[aria-selected="true"] {
   border-color: #1f6b48;
   background: #1f6b48;
   color: #fff;
-}
-
-.project-tab {
-  background: #f7f9f7;
-  color: #67776e;
 }
 
 .project-tab:disabled { cursor: not-allowed; }

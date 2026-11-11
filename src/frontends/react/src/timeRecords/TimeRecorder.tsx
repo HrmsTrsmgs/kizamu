@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from '../presentation/timeRecordService'
 import { useTimeRecorder } from '../presentation/useTimeRecorder'
 import type { TimeRecorderState } from '../presentation/timeRecorderState'
@@ -7,10 +8,15 @@ import TimeRecordTimes from './TimeRecordTimes'
 
 type TimeRecorderProps = {
   timeRecords: TimeRecordService
+  selectedProject?: Project
 }
 
-export default function TimeRecorder({ timeRecords }: TimeRecorderProps) {
-  const { state, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords } = useTimeRecorder(timeRecords)
+export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecorderProps) {
+  const { state, selectProject, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords } = useTimeRecorder(timeRecords)
+
+  useEffect(() => {
+    selectProject(selectedProject)
+  }, [selectedProject, selectProject])
 
   return (
     <TimeRecorderView
@@ -40,7 +46,7 @@ export function TimeRecorderView({ state, isBusy, isStateUnconfirmed, startTimeR
     <div className="time-recorder">
       <section className="recorder-panel" aria-labelledby="recorder-title">
         <header className="panel-header">
-          <h2 id="recorder-title">プロジェクト未登録</h2>
+          <h2 id="recorder-title">{state.selectedProject?.name ?? 'プロジェクト未指定'}</h2>
           <span className={`status-badge ${state.timeRecordId === null ? '' : 'is-active'}`}>
             {state.timeRecordId === null ? '待機中' : '記録中'}
           </span>

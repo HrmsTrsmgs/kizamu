@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from './timeRecordService'
 import type { TimeRecordPresentation } from './timeRecordPresentation'
 import { initialTimeRecorderState, timeRecorderReducer } from './timeRecorderState'
@@ -49,12 +50,13 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
 
   async function startTimeRecord() {
     if (operationPending.current || isStateUnconfirmed) return
+    const project = state.selectedProject
     operationPending.current = true
     setIsBusy(true)
     try {
       const record = await timeRecords.startTimeRecord()
       pendingLoads.current.forEach(pending => pending.push(record))
-      dispatch({ type: 'recordStarted', record })
+      dispatch({ type: 'recordStarted', record, project })
     } catch (error) {
       await reloadAfterOperationFailure()
       throw error
@@ -83,5 +85,9 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     }
   }
 
-  return { state, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords }
+  const selectProject = useCallback((project: Project | undefined) => {
+    dispatch({ type: 'projectSelected', project })
+  }, [])
+
+  return { state, selectProject, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords }
 }
