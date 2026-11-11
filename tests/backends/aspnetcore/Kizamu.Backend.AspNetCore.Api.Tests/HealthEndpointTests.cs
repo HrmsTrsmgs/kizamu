@@ -7,14 +7,10 @@ namespace Kizamu.Backend.AspNetCore.Api.Tests;
 
 using static Kizamu.Tests.TestCancellation;
 
-public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
+public sealed class HealthEndpointTests(WebApplicationFactory<Program> factory)
+    : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
-    readonly HttpClient client;
-
-    public HealthEndpointTests(WebApplicationFactory<Program> factory)
-    {
-        client = factory.CreateClient();
-    }
+    readonly HttpClient client = factory.CreateClient();
 
     [Fact]
     public async Task 正常性を確認すると正常な状態が返されます()

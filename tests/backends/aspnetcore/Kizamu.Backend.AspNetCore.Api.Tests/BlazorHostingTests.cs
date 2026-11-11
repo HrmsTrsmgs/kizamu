@@ -6,11 +6,10 @@ namespace Kizamu.Backend.AspNetCore.Api.Tests;
 
 using static Kizamu.Tests.TestCancellation;
 
-public sealed class BlazorHostingTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
+public sealed class BlazorHostingTests(WebApplicationFactory<Program> factory)
+    : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
-    readonly HttpClient client;
-
-    public BlazorHostingTests(WebApplicationFactory<Program> factory) => client = factory.CreateClient();
+    readonly HttpClient client = factory.CreateClient();
 
     [Theory]
     [InlineData("/")]
