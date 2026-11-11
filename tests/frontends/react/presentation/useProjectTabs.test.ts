@@ -4,6 +4,16 @@ import { describe, it } from 'vitest'
 import { useProjectTabs } from '../../../../src/frontends/react/src/presentation/useProjectTabs'
 
 describe('useProjectTabs', () => {
+  it('追加を開くとダイアログを表示します', () => {
+    const { result } = renderHook(() => useProjectTabs())
+
+    result.current.state.should.have.property('showProjectDialog', false)
+
+    act(() => result.current.openProjectDialog())
+
+    result.current.state.showProjectDialog.should.equal(true)
+  })
+
   it('登録したプロジェクトを一覧に保持します', () => {
     const { result } = renderHook(() => useProjectTabs())
 
