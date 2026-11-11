@@ -76,7 +76,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     /// <param name="project">対象プロジェクト。未指定の場合はnull。</param>
     public void SelectProject(Project? project) => selectedProject = project;
 
-    /// <summary>一覧を読み込み、最初の記録中の作業を終了操作の対象にします。</summary>
+    /// <summary>一覧取得中の操作結果に、応答時の終了対象と同じIDの未終了記録があればその対象を保ちます。それ以外は一覧で最初の未終了記録を選びます。</summary>
     /// <returns>読み込みと画面状態の更新の完了。</returns>
     public async Task LoadAsync()
     {
