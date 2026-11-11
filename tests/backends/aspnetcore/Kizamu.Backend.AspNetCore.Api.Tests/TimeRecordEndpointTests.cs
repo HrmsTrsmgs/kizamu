@@ -32,8 +32,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     {
         timeProvider.SetUtcNow(早い時刻);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/time-records/start");
-        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+        using var request = 同一オリジンのPOST要求を用意する("/api/time-records/start");
         using var response = await client.SendAsync(request, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -50,8 +49,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         var startedRecord = await 開始済みの記録を用意する(早い時刻);
         timeProvider.SetUtcNow(遅い時刻);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/time-records/{startedRecord.Id}/end");
-        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+        using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
         using var response = await client.SendAsync(request, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -67,8 +65,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     {
         var startedRecord = await 開始済みの記録を用意する(早い時刻);
         timeProvider.SetUtcNow(遅い時刻);
-        using var endRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/time-records/{startedRecord.Id}/end");
-        endRequest.Headers.Add("Sec-Fetch-Site", "same-origin");
+        using var endRequest = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
         using var endResponse = await client.SendAsync(endRequest, CancellationToken);
         endResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -122,12 +119,17 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         records.Should().Equal(startedRecord);
     }
 
+    static HttpRequestMessage 同一オリジンのPOST要求を用意する(string requestUri)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
+        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+        return request;
+    }
+
     async Task<TimeRecordResponse> 開始済みの記録を用意する(DateTimeOffset startedAt)
     {
-        // 開始APIの仕様を直接読めるよう、開始テストと同じHTTP処理を意図的に共通化していない。
         timeProvider.SetUtcNow(startedAt);
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/time-records/start");
-        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+        using var request = 同一オリジンのPOST要求を用意する("/api/time-records/start");
         using var response = await client.SendAsync(request, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>(CancellationToken);
