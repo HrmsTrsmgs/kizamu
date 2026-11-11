@@ -481,6 +481,8 @@ MVP後にローカル単一ユーザーの範囲を越える場合は、次の�
 
 ### 検証と次の着手点
 
+* 基準 91ecd2b のReact未指定の記録状態は、未指定へ戻るとIDを失うRedを確認後、既存reducerの対象Mapで未指定も保持し成功。npm lint・全97テスト・build成功。reducerとテストをこのコミットに含める。hook・画面接続、他のBlazor対応ケースは未完了。
+
 * 基準 17fccfe のReact対象別記録状態は、projectSelected未定義のRedを確認後、既存reducerでA→B→Aの記録中ID保持を実装し成功。npm lint・全96テスト・build成功。reducerとテストをこのコミットに含める。hook・画面接続および他のBlazor対応ケースは未完了。
 
 * 基準 759254a のReact記録欄の選択名表示は、固定見出しによるRedを確認後、Domain Projectを記録欄へ渡す最小実装で成功。npm lint・全95テスト・build成功。画面とテストをこのコミットに含める。対象別記録状態・配置スタイル・目視確認は未完了。

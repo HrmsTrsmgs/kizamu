@@ -3,7 +3,7 @@ import { getTimeRecordTimestamps, type RecordTimestamp, type TimeRecordPresentat
 
 export type TimeRecorderState = Readonly<{
   selectedProject?: Project
-  projectTimeRecordIds?: ReadonlyMap<Project, string | null>
+  projectTimeRecordIds?: ReadonlyMap<Project | undefined, string | null>
   records: readonly TimeRecordPresentation[]
   timeRecordId: string | null
   startedAt: RecordTimestamp | null
@@ -11,7 +11,7 @@ export type TimeRecorderState = Readonly<{
 }>
 
 export type TimeRecorderAction =
-  | { type: 'projectSelected', project: Project }
+  | { type: 'projectSelected', project: Project | undefined }
   | { type: 'recordsLoaded', records: readonly TimeRecordPresentation[], updatedRecords?: readonly TimeRecordPresentation[] }
   | { type: 'recordStarted', record: TimeRecordPresentation }
   | { type: 'recordEnded', record: TimeRecordPresentation }
@@ -30,9 +30,7 @@ export function timeRecorderReducer(
   switch (action.type) {
     case 'projectSelected': {
       const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
-      if (state.selectedProject !== undefined) {
-        projectTimeRecordIds.set(state.selectedProject, state.timeRecordId)
-      }
+      projectTimeRecordIds.set(state.selectedProject, state.timeRecordId)
       return {
         ...state,
         selectedProject: action.project,

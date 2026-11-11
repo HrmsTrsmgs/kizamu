@@ -42,6 +42,29 @@ describe('timeRecorderReducer', () => {
     tested.records.should.deep.equal([記録])
   })
 
+  it('未指定とプロジェクトを切り替えて戻ると元の記録中状態を保持します', () => {
+    const プロジェクトA = new Project('プロジェクトA')
+    let tested = timeRecorderReducer(initialTimeRecorderState, {
+      type: 'recordStarted',
+      record: 記録,
+    })
+
+    tested = timeRecorderReducer(tested, {
+      type: 'projectSelected',
+      project: プロジェクトA,
+    })
+
+    tested.should.have.property('timeRecordId', null)
+
+    tested = timeRecorderReducer(tested, {
+      type: 'projectSelected',
+      project: undefined,
+    })
+
+    tested.should.have.property('timeRecordId', 記録ID)
+    tested.records.should.deep.equal([記録])
+  })
+
   it('記録中の作業記録一覧を取得すると一覧と現在記録を保持します', () => {
     const result = timeRecorderReducer(initialTimeRecorderState, {
       type: 'recordsLoaded',
