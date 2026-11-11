@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { describe, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { useTimeRecorder } from '../../../../src/frontends/react/src/presentation/useTimeRecorder'
 import { createTimeRecordServiceStub } from '../test/createTimeRecordServiceStub'
 import { deferred } from '../test/deferred'
@@ -14,6 +14,52 @@ const 記録 = presentedRecord(記録ID, 開始時刻)
 const 終了済み記録 = presentedRecord(記録ID, 開始時刻, 終了時刻)
 
 describe('useTimeRecorder', () => {
+  it('開始の通信中は追加操作を受け付けず成功後に終了できます', async () => {
+    const { response, startTimeRecord, endTimeRecord, result } = 開始応答を保留する()
+    let operation = Promise.resolve()
+    act(() => { operation = result.current.startTimeRecord(); void result.current.startTimeRecord(); void result.current.endTimeRecord() })
+    startTimeRecord.should.have.callCount(1)
+    endTimeRecord.should.have.callCount(0)
+    await act(async () => { response.resolve(記録); await operation })
+    await act(() => result.current.endTimeRecord())
+    endTimeRecord.should.have.callCount(1)
+  })
+
+  it('開始の通信中は追加操作を受け付けず失敗後に再開始できます', async () => {
+    const { response, startTimeRecord, endTimeRecord, result } = 開始応答を保留する()
+    let operation = Promise.resolve()
+    act(() => { operation = result.current.startTimeRecord(); void result.current.startTimeRecord(); void result.current.endTimeRecord() })
+    startTimeRecord.should.have.callCount(1)
+    endTimeRecord.should.have.callCount(0)
+    await act(async () => { response.reject(new Error('failed')); await expect(operation).rejects.toThrow('failed') })
+    await act(() => result.current.startTimeRecord())
+    startTimeRecord.should.have.callCount(2)
+  })
+
+  it('終了の通信中は追加操作を受け付けず成功後に開始できます', async () => {
+    const { response, startTimeRecord, endTimeRecord, result } = 終了応答を保留する()
+    await act(() => result.current.startTimeRecord())
+    let operation = Promise.resolve()
+    act(() => { operation = result.current.endTimeRecord(); void result.current.startTimeRecord(); void result.current.endTimeRecord() })
+    startTimeRecord.should.have.callCount(1)
+    endTimeRecord.should.have.callCount(1)
+    await act(async () => { response.resolve(終了済み記録); await operation })
+    await act(() => result.current.startTimeRecord())
+    startTimeRecord.should.have.callCount(2)
+  })
+
+  it('終了の通信中は追加操作を受け付けず失敗後に再終了できます', async () => {
+    const { response, startTimeRecord, endTimeRecord, result } = 終了応答を保留する()
+    await act(() => result.current.startTimeRecord())
+    let operation = Promise.resolve()
+    act(() => { operation = result.current.endTimeRecord(); void result.current.startTimeRecord(); void result.current.endTimeRecord() })
+    startTimeRecord.should.have.callCount(1)
+    endTimeRecord.should.have.callCount(1)
+    await act(async () => { response.reject(new Error('failed')); await expect(operation).rejects.toThrow('failed') })
+    await act(() => result.current.endTimeRecord())
+    endTimeRecord.should.have.callCount(2)
+  })
+
   it('初期化で一覧を一度要求し取得した記録と終了対象を公開します', async () => {
     const 一覧の記録中の記録 = presentedRecord(次の記録ID, 開始時刻)
     const getTimeRecords = vi.fn(async () => [終了済み記録, 一覧の記録中の記録])
@@ -143,4 +189,22 @@ function renderRecorder(initialRecords?: (typeof 記録)[]) {
     initialListResponse,
     endTimeRecord,
   }
+}
+
+function 開始応答を保留する() {
+  const response = deferred<typeof 記録>()
+  const startTimeRecord = vi.fn().mockReturnValueOnce(response.promise).mockResolvedValue(記録)
+  const endTimeRecord = vi.fn(async () => 終了済み記録)
+  const service = createTimeRecordServiceStub({ startTimeRecord, endTimeRecord })
+  const { result } = renderHook(() => useTimeRecorder(service))
+  return { response, startTimeRecord, endTimeRecord, result }
+}
+
+function 終了応答を保留する() {
+  const response = deferred<typeof 終了済み記録>()
+  const startTimeRecord = vi.fn(async () => 記録)
+  const endTimeRecord = vi.fn().mockReturnValueOnce(response.promise).mockResolvedValue(終了済み記録)
+  const service = createTimeRecordServiceStub({ startTimeRecord, endTimeRecord })
+  const { result } = renderHook(() => useTimeRecorder(service))
+  return { response, startTimeRecord, endTimeRecord, result }
 }

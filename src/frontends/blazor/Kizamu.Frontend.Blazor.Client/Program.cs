@@ -10,7 +10,7 @@ builder.RootComponents.Add<App>("#app");
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddScoped<HealthApi>();
 builder.Services.AddScoped<ITimeRecordService, TimeRecordApi>();
-builder.Services.AddTransient<TimeRecorderViewModel>();
+builder.Services.AddTransient<ITimeRecorderViewModel, TimeRecorderViewModel>();
 builder.Services.AddTransient<ProjectTabsViewModel>();
 builder.Services.AddSingleton(TimeProvider.System);
 await builder.Build().RunAsync();

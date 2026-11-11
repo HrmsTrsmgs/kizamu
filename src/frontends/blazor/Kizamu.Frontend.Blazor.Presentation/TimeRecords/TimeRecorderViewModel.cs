@@ -4,7 +4,7 @@ namespace Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 
 /// <summary>記録画面の一覧、操作対象、直近の操作結果を管理します。HTMLやHTTPには依存しません。</summary>
 /// <param name="service">確定した作業記録を取得する操作境界。</param>
-public sealed class TimeRecorderViewModel(ITimeRecordService service)
+public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRecorderViewModel
 {
     List<TimeRecord> records = [];
     readonly List<List<TimeRecord>> pendingLoads = [];
@@ -35,6 +35,9 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service)
 
     /// <summary>終了操作の対象となる記録があるかどうかを取得します。</summary>
     public bool IsRecording => CurrentId is not null;
+
+    /// <summary>記録操作の通信中かどうかを取得します。</summary>
+    public bool IsBusy { get; private set; }
 
     /// <summary>操作した直近の記録を取得します。終了後も結果を残し、再開始時に差し替えます。</summary>
     public TimeRecord? DisplayedRecord { get; private set; }
@@ -70,34 +73,52 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service)
     /// <returns>開始と画面状態の更新の完了。</returns>
     public async Task StartTimeRecordAsync()
     {
-        var project = selectedProject;
-        var record = await service.StartTimeRecordAsync();
-        records.Add(record);
-        foreach (var pending in pendingLoads)
+        if (IsBusy) return;
+        IsBusy = true;
+        try
         {
-            pending.Add(record);
+            var project = selectedProject;
+            var record = await service.StartTimeRecordAsync();
+            records.Add(record);
+            foreach (var pending in pendingLoads)
+            {
+                pending.Add(record);
+            }
+            DisplayedRecord = record;
+            SetCurrentId(project, record.Id);
         }
-        DisplayedRecord = record;
-        SetCurrentId(project, record.Id);
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     /// <summary>操作対象の記録を終了し、一覧と、表示中であれば操作欄を更新します。対象がなければ何もしません。</summary>
     /// <returns>終了と画面状態の更新の完了。</returns>
     public async Task EndTimeRecordAsync()
     {
+        if (IsBusy) return;
         if (CurrentId is { } id)
         {
-            var record = await service.EndTimeRecordAsync(id);
-            records[records.FindIndex(it => it.Id == record.Id)] = record;
-            foreach (var pending in pendingLoads)
+            IsBusy = true;
+            try
             {
-                pending.Add(record);
+                var record = await service.EndTimeRecordAsync(id);
+                records[records.FindIndex(it => it.Id == record.Id)] = record;
+                foreach (var pending in pendingLoads)
+                {
+                    pending.Add(record);
+                }
+                if (DisplayedRecord is not null)
+                {
+                    DisplayedRecord = record;
+                }
+                CurrentId = null;
             }
-            if (DisplayedRecord is not null)
+            finally
             {
-                DisplayedRecord = record;
+                IsBusy = false;
             }
-            CurrentId = null;
         }
     }
 }

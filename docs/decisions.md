@@ -127,3 +127,12 @@
 * 中継との契約：元のFetch Metadataを保持し、追加・書き換えずに転送します。情報が失われた場合も更新を拒否します。この契約を満たす必要はありますが、特定のプロキシ製品やバックエンド実装を相互参照しません。これはブラウザー経由の更新制約であり、認証を実装したことにはなりません。
 * 検討した別案：ブラウザーからAPIへ直接接続してCORSを許可する案は、画面専用APIという今回の前提に対し、APIの外向き接続先と画面の許可オリジンの対応管理が増えます。Origin照合は画面URLをAPI設定へ持たせる必要があります。独自ヘッダー方式はUIとAPIの通信契約が増え、中継側のCORS許可にも防御が依存するため、今回は採用しません。
 * 根拠：開発者の同一オリジン構成とFetch Metadata検証への実装指示。[OWASPのFetch Metadata対策](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#fetch-metadata-headers)、[MDNのSec-Fetch-Siteの説明](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-Fetch-Site)。動作仕様は [ASP.NETのAPIテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs) と [NodeのAPIテスト](../tests/backends/node/timeRecordEndpoints.test.ts) で確認します。
+
+## D011：画面テストにMoqを使用する
+
+* 確認日・状態：2026-11-11、開発者が導入を指示。差分はレビュー待ち。
+* 決定：Blazor Client.TestsにMoq 4.21.0（BSD-3-Clause）を追加し、画面向けViewModelの代役と呼び出し検証に使用します。
+* 理由：画面とViewModelの境界で操作の委譲を確認し、呼び出し回数を記録する代役の自作を避けるためです。
+* 影響：テストプロジェクトの復元・ビルドにMoqと推移依存のCastle.Coreが加わります。製品の実行時依存や配布物には追加しません。
+* 検討した別案：呼び出し回数を持つ手書き代役は今回作成しましたが、開発者の指示によりMoqへ置き換えました。
+* 根拠：開発者の導入指示、[NuGetのMoq 4.21.0](https://www.nuget.org/packages/Moq/4.21.0)。

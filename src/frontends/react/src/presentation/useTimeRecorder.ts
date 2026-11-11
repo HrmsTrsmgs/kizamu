@@ -1,10 +1,12 @@
-import { useEffect, useReducer, useRef } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import type { TimeRecordService } from './timeRecordService'
 import type { TimeRecordPresentation } from './timeRecordPresentation'
 import { initialTimeRecorderState, timeRecorderReducer } from './timeRecorderState'
 
 export function useTimeRecorder(timeRecords: TimeRecordService) {
   const [state, dispatch] = useReducer(timeRecorderReducer, initialTimeRecorderState)
+  const [isBusy, setIsBusy] = useState(false)
+  const operationPending = useRef(false)
   const pendingLoads = useRef<TimeRecordPresentation[][]>([])
 
   useEffect(() => {
@@ -23,18 +25,34 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
   }, [timeRecords])
 
   async function startTimeRecord() {
-    const record = await timeRecords.startTimeRecord()
-    pendingLoads.current.forEach(pending => pending.push(record))
-    dispatch({ type: 'recordStarted', record })
-  }
-
-  async function endTimeRecord() {
-    if (state.timeRecordId !== null) {
-      const record = await timeRecords.endTimeRecord(state.timeRecordId)
+    if (operationPending.current) return
+    operationPending.current = true
+    setIsBusy(true)
+    try {
+      const record = await timeRecords.startTimeRecord()
       pendingLoads.current.forEach(pending => pending.push(record))
-      dispatch({ type: 'recordEnded', record })
+      dispatch({ type: 'recordStarted', record })
+    } finally {
+      operationPending.current = false
+      setIsBusy(false)
     }
   }
 
-  return { state, startTimeRecord, endTimeRecord }
+  async function endTimeRecord() {
+    if (operationPending.current) return
+    if (state.timeRecordId !== null) {
+      operationPending.current = true
+      setIsBusy(true)
+      try {
+        const record = await timeRecords.endTimeRecord(state.timeRecordId)
+        pendingLoads.current.forEach(pending => pending.push(record))
+        dispatch({ type: 'recordEnded', record })
+      } finally {
+        operationPending.current = false
+        setIsBusy(false)
+      }
+    }
+  }
+
+  return { state, isBusy, startTimeRecord, endTimeRecord }
 }
