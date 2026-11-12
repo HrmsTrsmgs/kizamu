@@ -63,16 +63,14 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     [Fact]
     public async Task 開始して終了した記録の一覧を取得すると200とJSON配列が返されます()
     {
-        var startedRecord = await 開始済みの記録を用意する(早い時刻);
-        using var endResponse = await 記録の終了応答を取得する(startedRecord.Id, 遅い時刻);
-        endResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var recordId = await 終了済みの記録を用意する(早い時刻, 遅い時刻);
 
         using var response = await client.GetAsync("/api/time-records", CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>(CancellationToken);
         body.Should().Equal(
-            new TimeRecordResponse(startedRecord.Id, 早い時刻, 遅い時刻));
+            new TimeRecordResponse(recordId, 早い時刻, 遅い時刻));
     }
 
     [Theory]
@@ -138,16 +136,14 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         return body;
     }
 
-    Task<HttpResponseMessage> 記録の終了応答を取得する(Guid id, DateTimeOffset endedAt)
+    async Task<Guid> 終了済みの記録を用意する(DateTimeOffset startedAt, DateTimeOffset endedAt)
     {
+        var startedRecord = await 開始済みの記録を用意する(startedAt);
         timeProvider.SetUtcNow(endedAt);
-        return 終了要求を送る(id);
-    }
-
-    async Task<HttpResponseMessage> 終了要求を送る(Guid id)
-    {
-        using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{id}/end");
-        return await client.SendAsync(request, CancellationToken);
+        using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
+        using var response = await client.SendAsync(request, CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        return startedRecord.Id;
     }
 
     public void Dispose()
