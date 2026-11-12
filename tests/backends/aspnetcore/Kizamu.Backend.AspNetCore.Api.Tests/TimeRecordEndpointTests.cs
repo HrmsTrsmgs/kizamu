@@ -1,3 +1,9 @@
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
@@ -14,6 +20,8 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     static readonly DateTimeOffset 早い時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 遅い時刻 = new(2026, 8, 1, 11, 0, 0, TimeSpan.Zero);
 
+    static readonly RSA googleKey = RSA.Create(2048);
+    readonly HttpClient publicKeyClient = new(new PublicKeyHandler());
     readonly FakeTimeProvider timeProvider;
     readonly WebApplicationFactory<Program> configuredFactory;
     readonly HttpClient client;
@@ -23,8 +31,19 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         timeProvider = new FakeTimeProvider();
         configuredFactory = factory.WithWebHostBuilder(builder =>
             builder.ConfigureServices(services =>
-                services.AddSingleton<TimeProvider>(timeProvider)));
+            {
+                services.AddSingleton<TimeProvider>(timeProvider);
+                services.RemoveAll<GoogleIdTokenVerifier>();
+                services.AddSingleton(new GoogleIdTokenVerifier("kizamu-client", publicKeyClient));
+            }));
         client = configuredFactory.CreateClient();
+    }
+
+    [Fact]
+    public async Task 未認証で記録一覧を取得すると401が返されます()
+    {
+        using var response = await client.GetAsync("/api/time-records", CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
@@ -67,7 +86,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         using var endResponse = await 記録の終了応答を取得する(startedRecord.Id, 遅い時刻);
         endResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        using var response = await client.GetAsync("/api/time-records", CancellationToken);
+        using var response = await 認証済みの一覧要求を送る();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>(CancellationToken);
@@ -115,9 +134,46 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
 
     async Task<TimeRecordResponse[]?> 記録一覧を取得する()
     {
-        using var response = await client.GetAsync("/api/time-records", CancellationToken);
+        using var response = await 認証済みの一覧要求を送る();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         return await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>(CancellationToken);
+    }
+
+    async Task<HttpResponseMessage> 認証済みの一覧要求を送る()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var header = Encode(JsonSerializer.SerializeToUtf8Bytes(new { alg = "RS256", kid = "endpoint-test-key" }));
+        var payload = Encode(JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            iss = "https://accounts.google.com",
+            aud = "kizamu-client",
+            sub = "google-user",
+            iat = now.AddHours(-2).ToUnixTimeSeconds(),
+            exp = now.AddHours(1).ToUnixTimeSeconds()
+        }));
+        var content = $"{header}.{payload}";
+        var signature = googleKey.SignData(Encoding.ASCII.GetBytes(content), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/time-records");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", $"{content}.{Encode(signature)}");
+        return await client.SendAsync(request, CancellationToken);
+    }
+
+    static string Encode(ReadOnlySpan<byte> bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    sealed class PublicKeyHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var parameters = googleKey.ExportParameters(false);
+            var jwks = JsonSerializer.Serialize(new
+            {
+                keys = new[] { new { kty = "RSA", alg = "RS256", use = "sig", kid = "endpoint-test-key", n = Encode(parameters.Modulus), e = Encode(parameters.Exponent) } }
+            });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(jwks, Encoding.UTF8, "application/json")
+            });
+        }
     }
 
     static HttpRequestMessage 同一オリジンのPOST要求を用意する(string requestUri)
@@ -154,6 +210,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     {
         client.Dispose();
         configuredFactory.Dispose();
+        publicKeyClient.Dispose();
     }
 
     sealed record TimeRecordResponse(

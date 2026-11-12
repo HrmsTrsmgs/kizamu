@@ -1,3 +1,5 @@
+import { generateKeyPairSync, sign } from 'node:crypto'
+import { GoogleIdTokenVerifier } from '../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
 import { afterEach, beforeEach, test, vi } from 'vitest'
 import { createApp } from '../../../src/backends/node/app.js'
 
@@ -9,17 +11,35 @@ interface TimeRecordResponse {
 
 const 開始時刻 = new Date('2026-08-01T09:00:00.000Z')
 const 終了時刻 = new Date('2026-08-01T10:30:00.000Z')
+const key = generateKeyPairSync('rsa', { modulusLength: 2048 })
+const publicKeyFetch: typeof fetch = async () => Response.json({
+  keys: [{ ...key.publicKey.export({ format: 'jwk' }), kid: 'endpoint-test-key', alg: 'RS256', use: 'sig' }],
+})
+function createTestApp() { return createApp(new GoogleIdTokenVerifier('kizamu-client', publicKeyFetch)) }
+function authorization() {
+  const now = Math.floor(Date.now() / 1000)
+  const header = Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'endpoint-test-key' })).toString('base64url')
+  const payload = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', aud: 'kizamu-client', sub: 'google-user', iat: now - 7200, exp: now + 3600 })).toString('base64url')
+  const content = header + '.' + payload
+  return 'Bearer ' + content + '.' + sign('RSA-SHA256', Buffer.from(content), key.privateKey).toString('base64url')
+}
 let app: ReturnType<typeof createApp>
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(開始時刻)
-  app = createApp()
+  app = createTestApp()
 })
 
 afterEach(async () => {
   await app.close()
   vi.useRealTimers()
+})
+
+test('未認証で記録一覧を取得すると401が返されます', async () => {
+  const response = await app.inject({ method: 'GET', url: '/api/time-records' })
+
+  response.statusCode.should.equal(401)
 })
 
 test('記録を開始すると空でないGUIDとサーバーの開始時刻があり終了時刻がない記録が返されます', async () => {
@@ -49,7 +69,7 @@ test('記録を終了すると同じ識別子と元の開始時刻とサーバ�
 })
 
 test('まだ開始していないときに一覧を取得すると空の配列が返されます', async () => {
-  const response = await app.inject({ method: 'GET', url: '/api/time-records' })
+  const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
 
   response.statusCode.should.equal(200)
   const content = { body: response.json() }
@@ -62,7 +82,7 @@ test('二件の記録を開始した後に一覧を取得すると開始した�
   const secondRecord = await prepareStartedRecord(app)
   secondRecord.id.should.not.equal(firstRecord.id)
 
-  const response = await app.inject({ method: 'GET', url: '/api/time-records' })
+  const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
 
   response.statusCode.should.equal(200)
   const content = { body: response.json() }
@@ -74,7 +94,7 @@ test('記録を終了した後に一覧を取得するとその記録の終了�
   vi.setSystemTime(終了時刻)
   await prepareEndedRecord(app, startedRecord.id)
 
-  const response = await app.inject({ method: 'GET', url: '/api/time-records' })
+  const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
 
   response.statusCode.should.equal(200)
   const content = { body: response.json() }
@@ -84,9 +104,9 @@ test('記録を終了した後に一覧を取得するとその記録の終了�
 test('別のアプリで開始した記録は新しく生成したアプリの一覧には含まれません', async () => {
   const startResponse = await postFromSameOrigin(app, '/api/time-records/start')
   startResponse.statusCode.should.equal(201)
-  const independentApp = createApp()
+  const independentApp = createTestApp()
   try {
-    const response = await independentApp.inject({ method: 'GET', url: '/api/time-records' })
+    const response = await independentApp.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
 
     response.statusCode.should.equal(200)
     const content = { body: response.json() }
@@ -130,7 +150,7 @@ test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
 )
 
 async function readTimeRecords(app: ReturnType<typeof createApp>): Promise<TimeRecordResponse[]> {
-  const response = await app.inject({ method: 'GET', url: '/api/time-records' })
+  const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
   response.statusCode.should.equal(200)
   return response.json<TimeRecordResponse[]>()
 }

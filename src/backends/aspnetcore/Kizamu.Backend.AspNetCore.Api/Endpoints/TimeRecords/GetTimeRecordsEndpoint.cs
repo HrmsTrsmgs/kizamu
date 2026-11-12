@@ -1,3 +1,4 @@
+using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
 using Kizamu.Backend.AspNetCore.Application.TimeRecords;
 
 namespace Kizamu.Backend.AspNetCore.Api.Endpoints.TimeRecords;
@@ -16,10 +17,15 @@ static class GetTimeRecordsEndpoint
         {
             self.MapGet(
                 "/api/time-records",
-                (TimeRecordReader timeRecordReader) =>
-                    Results.Ok(
-                        timeRecordReader.Execute().Select(it =>
-                            new TimeRecordResponse(it))));
+                async (HttpRequest request, TimeRecordReader timeRecordReader, GoogleIdTokenVerifier verifier) =>
+                {
+                    var authorization = request.Headers.Authorization.ToString();
+                    if (!authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                        || await verifier.VerifyAsync(authorization[7..]) is null)
+                        return Results.Unauthorized();
+
+                    return Results.Ok(timeRecordReader.Execute().Select(it => new TimeRecordResponse(it)));
+                });
         }
     }
 }

@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify'
 import type { TimeRecord } from 'kizamu-domain-typescript'
+import type { GoogleIdTokenVerifier } from '../infrastructure/googleIdTokenVerifier.js'
 import type { TimeRecords } from '../application/timeRecords.js'
 
-export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: TimeRecords): void {
+export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: TimeRecords, verifier: GoogleIdTokenVerifier): void {
   app.register(async (sameOriginApp) => {
     sameOriginApp.addHook('preHandler', async (request, reply) => {
       if (request.headers['sec-fetch-site'] !== 'same-origin') return reply.code(403).send()
@@ -15,7 +16,13 @@ export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: T
       if (record !== undefined) return toResponse(record)
     })
   })
-  app.get('/api/time-records', async () => timeRecords.list().map(toResponse))
+  app.get('/api/time-records', async (request, reply) => {
+    const authorization = request.headers.authorization
+    if (!authorization?.startsWith('Bearer ') || await verifier.verify(authorization.slice(7)) === null) {
+      return reply.code(401).send()
+    }
+    return timeRecords.list().map(toResponse)
+  })
 }
 
 function toResponse(record: TimeRecord) {

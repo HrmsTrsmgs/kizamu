@@ -1,3 +1,4 @@
+using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
 using Kizamu.Backend.AspNetCore.Application.TimeRecords;
 using Kizamu.Backend.AspNetCore.Infrastructure.TimeRecords;
 using Kizamu.Backend.AspNetCore.Api.Endpoints.Health;
@@ -10,6 +11,7 @@ static WebApplication CreateApplication(string[] args)
 {
     var builder = WebApplication.CreateBuilder(args);
     AddTimeRecordServices(builder.Services);
+    builder.Services.AddSingleton(new GoogleIdTokenVerifier(builder.Configuration["GOOGLE_CLIENT_ID"] ?? "", new HttpClient()));
 
     var app = builder.Build();
     app.MapHealthEndpoint();
