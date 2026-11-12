@@ -20,9 +20,7 @@ static class GetTimeRecordsEndpoint
                 "/api/time-records",
                 async (HttpRequest request, TimeRecordReader timeRecordReader, GoogleIdTokenVerifier verifier) =>
                 {
-                    var authorization = request.Headers.Authorization.ToString();
-                    var owner = authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
-                        ? await verifier.VerifyAsync(authorization[7..]) : null;
+                    var owner = await TimeRecordAuthentication.GetOwnerAsync(request, verifier);
                     if (owner is null) return Results.Unauthorized();
 
                     return Results.Ok(timeRecordReader.Execute()

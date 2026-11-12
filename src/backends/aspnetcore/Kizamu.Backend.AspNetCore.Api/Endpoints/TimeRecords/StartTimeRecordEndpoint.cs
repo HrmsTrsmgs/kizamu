@@ -18,9 +18,7 @@ static class StartTimeRecordEndpoint
         {
             self.MapPost("/api/time-records/start", async (HttpRequest request, TimeRecordStartOperation timeRecordStartOperation, GoogleIdTokenVerifier verifier) =>
             {
-                var authorization = request.Headers.Authorization.ToString();
-                var owner = authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
-                    ? await verifier.VerifyAsync(authorization[7..]) : null;
+                var owner = await TimeRecordAuthentication.GetOwnerAsync(request, verifier);
                 if (owner is null) return Results.Unauthorized();
                 var record = timeRecordStartOperation.Execute();
                 owners[record.Id] = owner;

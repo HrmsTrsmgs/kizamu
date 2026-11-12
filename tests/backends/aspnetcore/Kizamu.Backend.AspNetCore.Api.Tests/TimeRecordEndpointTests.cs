@@ -39,6 +39,17 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         client = configuredFactory.CreateClient();
     }
 
+    [Theory]
+    [InlineData("GET", "/api/time-records")]
+    [InlineData("POST", "/api/time-records/start")]
+    public async Task Bearer以外の認証方式では401が返されます(string method, string path)
+    {
+        using var request = new HttpRequestMessage(new HttpMethod(method), path);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", "token");
+        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+        using var response = await client.SendAsync(request, CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
     [Fact]
     public async Task 未認証で記録一覧を取得すると401が返されます()
     {

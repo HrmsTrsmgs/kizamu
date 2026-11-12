@@ -36,6 +36,15 @@ afterEach(async () => {
   vi.useRealTimers()
 })
 
+test.each(['GET', 'POST'] as const)('Bearer以外の認証方式では%s要求に401が返されます', async (method) => {
+  const response = await app.inject({
+    method,
+    url: method === 'GET' ? '/api/time-records' : '/api/time-records/start',
+    headers: { authorization: 'Basic token', 'sec-fetch-site': 'same-origin' },
+  })
+
+  response.statusCode.should.equal(401)
+})
 test('未認証で記録一覧を取得すると401が返されます', async () => {
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })
 
