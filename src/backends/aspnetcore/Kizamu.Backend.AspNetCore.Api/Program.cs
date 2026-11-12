@@ -18,11 +18,12 @@ static WebApplication CreateApplication(string[] args)
     var app = builder.Build();
     app.MapHealthEndpoint();
 
+    var owners = new System.Collections.Concurrent.ConcurrentDictionary<Guid, string>();
     var sameOriginEndpoints = app.MapGroup("").AddEndpointFilter(RequireSameOrigin);
-    sameOriginEndpoints.MapStartTimeRecordEndpoint();
+    sameOriginEndpoints.MapStartTimeRecordEndpoint(owners);
     sameOriginEndpoints.MapEndTimeRecordEndpoint();
 
-    app.MapGetTimeRecordsEndpoint();
+    app.MapGetTimeRecordsEndpoint(owners);
 
     return app;
 }

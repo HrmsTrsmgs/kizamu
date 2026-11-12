@@ -4,12 +4,18 @@ import type { GoogleIdTokenVerifier } from '../infrastructure/googleIdTokenVerif
 import type { TimeRecords } from '../application/timeRecords.js'
 
 export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: TimeRecords, verifier: GoogleIdTokenVerifier): void {
+  const owners = new Map<string, string>()
   app.register(async (sameOriginApp) => {
     sameOriginApp.addHook('preHandler', async (request, reply) => {
       if (request.headers['sec-fetch-site'] !== 'same-origin') return reply.code(403).send()
     })
-    sameOriginApp.post('/api/time-records/start', async (_, reply) => {
-      return reply.code(201).send(toResponse(timeRecords.start()))
+    sameOriginApp.post('/api/time-records/start', async (request, reply) => {
+      const authorization = request.headers.authorization
+      const owner = authorization?.startsWith('Bearer ') ? await verifier.verify(authorization.slice(7)) : null
+      if (owner === null) return reply.code(401).send()
+      const record = timeRecords.start()
+      owners.set(record.id, owner)
+      return reply.code(201).send(toResponse(record))
     })
     sameOriginApp.post<{ Params: { id: string } }>('/api/time-records/:id/end', async (request) => {
       const record = timeRecords.end(request.params.id)
@@ -18,10 +24,9 @@ export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: T
   })
   app.get('/api/time-records', async (request, reply) => {
     const authorization = request.headers.authorization
-    if (!authorization?.startsWith('Bearer ') || await verifier.verify(authorization.slice(7)) === null) {
-      return reply.code(401).send()
-    }
-    return timeRecords.list().map(toResponse)
+    const owner = authorization?.startsWith('Bearer ') ? await verifier.verify(authorization.slice(7)) : null
+    if (owner === null) return reply.code(401).send()
+    return timeRecords.list().filter(record => owners.get(record.id) === owner).map(toResponse)
   })
 }
 

@@ -16,10 +16,10 @@ const publicKeyFetch: typeof fetch = async () => Response.json({
   keys: [{ ...key.publicKey.export({ format: 'jwk' }), kid: 'endpoint-test-key', alg: 'RS256', use: 'sig' }],
 })
 function createTestApp() { return createApp(new GoogleIdTokenVerifier('kizamu-client', publicKeyFetch)) }
-function authorization() {
+function authorization(user = 'google-user') {
   const now = Math.floor(Date.now() / 1000)
   const header = Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'endpoint-test-key' })).toString('base64url')
-  const payload = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', aud: 'kizamu-client', sub: 'google-user', iat: now - 7200, exp: now + 3600 })).toString('base64url')
+  const payload = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', aud: 'kizamu-client', sub: user, iat: now - 7200, exp: now + 3600 })).toString('base64url')
   const content = header + '.' + payload
   return 'Bearer ' + content + '.' + sign('RSA-SHA256', Buffer.from(content), key.privateKey).toString('base64url')
 }
@@ -40,6 +40,22 @@ test('未認証で記録一覧を取得すると401が返されます', async ()
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })
 
   response.statusCode.should.equal(401)
+})
+
+test('未認証で記録を開始すると401が返され記録は追加されません', async () => {
+  const response = await app.inject({ method: 'POST', url: '/api/time-records/start', headers: { 'sec-fetch-site': 'same-origin' } })
+  response.statusCode.should.equal(401)
+  const records = await readTimeRecords(app)
+  records.should.deep.equal([])
+})
+
+test('二人が開始した記録の一覧にはそれぞれ本人の記録だけが返されます', async () => {
+  const firstRecord = await prepareStartedRecord(app, 'first-user')
+  const secondRecord = await prepareStartedRecord(app, 'second-user')
+  const firstRecords = await readTimeRecords(app, 'first-user')
+  const secondRecords = await readTimeRecords(app, 'second-user')
+  firstRecords.should.deep.equal([firstRecord])
+  secondRecords.should.deep.equal([secondRecord])
 })
 
 test('記録を開始すると空でないGUIDとサーバーの開始時刻があり終了時刻がない記録が返されます', async () => {
@@ -122,7 +138,7 @@ test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
     const response = await app.inject({
       method: 'POST',
       url: '/api/time-records/start',
-      headers: secFetchSite === undefined ? {} : { 'sec-fetch-site': secFetchSite },
+      headers: secFetchSite === undefined ? { authorization: authorization() } : { authorization: authorization(), 'sec-fetch-site': secFetchSite },
     })
     response.statusCode.should.equal(403)
 
@@ -140,7 +156,7 @@ test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
     const response = await app.inject({
       method: 'POST',
       url: `/api/time-records/${startedRecord.id}/end`,
-      headers: secFetchSite === undefined ? {} : { 'sec-fetch-site': secFetchSite },
+      headers: secFetchSite === undefined ? { authorization: authorization() } : { authorization: authorization(), 'sec-fetch-site': secFetchSite },
     })
     response.statusCode.should.equal(403)
 
@@ -149,20 +165,20 @@ test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
   },
 )
 
-async function readTimeRecords(app: ReturnType<typeof createApp>): Promise<TimeRecordResponse[]> {
-  const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
+async function readTimeRecords(app: ReturnType<typeof createApp>, user = 'google-user'): Promise<TimeRecordResponse[]> {
+  const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization(user) } })
   response.statusCode.should.equal(200)
   return response.json<TimeRecordResponse[]>()
 }
 
-function postFromSameOrigin(app: ReturnType<typeof createApp>, url: string) {
+function postFromSameOrigin(app: ReturnType<typeof createApp>, url: string, user = 'google-user') {
   return app.inject({
-    method: 'POST', url, headers: { 'sec-fetch-site': 'same-origin' },
+    method: 'POST', url, headers: { 'sec-fetch-site': 'same-origin', authorization: authorization(user) },
   })
 }
 
-async function prepareStartedRecord(app: ReturnType<typeof createApp>): Promise<TimeRecordResponse> {
-  const response = await postFromSameOrigin(app, '/api/time-records/start')
+async function prepareStartedRecord(app: ReturnType<typeof createApp>, user = 'google-user'): Promise<TimeRecordResponse> {
+  const response = await postFromSameOrigin(app, '/api/time-records/start', user)
   response.statusCode.should.equal(201)
   return response.json<TimeRecordResponse>()
 }

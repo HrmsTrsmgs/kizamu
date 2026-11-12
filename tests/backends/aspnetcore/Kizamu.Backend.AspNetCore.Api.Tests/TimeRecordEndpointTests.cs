@@ -47,6 +47,25 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     }
 
     [Fact]
+    public async Task 未認証で記録を開始すると401が返され記録は追加されません()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/time-records/start");
+        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+        using var response = await client.SendAsync(request, CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await 記録一覧を取得する()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task 二人が開始した記録の一覧にはそれぞれ本人の記録だけが返されます()
+    {
+        var firstRecord = await 開始済みの記録を用意する(早い時刻, "first-user");
+        var secondRecord = await 開始済みの記録を用意する(遅い時刻, "second-user");
+        (await 記録一覧を取得する("first-user")).Should().Equal(firstRecord);
+        (await 記録一覧を取得する("second-user")).Should().Equal(secondRecord);
+    }
+
+    [Fact]
     public async Task 記録を開始すると201と作業記録のJSONが返されます()
     {
         timeProvider.SetUtcNow(早い時刻);
@@ -103,6 +122,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     public async Task SecFetchSiteが同一オリジンを示さない開始要求は403になり記録が追加されません(string? secFetchSite)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/time-records/start");
+        request.Headers.Authorization = 認証情報を用意する();
         if (secFetchSite is not null) request.Headers.Add("Sec-Fetch-Site", secFetchSite);
 
         using var response = await client.SendAsync(request, CancellationToken);
@@ -123,6 +143,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         var startedRecord = await 開始済みの記録を用意する(早い時刻);
         timeProvider.SetUtcNow(遅い時刻);
         using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/time-records/{startedRecord.Id}/end");
+        request.Headers.Authorization = 認証情報を用意する();
         if (secFetchSite is not null) request.Headers.Add("Sec-Fetch-Site", secFetchSite);
 
         using var response = await client.SendAsync(request, CancellationToken);
@@ -132,14 +153,21 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         records.Should().Equal(startedRecord);
     }
 
-    async Task<TimeRecordResponse[]?> 記録一覧を取得する()
+    async Task<TimeRecordResponse[]?> 記録一覧を取得する(string user = "google-user")
     {
-        using var response = await 認証済みの一覧要求を送る();
+        using var response = await 認証済みの一覧要求を送る(user);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         return await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>(CancellationToken);
     }
 
-    async Task<HttpResponseMessage> 認証済みの一覧要求を送る()
+    async Task<HttpResponseMessage> 認証済みの一覧要求を送る(string user = "google-user")
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/time-records");
+        request.Headers.Authorization = 認証情報を用意する(user);
+        return await client.SendAsync(request, CancellationToken);
+    }
+
+    static AuthenticationHeaderValue 認証情報を用意する(string user = "google-user")
     {
         var now = DateTimeOffset.UtcNow;
         var header = Encode(JsonSerializer.SerializeToUtf8Bytes(new { alg = "RS256", kid = "endpoint-test-key" }));
@@ -147,15 +175,13 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         {
             iss = "https://accounts.google.com",
             aud = "kizamu-client",
-            sub = "google-user",
+            sub = user,
             iat = now.AddHours(-2).ToUnixTimeSeconds(),
             exp = now.AddHours(1).ToUnixTimeSeconds()
         }));
         var content = $"{header}.{payload}";
         var signature = googleKey.SignData(Encoding.ASCII.GetBytes(content), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/time-records");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", $"{content}.{Encode(signature)}");
-        return await client.SendAsync(request, CancellationToken);
+        return new AuthenticationHeaderValue("Bearer", $"{content}.{Encode(signature)}");
     }
 
     static string Encode(ReadOnlySpan<byte> bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -176,17 +202,18 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         }
     }
 
-    static HttpRequestMessage 同一オリジンのPOST要求を用意する(string requestUri)
+    static HttpRequestMessage 同一オリジンのPOST要求を用意する(string requestUri, string user = "google-user")
     {
         var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
         request.Headers.Add("Sec-Fetch-Site", "same-origin");
+        request.Headers.Authorization = 認証情報を用意する(user);
         return request;
     }
 
-    async Task<TimeRecordResponse> 開始済みの記録を用意する(DateTimeOffset startedAt)
+    async Task<TimeRecordResponse> 開始済みの記録を用意する(DateTimeOffset startedAt, string user = "google-user")
     {
         timeProvider.SetUtcNow(startedAt);
-        using var request = 同一オリジンのPOST要求を用意する("/api/time-records/start");
+        using var request = 同一オリジンのPOST要求を用意する("/api/time-records/start", user);
         using var response = await client.SendAsync(request, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>(CancellationToken);
