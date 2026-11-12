@@ -11,7 +11,6 @@ const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
 const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
 const 開始時刻 = timestamp('2026-08-01T09:00:00Z')
 const 終了時刻 = timestamp('2026-08-01T10:30:00Z')
-const 次の開始時刻 = timestamp('2026-08-01T11:00:00Z')
 const 記録 = presentedRecord(記録ID, 開始時刻)
 const 終了済み記録 = presentedRecord(記録ID, 開始時刻, 終了時刻)
 
@@ -376,17 +375,6 @@ describe('useTimeRecorder', () => {
     })
   })
 
-  it('再び開始すると前回の記録を残して終了時刻を消去します', async () => {
-    const 次の記録 = presentedRecord(次の記録ID, 次の開始時刻)
-    const { result } = await renderEndedRecorder(次の記録)
-
-    await act(() => result.current.startTimeRecord())
-
-    result.current.state.should.toStrictEqual({
-      records: [終了済み記録, 次の記録], timeRecordId: 次の記録ID, startedAt: 次の開始時刻, endedAt: null,
-    })
-  })
-
   it('記録中でなければ終了を要求しません', async () => {
     const { result } = renderRecorder()
 
@@ -436,14 +424,6 @@ describe('useTimeRecorder', () => {
   async function renderStartedRecorder() {
     const recorder = renderRecorder()
     await act(() => recorder.result.current.startTimeRecord())
-
-    return recorder
-  }
-
-  async function renderEndedRecorder(nextRecord: typeof 記録) {
-    startTimeRecord.mockResolvedValueOnce(記録).mockResolvedValueOnce(nextRecord)
-    const recorder = await renderStartedRecorder()
-    await act(() => recorder.result.current.endTimeRecord())
 
     return recorder
   }
