@@ -9,26 +9,33 @@ app.Run();
 static WebApplication CreateApplication(string[] args)
 {
     var builder = WebApplication.CreateBuilder(args);
-    builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
-    builder.Services.AddSingleton<TimeRecordStartOperation>();
-    builder.Services.AddSingleton<TimeRecordEndOperation>();
-    builder.Services.AddSingleton<TimeRecordReader>();
-    builder.Services.AddSingleton<ITimeRecordState, InMemoryTimeRecordState>();
+    AddTimeRecordServices(builder.Services);
 
     var app = builder.Build();
     app.MapHealthEndpoint();
-    var sameOriginEndpoints = app.MapGroup("").AddEndpointFilter(async (context, next) =>
-    {
-        if (context.HttpContext.Request.Headers["Sec-Fetch-Site"] != "same-origin")
-            return Results.StatusCode(StatusCodes.Status403Forbidden);
 
-        return await next(context);
-    });
+    var sameOriginEndpoints = app.MapGroup("").AddEndpointFilter(RequireSameOrigin);
     sameOriginEndpoints.MapStartTimeRecordEndpoint();
     sameOriginEndpoints.MapEndTimeRecordEndpoint();
+
     app.MapGetTimeRecordsEndpoint();
 
     return app;
 }
 
-public partial class Program;
+static void AddTimeRecordServices(IServiceCollection services)
+{
+    services.AddSingleton<TimeProvider>(TimeProvider.System);
+    services.AddSingleton<TimeRecordStartOperation>();
+    services.AddSingleton<TimeRecordEndOperation>();
+    services.AddSingleton<TimeRecordReader>();
+    services.AddSingleton<ITimeRecordState, InMemoryTimeRecordState>();
+}
+
+static async ValueTask<object?> RequireSameOrigin(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+{
+    if (context.HttpContext.Request.Headers["Sec-Fetch-Site"] != "same-origin")
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+
+    return await next(context);
+}

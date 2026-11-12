@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from '../presentation/timeRecordService'
 import { useTimeRecorder } from '../presentation/useTimeRecorder'
+import type { TimeRecorderControls } from '../presentation/timeRecorderOperationState'
 import type { TimeRecorderState } from '../presentation/timeRecorderState'
 import { getTimeRecordTimestamps } from '../presentation/timeRecordPresentation'
 import TimeRecordTimes from './TimeRecordTimes'
@@ -12,7 +13,7 @@ type TimeRecorderProps = {
 }
 
 export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecorderProps) {
-  const { state, selectProject, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords } = useTimeRecorder(timeRecords)
+  const { state, selectProject, controls, startTimeRecord, endTimeRecord, reloadTimeRecords } = useTimeRecorder(timeRecords)
 
   useEffect(() => {
     selectProject(selectedProject)
@@ -21,8 +22,7 @@ export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecor
   return (
     <TimeRecorderView
       state={state}
-      isBusy={isBusy}
-      isStateUnconfirmed={isStateUnconfirmed}
+      controls={controls}
       startTimeRecord={startTimeRecord}
       endTimeRecord={endTimeRecord}
       reloadTimeRecords={reloadTimeRecords}
@@ -32,67 +32,81 @@ export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecor
 
 type TimeRecorderViewProps = {
   state: TimeRecorderState
-  isBusy: boolean
-  isStateUnconfirmed: boolean
-  startTimeRecord: () => Promise<void>
-  endTimeRecord: () => Promise<void>
-  reloadTimeRecords: () => Promise<void>
+  controls: TimeRecorderControls
+  startTimeRecord: () => void
+  endTimeRecord: () => void
+  reloadTimeRecords: () => void
 }
 
-export function TimeRecorderView({ state, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords }: TimeRecorderViewProps) {
-  const [operationFailed, setOperationFailed] = useState(false)
-
+export function TimeRecorderView(props: TimeRecorderViewProps) {
   return (
     <div className="time-recorder">
-      <section className="recorder-panel" aria-labelledby="recorder-title">
-        <header className="panel-header">
-          <h2 id="recorder-title">{state.selectedProject?.name ?? 'プロジェクト未指定'}</h2>
-          <span className={`status-badge ${state.timeRecordId === null ? '' : 'is-active'}`}>
-            {state.timeRecordId === null ? '待機中' : '記録中'}
-          </span>
-        </header>
-
-        <div className="recorder-action">
-          {state.timeRecordId === null ? (
-            <button className="record-button" type="button" disabled={isBusy || isStateUnconfirmed} onClick={() => { void startTimeRecord().catch(() => setOperationFailed(true)) }}>
-              記録を開始
-            </button>
-          ) : (
-            <button className="record-button is-active" type="button" disabled={isBusy || isStateUnconfirmed} onClick={() => { void endTimeRecord().catch(() => setOperationFailed(true)) }}>
-              記録を終了
-            </button>
-          )}
-          {isStateUnconfirmed ? (
-            <>
-              <p role="alert">最新状態を確認できません。再取得してください。</p>
-              <button type="button" disabled={isBusy} onClick={() => { void reloadTimeRecords().catch(() => setOperationFailed(true)) }}>再取得</button>
-            </>
-          ) : operationFailed && <p role="alert">記録操作に失敗しました。</p>}
-          {state.startedAt !== null && (
-            <TimeRecordTimes
-              startedAt={state.startedAt}
-              endedAt={state.endedAt}
-              labelled
-            />
-          )}
-        </div>
-      </section>
-
-      <section className="records-panel" aria-labelledby="records-title">
-        <header className="panel-header records-header">
-          <h2 id="records-title">作業記録</h2>
-          <span className="record-count">{state.records.length}件</span>
-        </header>
-
-        <ul className="records-list" aria-label="作業記録一覧">
-          {state.records.map(record => (
-            <li key={record.record.id}>
-              <span className={`record-status ${record.record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
-              <TimeRecordTimes {...getTimeRecordTimestamps(record)} />
-            </li>
-          ))}
-        </ul>
-      </section>
+      <RecorderPanel {...props} />
+      <TimeRecordList records={props.state.records} />
     </div>
+  )
+}
+
+type RecorderPanelProps = Omit<TimeRecorderViewProps, 'state'> & {
+  state: Pick<TimeRecorderState, 'selectedProject' | 'timeRecordId' | 'startedAt' | 'endedAt'>
+}
+
+function RecorderPanel({ state, controls, startTimeRecord, endTimeRecord, reloadTimeRecords }: RecorderPanelProps) {
+  const isRecording = state.timeRecordId !== null
+
+  return (
+    <section className="recorder-panel" aria-labelledby="recorder-title">
+      <header className="panel-header">
+        <h2 id="recorder-title">{state.selectedProject?.name ?? 'プロジェクト未指定'}</h2>
+        <span className={`status-badge ${isRecording ? 'is-active' : ''}`}>
+          {isRecording ? '記録中' : '待機中'}
+        </span>
+      </header>
+
+      <div className="recorder-action">
+        <button
+          className={isRecording ? 'record-button is-active' : 'record-button'}
+          type="button"
+          disabled={!controls.canChangeRecord}
+          onClick={isRecording ? endTimeRecord : startTimeRecord}
+        >
+          {isRecording ? '記録を終了' : '記録を開始'}
+        </button>
+        {controls.notice === 'stateUnconfirmed' && (
+          <>
+            <p role="alert">最新状態を確認できません。再取得してください。</p>
+            <button type="button" disabled={!controls.canReload} onClick={reloadTimeRecords}>再取得</button>
+          </>
+        )}
+        {controls.notice === 'operationFailed' && <p role="alert">記録操作に失敗しました。</p>}
+        {state.startedAt !== null && (
+          <TimeRecordTimes
+            startedAt={state.startedAt}
+            endedAt={state.endedAt}
+            labelled
+          />
+        )}
+      </div>
+    </section>
+  )
+}
+
+function TimeRecordList({ records }: Pick<TimeRecorderState, 'records'>) {
+  return (
+    <section className="records-panel" aria-labelledby="records-title">
+      <header className="panel-header records-header">
+        <h2 id="records-title">作業記録</h2>
+        <span className="record-count">{records.length}件</span>
+      </header>
+
+      <ul className="records-list" aria-label="作業記録一覧">
+        {records.map(record => (
+          <li key={record.record.id}>
+            <span className={`record-status ${record.record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
+            <TimeRecordTimes {...getTimeRecordTimestamps(record)} />
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

@@ -18,20 +18,20 @@ export const timeRecordService: TimeRecordService = {
     const records: TimeRecordResponse[] = await response.json()
     return records.map(toTimeRecord)
   },
-  async startTimeRecord() {
-    const response = await fetch('/api/time-records/start', { method: 'POST' })
-    if (!response.ok) {
-      throw new Error()
-    }
-    return toTimeRecord(await response.json())
+  startTimeRecord() {
+    return postTimeRecord('/api/time-records/start')
   },
-  async endTimeRecord(id) {
-    const response = await fetch(`/api/time-records/${id}/end`, { method: 'POST' })
-    if (!response.ok) {
-      throw new Error()
-    }
-    return toTimeRecord(await response.json())
+  endTimeRecord(id) {
+    return postTimeRecord(`/api/time-records/${id}/end`)
   },
+}
+
+async function postTimeRecord(path: string): Promise<TimeRecordPresentation> {
+  const response = await fetch(path, { method: 'POST' })
+  if (!response.ok) {
+    throw new Error()
+  }
+  return toTimeRecord(await response.json())
 }
 
 function toTimeRecord(response: TimeRecordResponse): TimeRecordPresentation {

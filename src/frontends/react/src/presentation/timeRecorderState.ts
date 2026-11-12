@@ -39,20 +39,12 @@ export function timeRecorderReducer(
       }
     }
     case 'recordsLoaded': {
-      const updatedRecords = action.updatedRecords ?? []
-      const latestUpdates = [...updatedRecords].reverse()
-      const records = [
-        ...action.records.map(loaded => latestUpdates.find(({ record }) => record.id === loaded.record.id) ?? loaded),
-        ...updatedRecords.filter(({ record }, index) =>
-          !action.records.some(loaded => loaded.record.id === record.id)
-          && !updatedRecords.slice(index + 1).some(updated => updated.record.id === record.id)),
-      ]
+      const updates = action.updatedRecords ?? []
+      const records = mergeLoadedRecords(action.records, updates)
       return {
         ...state,
         records,
-        timeRecordId:
-          latestUpdates.find(({ record }) => record.id === state.timeRecordId && record.endedAt === null)?.record.id
-          ?? records.find(({ record }) => record.endedAt === null)?.record.id ?? null,
+        timeRecordId: getEndTargetAfterLoad(state.timeRecordId, records, updates),
       }
     }
     case 'recordStarted':
@@ -77,4 +69,32 @@ export function timeRecorderReducer(
         endedAt: getTimeRecordTimestamps(action.record).endedAt,
       }
   }
+}
+
+function mergeLoadedRecords(
+  loadedRecords: readonly TimeRecordPresentation[],
+  updates: readonly TimeRecordPresentation[],
+): TimeRecordPresentation[] {
+  const latestUpdates = new Map<string, TimeRecordPresentation>()
+  for (const update of updates) {
+    const id = update.record.id
+    // Records absent from the snapshot follow the order of their last update.
+    latestUpdates.delete(id)
+    latestUpdates.set(id, update)
+  }
+
+  const records = loadedRecords.map(loaded => latestUpdates.get(loaded.record.id) ?? loaded)
+  for (const { record } of loadedRecords) latestUpdates.delete(record.id)
+  return [...records, ...latestUpdates.values()]
+}
+
+function getEndTargetAfterLoad(
+  previousId: string | null,
+  records: readonly TimeRecordPresentation[],
+  updates: readonly TimeRecordPresentation[],
+): string | null {
+  if (previousId !== null && updates.some(({ record }) => record.id === previousId && record.endedAt === null)) {
+    return previousId
+  }
+  return records.find(({ record }) => record.endedAt === null)?.record.id ?? null
 }

@@ -4,11 +4,10 @@ export const healthService: HealthService = {
   async checkHealth() {
     const response = await fetch('/api/health')
     if (!response.ok) return false
-    const body: unknown = await response.json()
-    return isHealthResponse(body) && body.status === 'ok'
+    return hasHealthyStatus(await response.json())
   },
 }
 
-function isHealthResponse(value: unknown): value is { status: string } {
-  return typeof value === 'object' && value !== null && 'status' in value
+function hasHealthyStatus(body: unknown): boolean {
+  return typeof body === 'object' && body !== null && 'status' in body && body.status === 'ok'
 }

@@ -20,6 +20,64 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task 利用者の操作が失敗しても完了しその後の成功で失敗表示は消えない()
+    {
+        var 応答 = service.DelayStartResponse();
+
+        var 開始 = tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+        tested.CanOperate.Should().BeFalse();
+        tested.HasOperationFailed.Should().BeFalse();
+        応答.SetException(new InvalidOperationException());
+        await 開始;
+
+        tested.HasOperationFailed.Should().BeTrue();
+        tested.CanOperate.Should().BeTrue();
+        service.StartResponse = null;
+        await tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+        tested.IsRecording.Should().BeTrue();
+        tested.HasOperationFailed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task 最新状態が未確認の間は再取得を案内し回復後は以前の操作失敗を知らせる()
+    {
+        service.StartResponse = Task.FromException<TimeRecord>(new InvalidOperationException());
+        一覧取得を失敗させる(new InvalidOperationException());
+        tested.Notice.Should().Be(TimeRecorderNotice.None);
+
+        await tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+
+        tested.Notice.Should().Be(TimeRecorderNotice.StateUnconfirmed);
+        service.DelayListResponse().SetResult([]);
+        await tested.RunUserOperationAsync(tested.LoadAsync);
+        tested.Notice.Should().Be(TimeRecorderNotice.OperationFailed);
+    }
+
+    [Fact]
+    public async Task 手動の再取得が失敗しても未確認状態と再取得操作を保つ()
+    {
+        await 開始失敗後の再取得にも失敗させる();
+
+        await tested.RunUserOperationAsync(tested.LoadAsync);
+
+        tested.HasOperationFailed.Should().BeTrue();
+        tested.IsStateUnconfirmed.Should().BeTrue();
+        tested.CanOperate.Should().BeFalse();
+        tested.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task 初回の一覧取得に失敗すると操作失敗の表示を付けず例外を返す()
+    {
+        var 取得失敗 = new InvalidOperationException();
+        一覧取得を失敗させる(取得失敗);
+
+        (await Assert.ThrowsAsync<InvalidOperationException>(tested.LoadAsync)).Should().BeSameAs(取得失敗);
+
+        tested.HasOperationFailed.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task 異なるプロジェクトの記録を同時に開始できる()
     {
         await 異なるプロジェクトの記録を開始する();
@@ -80,8 +138,7 @@ public sealed class TimeRecorderViewModelTests
     public async Task 開始の応答前に対象を切り替えても開始元の記録中状態を更新する()
     {
         var プロジェクトA = new Project("プロジェクトA");
-        TaskCompletionSource<TimeRecord> 応答 = new();
-        service.StartResponse = 応答.Task;
+        var 応答 = service.DelayStartResponse();
         tested.SelectProject(プロジェクトA);
         var 開始操作 = tested.StartTimeRecordAsync();
         tested.SelectProject(null);
@@ -103,10 +160,7 @@ public sealed class TimeRecorderViewModelTests
         var プロジェクトA = new Project("プロジェクトA");
         var (終了するプロジェクト, 終了する記録ID) =
             プロジェクトを終了する ? (プロジェクトA, 別の記録ID) : ((Project?)null, 記録ID);
-        var service = new StubTimeRecordService(
-            new(記録ID, 開始時刻, null), new(終了する記録ID, 開始時刻, 終了時刻));
-        var tested = new TimeRecorderViewModel(service);
-        await 未指定とプロジェクトの記録を開始する(tested, service, プロジェクトA);
+        var (tested, service) = await 未指定対象とプロジェクトで記録中の状態を用意する(プロジェクトA, 終了する記録ID);
         tested.SelectProject(終了するプロジェクト);
 
         await tested.EndTimeRecordAsync();
@@ -125,10 +179,7 @@ public sealed class TimeRecorderViewModelTests
             プロジェクトを終了する
                 ? (プロジェクトA, 別の記録ID, (Project?)null, 記録ID)
                 : ((Project?)null, 記録ID, プロジェクトA, 別の記録ID);
-        var service = new StubTimeRecordService(
-            new(記録ID, 開始時刻, null), new(終了する記録ID, 開始時刻, 終了時刻));
-        var tested = new TimeRecorderViewModel(service);
-        await 未指定とプロジェクトの記録を開始する(tested, service, プロジェクトA);
+        var (tested, _) = await 未指定対象とプロジェクトで記録中の状態を用意する(プロジェクトA, 終了する記録ID);
         tested.SelectProject(終了するプロジェクト);
 
         await tested.EndTimeRecordAsync();
@@ -141,8 +192,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 開始の通信中は追加操作を受け付けず成功後に終了できる()
     {
-        TaskCompletionSource<TimeRecord> 応答 = new();
-        service.StartResponse = 応答.Task;
+        var 応答 = service.DelayStartResponse();
         var 開始操作 = tested.StartTimeRecordAsync();
         var 追加開始 = tested.StartTimeRecordAsync();
         var 追加終了 = tested.EndTimeRecordAsync();
@@ -158,8 +208,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 開始の通信中は追加操作を受け付けず失敗後に再開始できる()
     {
-        TaskCompletionSource<TimeRecord> 応答 = new();
-        service.StartResponse = 応答.Task;
+        var 応答 = service.DelayStartResponse();
         var 開始操作 = tested.StartTimeRecordAsync();
         var 追加開始 = tested.StartTimeRecordAsync();
         var 追加終了 = tested.EndTimeRecordAsync();
@@ -178,8 +227,7 @@ public sealed class TimeRecorderViewModelTests
     public async Task 終了の通信中は追加操作を受け付けず成功後に開始できる()
     {
         await tested.StartTimeRecordAsync();
-        TaskCompletionSource<TimeRecord> 応答 = new();
-        service.EndResponse = 応答.Task;
+        var 応答 = service.DelayEndResponse();
         var 終了操作 = tested.EndTimeRecordAsync();
         var 追加開始 = tested.StartTimeRecordAsync();
         var 追加終了 = tested.EndTimeRecordAsync();
@@ -197,8 +245,7 @@ public sealed class TimeRecorderViewModelTests
     {
         await tested.StartTimeRecordAsync();
         service.Records = [service.StartedRecord];
-        TaskCompletionSource<TimeRecord> 応答 = new();
-        service.EndResponse = 応答.Task;
+        var 応答 = service.DelayEndResponse();
         var 終了操作 = tested.EndTimeRecordAsync();
         var 追加開始 = tested.StartTimeRecordAsync();
         var 追加終了 = tested.EndTimeRecordAsync();
@@ -432,6 +479,55 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task 古い一覧と同じIDは最新の操作結果で置き換え一覧にない記録は後に加える()
+    {
+        var 先に開始した記録 = service.StartedRecord;
+        var 応答 = service.DelayListResponse();
+        var 読み込み = tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        await tested.EndTimeRecordAsync();
+        service.StartedRecord = new(別の記録ID, 終了時刻, null);
+        await tested.StartTimeRecordAsync();
+
+        応答.SetResult([先に開始した記録]);
+        await 読み込み;
+
+        tested.Records.Should().Equal(service.EndedRecord, service.StartedRecord);
+    }
+
+    [Fact]
+    public async Task 古い一覧にない記録は最新の更新を最初の操作順で残す()
+    {
+        var 応答 = service.DelayListResponse();
+        var 読み込み = tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(new("別のプロジェクト"));
+        service.StartedRecord = new(別の記録ID, 開始時刻, null);
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(null);
+        await tested.EndTimeRecordAsync();
+
+        応答.SetResult([]);
+        await 読み込み;
+
+        tested.Records.Should().Equal(service.EndedRecord, service.StartedRecord);
+    }
+
+    [Fact]
+    public async Task 古い一覧の先頭にも記録中の項目があれば取得中に開始した記録を先に終了する()
+    {
+        var 応答 = service.DelayListResponse();
+        var 読み込み = tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        応答.SetResult([new(別の記録ID, 開始時刻, null)]);
+        await 読み込み;
+
+        await tested.EndTimeRecordAsync();
+
+        service.EndedIds.Should().Equal(記録ID);
+    }
+
+    [Fact]
     public async Task 操作後の再読み込みはサーバーの更新と削除を反映する()
     {
         await 履歴がある状態で記録を開始する();
@@ -552,11 +648,7 @@ public sealed class TimeRecorderViewModelTests
         var service = new StubTimeRecordService(
             new(記録ID, 開始時刻, null), new(終了する記録ID, 開始時刻, 終了時刻));
         var tested = new TimeRecorderViewModel(service);
-        tested.SelectProject(null);
-        await tested.StartTimeRecordAsync();
-        tested.SelectProject(プロジェクト);
-        service.StartedRecord = new(別の記録ID, 開始時刻, null);
-        await tested.StartTimeRecordAsync();
+        await 未指定とプロジェクトの記録を開始する(tested, service, プロジェクト);
         return (tested, service);
     }
 }

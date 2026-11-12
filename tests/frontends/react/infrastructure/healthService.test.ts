@@ -4,10 +4,10 @@ import { healthService } from '../../../../src/frontends/react/src/infrastructur
 const tested = healthService
 
 describe('healthService', () => {
-  let fetchMock: Mock<() => Promise<Response>>
+  let fetchMock: Mock<typeof fetch>
 
   beforeEach(() => {
-    fetchMock = vi.fn<() => Promise<Response>>()
+    fetchMock = vi.fn<typeof fetch>()
     vi.stubGlobal('fetch', fetchMock)
   })
 
@@ -16,16 +16,15 @@ describe('healthService', () => {
   })
 
   it('正常性確認APIへ要求します', async () => {
-    fetchMock.mockImplementation(async () => response({ status: 'ok' }))
+    fetchMock.mockImplementation(async () => Response.json({ status: 'ok' }))
 
     await tested.checkHealth()
 
-    fetchMock.should.have.callCount(1)
-    fetchMock.should.have.been.calledWith('/api/health')
+    fetchMock.should.have.been.calledOnceWith('/api/health')
   })
 
   it('正常なレスポンスを受け取るとtrueを返します', async () => {
-    fetchMock.mockImplementation(async () => response({ status: 'ok' }))
+    fetchMock.mockImplementation(async () => Response.json({ status: 'ok' }))
 
     const isHealthy = await tested.checkHealth()
     isHealthy.should.equal(true)
@@ -38,16 +37,10 @@ describe('healthService', () => {
     isHealthy.should.equal(false)
   })
 
-  it('正常でない内容を受け取るとfalseを返します', async () => {
-    fetchMock.mockImplementation(async () => response({}))
+  it.each([{}, { status: 1 }])('正常でない内容を受け取るとfalseを返します（%j）', async body => {
+    fetchMock.mockImplementation(async () => Response.json(body))
 
     const isHealthy = await tested.checkHealth()
     isHealthy.should.equal(false)
   })
 })
-
-function response(body: unknown) {
-  return new Response(JSON.stringify(body), {
-    headers: { 'Content-Type': 'application/json' },
-  })
-}

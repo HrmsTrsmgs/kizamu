@@ -76,12 +76,10 @@ describe('useTimeRecorder', () => {
   })
 
   it('開始の通信に失敗すると一覧を再取得して反映します', async () => {
-    const getTimeRecords = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([記録])
     const 開始失敗 = new Error('failed')
-    const service = createTimeRecordServiceStub({
-      getTimeRecords, startTimeRecord: async () => { throw 開始失敗 },
-    })
-    const { result } = renderHook(() => useTimeRecorder(service))
+    getTimeRecords.mockResolvedValueOnce([]).mockResolvedValueOnce([記録])
+    startTimeRecord.mockRejectedValue(開始失敗)
+    const { result } = renderRecorder()
     await waitFor(() => getTimeRecords.should.have.callCount(1))
 
     await act(async () => { await expect(result.current.startTimeRecord()).rejects.toBe(開始失敗) })
@@ -92,12 +90,10 @@ describe('useTimeRecorder', () => {
   })
 
   it('終了の通信に失敗すると一覧を再取得して反映します', async () => {
-    const getTimeRecords = vi.fn().mockResolvedValueOnce([記録]).mockResolvedValueOnce([終了済み記録])
     const 終了失敗 = new Error('failed')
-    const service = createTimeRecordServiceStub({
-      getTimeRecords, endTimeRecord: async () => { throw 終了失敗 },
-    })
-    const { result } = renderHook(() => useTimeRecorder(service))
+    getTimeRecords.mockResolvedValueOnce([記録]).mockResolvedValueOnce([終了済み記録])
+    endTimeRecord.mockRejectedValue(終了失敗)
+    const { result } = renderRecorder()
     await waitFor(() => result.current.state.should.have.property('timeRecordId', 記録ID))
 
     await act(async () => { await expect(result.current.endTimeRecord()).rejects.toBe(終了失敗) })
@@ -249,11 +245,10 @@ describe('useTimeRecorder', () => {
   it('開始の応答前に対象を切り替えても開始元の記録中状態を更新します', async () => {
     const プロジェクトA = new Project('プロジェクトA')
     const 応答 = deferred<typeof 記録>()
-    const service = createTimeRecordServiceStub({ startTimeRecord: () => 応答.promise })
-    const { result } = renderHook(() => useTimeRecorder(service))
-    await act(async () => {})
+    startTimeRecord.mockReturnValue(応答.promise)
+    const { result } = renderRecorder()
+    await waitFor(() => getTimeRecords.should.have.callCount(1))
 
-    // 未確定の公開API案: DomainのProjectまたは未指定を選択します。
     act(() => result.current.selectProject(プロジェクトA))
     let 開始操作 = Promise.resolve()
     act(() => { 開始操作 = result.current.startTimeRecord() })
@@ -395,24 +390,19 @@ describe('useTimeRecorder', () => {
 
     return recorder
   }
+
+  function 開始応答を保留する() {
+    const response = deferred<typeof 記録>()
+    startTimeRecord.mockReturnValueOnce(response.promise)
+    const { result } = renderRecorder()
+    return { response, startTimeRecord, endTimeRecord, result }
+  }
+
+  function 終了応答を保留する() {
+    const response = deferred<typeof 終了済み記録>()
+    endTimeRecord.mockReturnValueOnce(response.promise)
+    getTimeRecords.mockResolvedValueOnce([]).mockResolvedValue([記録])
+    const { result } = renderRecorder()
+    return { response, startTimeRecord, endTimeRecord, result }
+  }
 })
-
-
-function 開始応答を保留する() {
-  const response = deferred<typeof 記録>()
-  const startTimeRecord = vi.fn().mockReturnValueOnce(response.promise).mockResolvedValue(記録)
-  const endTimeRecord = vi.fn(async () => 終了済み記録)
-  const service = createTimeRecordServiceStub({ startTimeRecord, endTimeRecord })
-  const { result } = renderHook(() => useTimeRecorder(service))
-  return { response, startTimeRecord, endTimeRecord, result }
-}
-
-function 終了応答を保留する() {
-  const response = deferred<typeof 終了済み記録>()
-  const startTimeRecord = vi.fn(async () => 記録)
-  const endTimeRecord = vi.fn().mockReturnValueOnce(response.promise).mockResolvedValue(終了済み記録)
-  const getTimeRecords = vi.fn().mockResolvedValueOnce([]).mockResolvedValue([記録])
-  const service = createTimeRecordServiceStub({ getTimeRecords, startTimeRecord, endTimeRecord })
-  const { result } = renderHook(() => useTimeRecorder(service))
-  return { response, startTimeRecord, endTimeRecord, result }
-}

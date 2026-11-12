@@ -27,6 +27,22 @@ sealed class StubTimeRecordService(TimeRecord startedRecord, TimeRecord endedRec
         return listResponse;
     }
 
+    /// <summary>開始の応答を、呼び出し側が成功または失敗を返すまで保留します。</summary>
+    public TaskCompletionSource<TimeRecord> DelayStartResponse()
+    {
+        var response = new TaskCompletionSource<TimeRecord>();
+        StartResponse = response.Task;
+        return response;
+    }
+
+    /// <summary>終了の応答を、呼び出し側が成功または失敗を返すまで保留します。</summary>
+    public TaskCompletionSource<TimeRecord> DelayEndResponse()
+    {
+        var response = new TaskCompletionSource<TimeRecord>();
+        EndResponse = response.Task;
+        return response;
+    }
+
     public Task<ImmutableArray<TimeRecord>> GetTimeRecordsAsync()
     {
         ListCount++;

@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef } from 'react'
 import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from './timeRecordService'
 import type { TimeRecordPresentation } from './timeRecordPresentation'
-import { initialTimeRecorderState, timeRecorderReducer } from './timeRecorderState'
+import { initialTimeRecorderState, timeRecorderReducer, type TimeRecorderAction } from './timeRecorderState'
+import { getTimeRecorderControls, initialTimeRecorderOperationState, timeRecorderOperationReducer } from './timeRecorderOperationState'
 
 export function useTimeRecorder(timeRecords: TimeRecordService) {
   const [state, dispatch] = useReducer(timeRecorderReducer, initialTimeRecorderState)
-  const [isBusy, setIsBusy] = useState(false)
-  const [isStateUnconfirmed, setIsStateUnconfirmed] = useState(false)
+  const [operationState, dispatchOperation] = useReducer(timeRecorderOperationReducer, initialTimeRecorderOperationState)
   const operationPending = useRef(false)
   const pendingLoads = useRef<TimeRecordPresentation[][]>([])
 
@@ -17,7 +17,7 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     try {
       const records = await timeRecords.getTimeRecords()
       dispatch({ type: 'recordsLoaded', records, updatedRecords })
-      setIsStateUnconfirmed(false)
+      dispatchOperation('recordsConfirmed')
     } finally {
       pendingLoads.current = pendingLoads.current.filter(pending => pending !== updatedRecords)
     }
@@ -27,67 +27,80 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     void getTimeRecords()
   }, [getTimeRecords])
 
-  async function reloadTimeRecords() {
-    if (operationPending.current) return
+  function runOperation(operation: () => Promise<void>) {
+    if (operationPending.current) return Promise.resolve()
     operationPending.current = true
-    setIsBusy(true)
-    try {
-      await getTimeRecords()
-    } finally {
-      operationPending.current = false
-      setIsBusy(false)
-    }
+    dispatchOperation('operationStarted')
+
+    const completion = operation()
+    // Observe failures for the view while returning the original promise to callers.
+    void completion.then(
+      () => finishOperation('operationSucceeded'),
+      () => finishOperation('operationFailed'),
+    )
+    return completion
+  }
+
+  function finishOperation(outcome: 'operationSucceeded' | 'operationFailed') {
+    operationPending.current = false
+    dispatchOperation(outcome)
   }
 
   async function reloadAfterOperationFailure() {
     try {
       await getTimeRecords()
     } catch (error) {
-      setIsStateUnconfirmed(true)
+      dispatchOperation('recordsUnconfirmed')
       throw error
     }
   }
 
-  async function startTimeRecord() {
-    if (operationPending.current || isStateUnconfirmed) return
-    const project = state.selectedProject
-    operationPending.current = true
-    setIsBusy(true)
-    try {
-      const record = await timeRecords.startTimeRecord()
-      pendingLoads.current.forEach(pending => pending.push(record))
-      dispatch({ type: 'recordStarted', record, project })
-    } catch (error) {
-      await reloadAfterOperationFailure()
-      throw error
-    } finally {
-      operationPending.current = false
-      setIsBusy(false)
-    }
-  }
-
-  async function endTimeRecord() {
-    if (operationPending.current || isStateUnconfirmed) return
-    if (state.timeRecordId !== null) {
-      operationPending.current = true
-      setIsBusy(true)
+  function changeTimeRecord(
+    request: () => Promise<TimeRecordPresentation>,
+    toAction: (record: TimeRecordPresentation) => TimeRecorderAction,
+  ) {
+    if (operationState.isStateUnconfirmed) return Promise.resolve()
+    return runOperation(async () => {
       try {
-        const record = await timeRecords.endTimeRecord(state.timeRecordId)
+        const record = await request()
         pendingLoads.current.forEach(pending => pending.push(record))
-        dispatch({ type: 'recordEnded', record })
+        dispatch(toAction(record))
       } catch (error) {
         await reloadAfterOperationFailure()
         throw error
-      } finally {
-        operationPending.current = false
-        setIsBusy(false)
       }
-    }
+    })
+  }
+
+  function startTimeRecord() {
+    const project = state.selectedProject
+    return changeTimeRecord(
+      () => timeRecords.startTimeRecord(),
+      record => ({ type: 'recordStarted', record, project }),
+    )
+  }
+
+  function endTimeRecord() {
+    const id = state.timeRecordId
+    if (id === null) return Promise.resolve()
+    return changeTimeRecord(
+      () => timeRecords.endTimeRecord(id),
+      record => ({ type: 'recordEnded', record }),
+    )
   }
 
   const selectProject = useCallback((project: Project | undefined) => {
     dispatch({ type: 'projectSelected', project })
   }, [])
 
-  return { state, selectProject, isBusy, isStateUnconfirmed, startTimeRecord, endTimeRecord, reloadTimeRecords }
+  return {
+    state,
+    selectProject,
+    isBusy: operationState.isBusy,
+    isStateUnconfirmed: operationState.isStateUnconfirmed,
+    controls: getTimeRecorderControls(operationState),
+    startTimeRecord,
+    endTimeRecord,
+    reloadTimeRecords: () => runOperation(getTimeRecords),
+  }
 }

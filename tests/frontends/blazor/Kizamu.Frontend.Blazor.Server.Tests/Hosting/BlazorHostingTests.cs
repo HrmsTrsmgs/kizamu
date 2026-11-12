@@ -6,11 +6,10 @@ namespace Kizamu.Frontend.Blazor.Server.Tests.Hosting;
 
 using static Kizamu.Tests.TestCancellation;
 
-public sealed class BlazorHostingTests : IClassFixture<WebApplicationFactory<global::Program>>, IDisposable
+public sealed class BlazorHostingTests(WebApplicationFactory<global::Program> factory)
+    : IClassFixture<WebApplicationFactory<global::Program>>, IDisposable
 {
-    readonly HttpClient client;
-
-    public BlazorHostingTests(WebApplicationFactory<global::Program> factory) => client = factory.CreateClient();
+    readonly HttpClient client = factory.CreateClient();
 
     [Fact]
     public async Task サーバーのルートでBlazor画面の起動HTMLを配信します()

@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Wait-HealthEndpoint.ps1')
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $api = Join-Path $root 'src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api'
 $frontend = Join-Path $root 'src/frontends/react'
@@ -29,14 +30,7 @@ try {
     )) {
         $process = Start-Process -FilePath $item.File -ArgumentList $item.Args -WorkingDirectory $item.Dir -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logs "$($item.Name).out") -RedirectStandardError (Join-Path $logs "$($item.Name).err")
         $processes += $process
-        $ready = $false
-        for ($i = 0; $i -lt 60; $i++) {
-            if ($process.HasExited) { break }
-            try {
-                $response = Invoke-WebRequest -Uri $item.Check -UseBasicParsing -TimeoutSec 1
-                if ($response.StatusCode -eq 200) { $ready = $true; break }
-            } catch { Start-Sleep -Milliseconds 500 }
-        }
+        $ready = Wait-HealthEndpoint -Process $process -Uri $item.Check
         if (-not $ready) { throw "$($item.Name) を起動できませんでした。ポートと実行環境を確認してください。" }
     }
     Write-Host 'ブラウザーが開かない場合は http://localhost:5173 を開いてください。'

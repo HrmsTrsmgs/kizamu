@@ -1,11 +1,12 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using Kizamu.Frontend.Blazor.Presentation.Health;
 
 namespace Kizamu.Frontend.Blazor.Infrastructure.Health;
 
 /// <summary>サーバーの正常性を確認します。HttpClientは呼び出し側が管理します。</summary>
 /// <param name="client">サーバーを基底URIとするHTTPクライアント。</param>
-public sealed partial class HealthApi(HttpClient client)
+public sealed partial class HealthApi(HttpClient client) : IHealthService
 {
     /// <summary>正常性確認APIが正常な状態を返すか確認します。</summary>
     /// <returns>HTTP応答が成功し、statusがokの場合にtrue。</returns>

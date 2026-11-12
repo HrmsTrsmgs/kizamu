@@ -6,14 +6,11 @@ namespace Kizamu.Frontend.Blazor.Presentation.Tests.Projects;
 
 public sealed class ProjectTabsViewModelTests
 {
-    readonly ProjectTabsViewModel tested;
-
-    public ProjectTabsViewModelTests() => tested = new();
+    readonly ProjectTabsViewModel tested = new();
 
     [Fact]
     public void プロジェクトを選択すると選択したプロジェクトを保持する()
     {
-        var tested = new ProjectTabsViewModel();
         var プロジェクト = new Project("プロジェクトA");
 
         tested.SelectProject(プロジェクト);
@@ -24,8 +21,7 @@ public sealed class ProjectTabsViewModelTests
     [Fact]
     public void 追加をキャンセルすると登録せずダイアログを閉じる()
     {
-        tested.OpenProjectDialog();
-        tested.ProjectName = "プロジェクトA";
+        名前を入力した追加ダイアログを開く("プロジェクトA");
 
         tested.CancelProjectDialog();
 
@@ -44,7 +40,7 @@ public sealed class ProjectTabsViewModelTests
     [Fact]
     public void 入力した名前を登録すると一覧に追加する()
     {
-        var tested = new ProjectTabsViewModel { ProjectName = "プロジェクトA" };
+        tested.ProjectName = "プロジェクトA";
 
         tested.RegisterProject();
 
@@ -54,9 +50,7 @@ public sealed class ProjectTabsViewModelTests
     [Fact]
     public void 追加画面から登録するとダイアログを閉じる()
     {
-        var tested = new ProjectTabsViewModel();
-        tested.OpenProjectDialog();
-        tested.ProjectName = "プロジェクトA";
+        名前を入力した追加ダイアログを開く("プロジェクトA");
 
         tested.RegisterProject();
 
@@ -75,8 +69,13 @@ public sealed class ProjectTabsViewModelTests
 
     void プロジェクトを登録しておく(string name)
     {
+        名前を入力した追加ダイアログを開く(name);
+        tested.RegisterProject();
+    }
+
+    void 名前を入力した追加ダイアログを開く(string name)
+    {
         tested.OpenProjectDialog();
         tested.ProjectName = name;
-        tested.RegisterProject();
     }
 }

@@ -89,9 +89,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         using var response = await client.SendAsync(request, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        using var listResponse = await client.GetAsync("/api/time-records", CancellationToken);
-        listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var records = await listResponse.Content.ReadFromJsonAsync<TimeRecordResponse[]>(CancellationToken);
+        var records = await 記録一覧を取得する();
         records.Should().BeEmpty();
     }
 
@@ -111,10 +109,15 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         using var response = await client.SendAsync(request, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        using var listResponse = await client.GetAsync("/api/time-records", CancellationToken);
-        listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var records = await listResponse.Content.ReadFromJsonAsync<TimeRecordResponse[]>(CancellationToken);
+        var records = await 記録一覧を取得する();
         records.Should().Equal(startedRecord);
+    }
+
+    async Task<TimeRecordResponse[]?> 記録一覧を取得する()
+    {
+        using var response = await client.GetAsync("/api/time-records", CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        return await response.Content.ReadFromJsonAsync<TimeRecordResponse[]>(CancellationToken);
     }
 
     static HttpRequestMessage 同一オリジンのPOST要求を用意する(string requestUri)
