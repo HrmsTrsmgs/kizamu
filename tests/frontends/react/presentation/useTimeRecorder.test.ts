@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Mock } from 'vitest'
 import type { TimeRecordService } from '../../../../src/frontends/react/src/presentation/timeRecordService'
 import { useTimeRecorder } from '../../../../src/frontends/react/src/presentation/useTimeRecorder'
-import { createTimeRecordServiceStub } from '../test/createTimeRecordServiceStub'
 import { deferred } from '../test/deferred'
 import { presentedRecord, timestamp } from '../test/timeRecords'
 
@@ -26,51 +25,91 @@ describe('useTimeRecorder', () => {
     getTimeRecords = vi.fn(async () => [])
     startTimeRecord = vi.fn(async () => 記録)
     endTimeRecord = vi.fn(async () => 終了済み記録)
-    service = createTimeRecordServiceStub({ getTimeRecords, startTimeRecord, endTimeRecord })
+    service = { getTimeRecords, startTimeRecord, endTimeRecord }
   })
 
   it('開始の通信中は追加操作を受け付けず成功後に終了できます', async () => {
-    const { response, startTimeRecord, endTimeRecord, result } = 開始応答を保留する()
-    let operation = Promise.resolve()
-    act(() => { operation = result.current.startTimeRecord(); void result.current.startTimeRecord(); void result.current.endTimeRecord() })
+    const { response, result } = 開始応答を保留する()
+    let operation: Promise<void>
+
+    act(() => {
+      operation = result.current.startTimeRecord()
+      void result.current.startTimeRecord()
+      void result.current.endTimeRecord()
+    })
     startTimeRecord.should.have.callCount(1)
     endTimeRecord.should.have.callCount(0)
-    await act(async () => { response.resolve(記録); await operation })
+
+    await act(async () => {
+      response.resolve(記録)
+      await operation
+    })
+
     await act(() => result.current.endTimeRecord())
     endTimeRecord.should.have.callCount(1)
   })
 
   it('開始の通信中は追加操作を受け付けず失敗後に再開始できます', async () => {
-    const { response, startTimeRecord, endTimeRecord, result } = 開始応答を保留する()
-    let operation = Promise.resolve()
-    act(() => { operation = result.current.startTimeRecord(); void result.current.startTimeRecord(); void result.current.endTimeRecord() })
+    const { response, result } = 開始応答を保留する()
+    let operation: Promise<void>
+
+    act(() => {
+      operation = result.current.startTimeRecord()
+      void result.current.startTimeRecord()
+      void result.current.endTimeRecord()
+    })
     startTimeRecord.should.have.callCount(1)
     endTimeRecord.should.have.callCount(0)
-    await act(async () => { response.reject(new Error('failed')); await expect(operation).rejects.toThrow('failed') })
+
+    await act(async () => {
+      response.reject(new Error('failed'))
+      await operation.should.rejects.toThrow('failed')
+    })
+
     await act(() => result.current.startTimeRecord())
     startTimeRecord.should.have.callCount(2)
   })
 
   it('終了の通信中は追加操作を受け付けず成功後に開始できます', async () => {
-    const { response, startTimeRecord, endTimeRecord, result } = 終了応答を保留する()
+    const { response, result } = 終了応答を保留する()
     await act(() => result.current.startTimeRecord())
-    let operation = Promise.resolve()
-    act(() => { operation = result.current.endTimeRecord(); void result.current.startTimeRecord(); void result.current.endTimeRecord() })
+    let operation: Promise<void>
+
+    act(() => {
+      operation = result.current.endTimeRecord()
+      void result.current.startTimeRecord()
+      void result.current.endTimeRecord()
+    })
     startTimeRecord.should.have.callCount(1)
     endTimeRecord.should.have.callCount(1)
-    await act(async () => { response.resolve(終了済み記録); await operation })
+
+    await act(async () => {
+      response.resolve(終了済み記録)
+      await operation
+    })
+
     await act(() => result.current.startTimeRecord())
     startTimeRecord.should.have.callCount(2)
   })
 
   it('終了の通信中は追加操作を受け付けず失敗後に再終了できます', async () => {
-    const { response, startTimeRecord, endTimeRecord, result } = 終了応答を保留する()
+    const { response, result } = 終了応答を保留する()
     await act(() => result.current.startTimeRecord())
-    let operation = Promise.resolve()
-    act(() => { operation = result.current.endTimeRecord(); void result.current.startTimeRecord(); void result.current.endTimeRecord() })
+    let operation: Promise<void>
+
+    act(() => {
+      operation = result.current.endTimeRecord()
+      void result.current.startTimeRecord()
+      void result.current.endTimeRecord()
+    })
     startTimeRecord.should.have.callCount(1)
     endTimeRecord.should.have.callCount(1)
-    await act(async () => { response.reject(new Error('failed')); await expect(operation).rejects.toThrow('failed') })
+
+    await act(async () => {
+      response.reject(new Error('failed'))
+      await operation.should.rejects.toThrow('failed')
+    })
+
     await act(() => result.current.endTimeRecord())
     endTimeRecord.should.have.callCount(2)
   })
@@ -395,7 +434,7 @@ describe('useTimeRecorder', () => {
     const response = deferred<typeof 記録>()
     startTimeRecord.mockReturnValueOnce(response.promise)
     const { result } = renderRecorder()
-    return { response, startTimeRecord, endTimeRecord, result }
+    return { response, result }
   }
 
   function 終了応答を保留する() {
@@ -403,6 +442,6 @@ describe('useTimeRecorder', () => {
     endTimeRecord.mockReturnValueOnce(response.promise)
     getTimeRecords.mockResolvedValueOnce([]).mockResolvedValue([記録])
     const { result } = renderRecorder()
-    return { response, startTimeRecord, endTimeRecord, result }
+    return { response, result }
   }
 })
