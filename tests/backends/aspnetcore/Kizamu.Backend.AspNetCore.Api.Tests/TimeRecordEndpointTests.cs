@@ -68,6 +68,29 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     }
 
     [Fact]
+    public async Task 未認証で記録を終了すると401が返され記録は変更されません()
+    {
+        var startedRecord = await 開始済みの記録を用意する(早い時刻);
+        timeProvider.SetUtcNow(遅い時刻);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/time-records/{startedRecord.Id}/end");
+        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+        using var response = await client.SendAsync(request, CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await 記録一覧を取得する()).Should().Equal(startedRecord);
+    }
+
+    [Fact]
+    public async Task 他の利用者の記録を終了すると404が返され記録は変更されません()
+    {
+        var startedRecord = await 開始済みの記録を用意する(早い時刻, "first-user");
+        timeProvider.SetUtcNow(遅い時刻);
+        using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end", "second-user");
+        using var response = await client.SendAsync(request, CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await 記録一覧を取得する("first-user")).Should().Equal(startedRecord);
+    }
+
+    [Fact]
     public async Task 二人が開始した記録の一覧にはそれぞれ本人の記録だけが返されます()
     {
         var firstRecord = await 開始済みの記録を用意する(早い時刻, "first-user");

@@ -21,7 +21,7 @@ static WebApplication CreateApplication(string[] args)
     var owners = new System.Collections.Concurrent.ConcurrentDictionary<Guid, string>();
     var sameOriginEndpoints = app.MapGroup("").AddEndpointFilter(RequireSameOrigin);
     sameOriginEndpoints.MapStartTimeRecordEndpoint(owners);
-    sameOriginEndpoints.MapEndTimeRecordEndpoint();
+    sameOriginEndpoints.MapEndTimeRecordEndpoint(owners);
 
     app.MapGetTimeRecordsEndpoint(owners);
 

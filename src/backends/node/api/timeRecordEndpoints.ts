@@ -16,7 +16,10 @@ export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: T
       owners.set(record.id, owner)
       return reply.code(201).send(toResponse(record))
     })
-    sameOriginApp.post<{ Params: { id: string } }>('/api/time-records/:id/end', async (request) => {
+    sameOriginApp.post<{ Params: { id: string } }>('/api/time-records/:id/end', async (request, reply) => {
+      const owner = await getOwner(request.headers.authorization, verifier)
+      if (owner === null) return reply.code(401).send()
+      if (owners.get(request.params.id) !== owner) return reply.code(404).send()
       const record = timeRecords.end(request.params.id)
       if (record !== undefined) return toResponse(record)
     })

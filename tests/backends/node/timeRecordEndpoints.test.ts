@@ -58,6 +58,24 @@ test('未認証で記録を開始すると401が返され記録は追加され�
   records.should.deep.equal([])
 })
 
+test('未認証で記録を終了すると401が返され記録は変更されません', async () => {
+  const startedRecord = await prepareStartedRecord(app)
+  vi.setSystemTime(終了時刻)
+  const response = await app.inject({ method: 'POST', url: `/api/time-records/${startedRecord.id}/end`, headers: { 'sec-fetch-site': 'same-origin' } })
+  response.statusCode.should.equal(401)
+  const records = await readTimeRecords(app)
+  records.should.deep.equal([startedRecord])
+})
+
+test('他の利用者の記録を終了すると404が返され記録は変更されません', async () => {
+  const startedRecord = await prepareStartedRecord(app, 'first-user')
+  vi.setSystemTime(終了時刻)
+  const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
+  response.statusCode.should.equal(404)
+  const records = await readTimeRecords(app, 'first-user')
+  records.should.deep.equal([startedRecord])
+})
+
 test('二人が開始した記録の一覧にはそれぞれ本人の記録だけが返されます', async () => {
   const firstRecord = await prepareStartedRecord(app, 'first-user')
   const secondRecord = await prepareStartedRecord(app, 'second-user')
