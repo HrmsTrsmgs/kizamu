@@ -332,6 +332,24 @@ describe('useTimeRecorder', () => {
     })
   })
 
+  it('手動の一覧取得に失敗しても待機中の初期取得にはその後の記録開始を反映します', async () => {
+    const 初期応答 = deferred<(typeof 記録)[]>()
+    getTimeRecords.mockReturnValueOnce(初期応答.promise).mockRejectedValueOnce(new Error('一覧取得失敗'))
+    const { result } = renderRecorder()
+
+    await act(async () => {
+      await result.current.reloadTimeRecords().should.rejects.toThrow('一覧取得失敗')
+    })
+    await act(() => result.current.startTimeRecord())
+    await act(async () => {
+      初期応答.resolve([])
+      await 初期応答.promise
+    })
+
+    result.current.state.records.should.toStrictEqual([記録])
+    result.current.state.should.have.property('timeRecordId', 記録ID)
+  })
+
   it('操作後の再読み込みはサーバーの更新と削除を反映します', async () => {
     const 過去の記録 = presentedRecord(次の記録ID, 開始時刻, 終了時刻)
     getTimeRecords.mockResolvedValue([過去の記録])
