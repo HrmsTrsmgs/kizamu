@@ -11,7 +11,9 @@ static WebApplication CreateApplication(string[] args)
 {
     var builder = WebApplication.CreateBuilder(args);
     AddTimeRecordServices(builder.Services);
-    builder.Services.AddSingleton(new GoogleIdTokenVerifier(builder.Configuration["GOOGLE_CLIENT_ID"] ?? "", new HttpClient()));
+    builder.Services.AddSingleton<HttpClient>(_ => new());
+    builder.Services.AddSingleton(services =>
+        new GoogleIdTokenVerifier(builder.Configuration["GOOGLE_CLIENT_ID"] ?? "", services.GetRequiredService<HttpClient>()));
 
     var app = builder.Build();
     app.MapHealthEndpoint();
