@@ -10,12 +10,15 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
   const [operationState, dispatchOperation] = useReducer(timeRecorderOperationReducer, initialTimeRecorderOperationState)
   const operationPending = useRef(false)
   const pendingLoads = useRef<TimeRecordPresentation[][]>([])
+  const loadVersion = useRef(0)
 
   const getTimeRecords = useCallback(async () => {
+    const version = loadVersion.current
     const updatedRecords: TimeRecordPresentation[] = []
     pendingLoads.current.push(updatedRecords)
     try {
       const records = await timeRecords.getTimeRecords()
+      if (version !== loadVersion.current) return
       dispatch({ type: 'recordsLoaded', records, updatedRecords })
       dispatchOperation('recordsConfirmed')
     } finally {
@@ -66,6 +69,7 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
         pendingLoads.current.forEach(pending => pending.push(record))
         dispatch(toAction(record))
       } catch (error) {
+        loadVersion.current++
         await reloadAfterOperationFailure()
         throw error
       }
