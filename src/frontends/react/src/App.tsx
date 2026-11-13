@@ -1,4 +1,4 @@
-import { useReducer, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import HealthStatus from './health/HealthStatus'
 import TimeRecorder from './timeRecords/TimeRecorder'
 import { initialProjectTabsState, projectTabsReducer } from './presentation/projectTabsState'
@@ -12,10 +12,17 @@ type AppProps = {
   timeRecords?: TimeRecordService
   signInWithGoogle?: () => Promise<string>
   createTimeRecords?: (token: string) => TimeRecordService
+  renderGoogleButton?: (container: HTMLElement, onCredential: (token: string) => void) => void
 }
 
-export default function App({ isAuthenticated = false, health, timeRecords, signInWithGoogle, createTimeRecords }: AppProps) {
+export default function App({ isAuthenticated = false, health, timeRecords, signInWithGoogle, createTimeRecords, renderGoogleButton }: AppProps) {
   const [signedInTimeRecords, setSignedInTimeRecords] = useState<TimeRecordService>()
+  const googleButton = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (googleButton.current && renderGoogleButton && createTimeRecords) {
+      renderGoogleButton(googleButton.current, token => setSignedInTimeRecords(createTimeRecords(token)))
+    }
+  }, [renderGoogleButton, createTimeRecords])
   const activeTimeRecords = signedInTimeRecords ?? (isAuthenticated ? timeRecords : undefined)
 
   async function signIn() {
@@ -32,7 +39,7 @@ export default function App({ isAuthenticated = false, health, timeRecords, sign
         <h1>Kizamu</h1>
         <p className="app-description">作業時間を記録します。</p>
       </header>
-      {!activeTimeRecords ? <button type="button" onClick={signIn}>Googleでログイン</button> : <>
+      {!activeTimeRecords ? (renderGoogleButton ? <div ref={googleButton} /> : <button type="button" onClick={signIn}>Googleでログイン</button>) : <>
         <section className="project-toolbar" aria-labelledby="projects-title">
           <div className="project-toolbar-heading">
             <h2 id="projects-title">プロジェクト</h2>

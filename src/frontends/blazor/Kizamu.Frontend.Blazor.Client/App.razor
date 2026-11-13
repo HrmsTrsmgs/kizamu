@@ -1,4 +1,5 @@
 @inject ProjectTabsViewModel ViewModel
+@inject IServiceProvider Services
 
 <main>
     <header class="app-header">
@@ -7,7 +8,14 @@
     </header>
     @if (!IsAuthenticated && timeRecorder is null)
     {
-        <button type="button" @onclick="SignInAsync">Googleでログイン</button>
+        @if (Services.GetService(typeof(IGoogleSignIn)) is not null)
+        {
+            <div @ref="googleButton"></div>
+        }
+        else
+        {
+            <button type="button" @onclick="SignInAsync">Googleでログイン</button>
+        }
     }
     else
     {
@@ -47,6 +55,22 @@
 
 @code {
     TimeRecorderViewModel? timeRecorder;
+    ElementReference googleButton;
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !IsAuthenticated && Services.GetService(typeof(IGoogleSignIn)) is IGoogleSignIn google)
+            await google.RenderButtonAsync(googleButton, OnCredential);
+    }
+
+    void OnCredential(string token)
+    {
+        var create = CreateTimeRecords ?? (value => new Kizamu.Frontend.Blazor.Infrastructure.TimeRecords.TimeRecordApi(
+            (HttpClient)Services.GetService(typeof(HttpClient))!, value));
+        timeRecorder = new(create(token));
+        _ = InvokeAsync(StateHasChanged);
+    }
 
     /// <summary>Google認証を開始する操作を取得または設定します。</summary>
     [Parameter]

@@ -518,7 +518,8 @@ MVPではモックテストを主な自動検証とし、実Clockify確認は公
 
 ## 現在の次作業
 
-* 基準はea8caba、作業ブランチはcodex/google-login-plan。Bearer送信のRefactorは変更不要で完了。ログイン結果を画面状態と記録サービス生成に渡す次のGreenが完了し、開発者がコミットを了承。
-* 両画面のRedで認証代役が返すトークンで記録画面に切り替わりサービスを生成する契約を確認。Reactは画面が切り替わらず失敗、Blazorは新パラメーター未実装でコンパイル失敗。Greenで代役を使った画面切替とサービス接続を実装した。
-* 両App、Blazor TimeRecorder、両Appテスト、本記録を本Gコミットに含めた。ea8cabaと今回のコード・テスト差分でBlazor構成全178件、npm全168件、npm lint/build、.NET非増分ビルド警告0・format・SARIF、diff --check成功。React編集途中の構文エラーは修正後に再検証成功。
-* 実際のGoogle認証と失敗時動作、通常起動での認証サービス接続は未実装・未確認。次は本Gコミットを基準にRefactorし、その後にGoogleへの実接続を進め、実画面でログイン前後のデザインを確認する。
+* 基準は67b47cb、作業ブランチはcodex/google-login-plan。ログイン結果の画面接続はGreenコミット済み、Refactor変更なし。
+* 実Googleログイン接続は両画面でRedを確認後、Green完了。開発者は実装後のコミットと次工程への進行を指示した。Google Identity Servicesの公式ブラウザースクリプト導入は開発者が了承した。Reactの通常起動テストはGIS代役のボタン不在、Blazorのテストは代役にコールバックが登録されないことで意図したRed。通常起動のBlazorサービス登録からBearer送信までは自動テストで未確認。
+* 両画面のGIS接続・起動設定・テスト、README、本記録を本Gコミットに含めた。対象版67b47cbと今回のコード・テスト差分でBlazor構成全179件、npm全169件、npm lint/build、.NET非増分ビルド警告0・format・SARIF、diff --check成功。初回formatは新規C#ファイルの改行で失敗し修正後成功。
+* 実Google認証・実ブラウザー・IDE操作、GIS読み込み失敗や設定不備の表示・再試行、画面離脱後の認証コールバックは未確認。Google WebクライアントIDと許可オリジンは実接続確認時に必要。ログアウトは未実装。
+* 次は本Gコミットを基準にRefactorを行い、実Google設定とログアウトなどを進めてから実画面でデザインを比較する。
