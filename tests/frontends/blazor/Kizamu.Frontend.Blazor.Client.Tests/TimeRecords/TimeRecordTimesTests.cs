@@ -21,8 +21,25 @@ public sealed class TimeRecordTimesTests : IDisposable
         var 時刻要素 = tested.FindAll("time");
 
         時刻要素.Select(it => it.TextContent).Should().Equal("2026/08/01 18:00", "2026/08/01 19:30");
-        時刻要素.Select(it => it.GetAttribute("datetime")).Should().Equal(
-            "2026-08-01T09:00:00.0000000+00:00", "2026-08-01T10:30:00.0000000+00:00");
+        時刻要素.Should().HaveCount(2);
+        時刻要素.Select(it => it.GetAttribute("datetime")).Should().AllSatisfy(it =>
+            it.Should().MatchRegex(@"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$"));
+        DateTimeOffset.TryParse(時刻要素[0].GetAttribute("datetime"), out var 開始日時).Should().BeTrue();
+        DateTimeOffset.TryParse(時刻要素[1].GetAttribute("datetime"), out var 終了日時).Should().BeTrue();
+        開始日時.Should().Be(開始時刻);
+        終了日時.Should().Be(開始時刻.AddMinutes(90));
+    }
+
+    [Fact]
+    public void 小数秒が3桁を超える開始時刻も時刻要素に有効な日時として設定します()
+    {
+        var 開始時刻 = DateTimeOffset.Parse("2026-08-01T09:00:00.1230000Z");
+        var tested = context.Render<TimeRecordTimes>(it => it.Add(it => it.StartedAt, 開始時刻));
+        var 日時属性 = tested.Find("time").GetAttribute("datetime");
+
+        日時属性.Should().MatchRegex(@"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$");
+        DateTimeOffset.TryParse(日時属性, out var 日時).Should().BeTrue();
+        日時.Should().Be(開始時刻);
     }
 
     [Fact]

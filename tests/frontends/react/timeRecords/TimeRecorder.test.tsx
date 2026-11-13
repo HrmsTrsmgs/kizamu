@@ -67,8 +67,8 @@ describe('TimeRecorderView', () => {
 
     screen.getByText('1件').should.toBeInTheDocument()
     const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
-    list.getByText('2026/08/01 18:00').should.toHaveAttribute('datetime', 開始時刻.isoText)
-    list.getByText('2026/08/01 19:30').should.toHaveAttribute('datetime', 終了時刻.isoText)
+    list.getByText('2026/08/01 18:00').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
+    list.getByText('2026/08/01 19:30').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
     list.getByText('作業時間').should.toBeInTheDocument()
     list.getByText('1時間30分').should.toBeInTheDocument()
     screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
@@ -144,7 +144,7 @@ describe('TimeRecorder', () => {
     const endButton = await screen.findByRole('button', { name: '記録を終了' })
     startTimeRecord.should.have.callCount(1)
     should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
-    screen.getByLabelText('開始時刻').should.toHaveAttribute('datetime', 開始時刻.isoText)
+    screen.getByLabelText('開始時刻').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
     screen.getByLabelText('開始時刻').should.toHaveTextContent('2026/08/01 18:00')
     screen.getByRole('listitem').should.toHaveTextContent('2026/08/01 18:00')
 
@@ -154,7 +154,7 @@ describe('TimeRecorder', () => {
     startButton.should.toBeInTheDocument()
     endTimeRecord.should.have.been.calledOnceWith(記録ID)
     should.not.exist(screen.queryByRole('button', { name: '記録を終了' }))
-    screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', 終了時刻.isoText)
+    screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
     screen.getByLabelText('終了時刻').should.toHaveTextContent('2026/08/01 19:30')
     screen.getByText('待機中').should.toBeInTheDocument()
     screen.getAllByText('1時間30分').should.have.lengthOf(2)
