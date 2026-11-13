@@ -7,11 +7,12 @@ import type { TimeRecordService } from './presentation/timeRecordService'
 import './index.css'
 
 type AppProps = {
+  isAuthenticated?: boolean
   health: HealthService
   timeRecords: TimeRecordService
 }
 
-export default function App({ health, timeRecords }: AppProps) {
+export default function App({ isAuthenticated = false, health, timeRecords }: AppProps) {
   const [state, dispatch] = useReducer(projectTabsReducer, initialProjectTabsState)
 
   return (
@@ -20,6 +21,7 @@ export default function App({ health, timeRecords }: AppProps) {
         <h1>Kizamu</h1>
         <p className="app-description">作業時間を記録します。</p>
       </header>
+      {!isAuthenticated ? <button type="button">Googleでログイン</button> : <>
       <section className="project-toolbar" aria-labelledby="projects-title">
         <div className="project-toolbar-heading">
           <h2 id="projects-title">プロジェクト</h2>
@@ -53,6 +55,7 @@ export default function App({ health, timeRecords }: AppProps) {
           </div>
         </div>
       )}
+      </>}
       <footer className="app-footer">
         <HealthStatus health={health} />
       </footer>

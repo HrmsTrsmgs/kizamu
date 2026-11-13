@@ -4,9 +4,18 @@ import { should } from '../../should.mjs'
 import App from '../../../src/frontends/react/src/App'
 import { createTimeRecordServiceStub } from './test/createTimeRecordServiceStub'
 
+describe('未ログインのApp', () => {
+  it('Googleログインを表示し記録画面を表示しません', () => {
+    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+
+    screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
+    should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
+  })
+})
+
 describe('App', () => {
   beforeEach(() => {
-    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+    render(<App isAuthenticated health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
   })
 
   it('追加ボタンを押すとプロジェクト追加ダイアログを表示します', () => {

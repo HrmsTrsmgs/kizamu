@@ -5,6 +5,12 @@
         <h1>Kizamu</h1>
         <p class="app-description">作業時間を記録します。</p>
     </header>
+    @if (!IsAuthenticated)
+    {
+        <button type="button">Googleでログイン</button>
+    }
+    else
+    {
     <section class="project-toolbar" aria-labelledby="projects-title">
         <div class="project-toolbar-heading">
             <h2 id="projects-title">プロジェクト</h2>
@@ -33,7 +39,14 @@
             </div>
         </div>
     }
+    }
     <footer class="app-footer">
         <HealthStatus />
     </footer>
 </main>
+
+@code {
+    /// <summary>記録画面を表示する認証済み状態を取得または設定します。</summary>
+    [Parameter]
+    public bool IsAuthenticated { get; set; }
+}
