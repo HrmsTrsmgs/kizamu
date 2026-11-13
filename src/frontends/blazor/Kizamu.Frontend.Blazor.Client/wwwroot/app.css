@@ -120,7 +120,7 @@ h1 {
 .record-status { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #aab2ae; }
 .record-status.is-active { background: #2c9662; box-shadow: 0 0 0 0.25rem rgb(44 150 98 / 12%); }
 .record-time { display: grid; gap: 0.2rem; min-width: 0; }
-.record-time > span:first-child { color: #7a837f; font-size: 0.7rem; font-weight: 650; }
+.record-time > span:first-child { color: #53615a; font-size: 0.7rem; font-weight: 650; }
 
 .record-time time, .recording-label, .time-record-duration-value {
   overflow: hidden;
