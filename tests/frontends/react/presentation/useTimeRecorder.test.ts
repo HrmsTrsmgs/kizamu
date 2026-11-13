@@ -156,6 +156,22 @@ describe('useTimeRecorder', () => {
     result.current.should.have.property('isBusy', false)
   })
 
+  it('開始失敗後に古い初回一覧が届いても未確認状態と操作の抑止を保ちます', async () => {
+    const 初期一覧の応答 = deferred<(typeof 記録)[]>()
+    getTimeRecords.mockReturnValueOnce(初期一覧の応答.promise).mockRejectedValueOnce(new Error('一覧取得失敗'))
+    startTimeRecord.mockRejectedValueOnce(new Error('開始失敗'))
+    const { result } = renderRecorder()
+
+    await act(async () => { await expect(result.current.startTimeRecord()).rejects.toThrow('一覧取得失敗') })
+    await act(async () => { 初期一覧の応答.resolve([]); await 初期一覧の応答.promise })
+    await act(() => result.current.startTimeRecord())
+    await act(() => result.current.endTimeRecord())
+
+    result.current.should.have.property('isStateUnconfirmed', true)
+    startTimeRecord.should.have.callCount(1)
+    endTimeRecord.should.have.callCount(0)
+  })
+
   it('終了失敗後の一覧再取得にも失敗すると直前の一覧を残して未確認状態になります', async () => {
     const { result } = await 記録中の一覧を読み込む()
     endTimeRecord.mockRejectedValueOnce(new Error('終了失敗'))

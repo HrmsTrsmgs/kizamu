@@ -307,6 +307,26 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task 開始失敗後に古い初回一覧が届いても未確認状態と操作の抑止を保つ()
+    {
+        var 初期一覧の応答 = service.DelayListResponse();
+        var 初期一覧の読み込み = tested.LoadAsync();
+        service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
+        一覧取得を失敗させる(new HttpRequestException());
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync());
+        初期一覧の応答.SetResult([]);
+        await 初期一覧の読み込み;
+        service.StartResponse = null;
+        await tested.StartTimeRecordAsync();
+        await tested.EndTimeRecordAsync();
+
+        tested.IsStateUnconfirmed.Should().BeTrue();
+        service.StartCount.Should().Be(1);
+        service.EndedIds.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task 終了失敗後の一覧再取得にも失敗すると直前の一覧を残して未確認状態になる()
     {
         await tested.StartTimeRecordAsync();
