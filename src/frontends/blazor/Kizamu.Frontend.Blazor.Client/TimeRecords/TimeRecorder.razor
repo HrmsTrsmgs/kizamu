@@ -1,4 +1,4 @@
-@inject ITimeRecorderViewModel ViewModel
+@inject ITimeRecorderViewModel InjectedViewModel
 
 <div class="time-recorder">
     <section class="recorder-panel" aria-labelledby="recorder-title">
@@ -51,6 +51,11 @@
 </div>
 
 @code {
+    ITimeRecorderViewModel ViewModel => AuthenticatedViewModel ?? InjectedViewModel;
+
+    [Parameter]
+    public ITimeRecorderViewModel? AuthenticatedViewModel { get; set; }
+
     [Parameter]
     public Project? SelectedProject { get; set; }
 

@@ -5,9 +5,9 @@
         <h1>Kizamu</h1>
         <p class="app-description">作業時間を記録します。</p>
     </header>
-    @if (!IsAuthenticated)
+    @if (!IsAuthenticated && timeRecorder is null)
     {
-        <button type="button">Googleでログイン</button>
+        <button type="button" @onclick="SignInAsync">Googleでログイン</button>
     }
     else
     {
@@ -24,7 +24,7 @@
                 }
             </div>
         </section>
-        <TimeRecorder SelectedProject="ViewModel.SelectedProject" />
+        <TimeRecorder SelectedProject="ViewModel.SelectedProject" AuthenticatedViewModel="timeRecorder" />
         @if (ViewModel.ShowProjectDialog)
         {
             <div class="project-dialog-overlay">
@@ -46,6 +46,25 @@
 </main>
 
 @code {
+    TimeRecorderViewModel? timeRecorder;
+
+    /// <summary>Google認証を開始する操作を取得または設定します。</summary>
+    [Parameter]
+    public Func<Task<string>>? SignInWithGoogle { get; set; }
+
+    /// <summary>認証トークンを使う記録サービスの生成操作を取得または設定します。</summary>
+    [Parameter]
+    public Func<string, ITimeRecordService>? CreateTimeRecords { get; set; }
+
+    async Task SignInAsync()
+    {
+        if (SignInWithGoogle is not null && CreateTimeRecords is not null)
+        {
+            var token = await SignInWithGoogle();
+            timeRecorder = new(CreateTimeRecords(token));
+        }
+    }
+
     /// <summary>記録画面を表示する認証済み状態を取得または設定します。</summary>
     [Parameter]
     public bool IsAuthenticated { get; set; }

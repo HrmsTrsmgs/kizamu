@@ -1,10 +1,22 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, describe, it } from 'vitest'
+import { beforeEach, describe, it, vi } from 'vitest'
 import { should } from '../../should.mjs'
 import App from '../../../src/frontends/react/src/App'
 import { createTimeRecordServiceStub } from './test/createTimeRecordServiceStub'
 
 describe('未ログインのApp', () => {
+  it('Googleログインに成功すると記録画面を表示し取得したトークンを記録通信へ渡します', async () => {
+    const signInWithGoogle = vi.fn(async () => 'google-id-token')
+    const createTimeRecords = vi.fn(() => createTimeRecordServiceStub())
+    render(<App health={{ checkHealth: async () => true }} signInWithGoogle={signInWithGoogle} createTimeRecords={createTimeRecords} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+
+    ;(await screen.findByRole('button', { name: '記録を開始' })).should.toBeInTheDocument()
+    should.not.exist(screen.queryByRole('button', { name: 'Googleでログイン' }))
+    createTimeRecords.should.have.been.calledWith('google-id-token')
+  })
+
   it('Googleログインを表示し記録画面を表示しません', () => {
     render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
 

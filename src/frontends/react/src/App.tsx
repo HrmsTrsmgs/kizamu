@@ -1,4 +1,4 @@
-import { useReducer } from 'react'
+import { useReducer, useState } from 'react'
 import HealthStatus from './health/HealthStatus'
 import TimeRecorder from './timeRecords/TimeRecorder'
 import { initialProjectTabsState, projectTabsReducer } from './presentation/projectTabsState'
@@ -9,10 +9,21 @@ import './index.css'
 type AppProps = {
   isAuthenticated?: boolean
   health: HealthService
-  timeRecords: TimeRecordService
+  timeRecords?: TimeRecordService
+  signInWithGoogle?: () => Promise<string>
+  createTimeRecords?: (token: string) => TimeRecordService
 }
 
-export default function App({ isAuthenticated = false, health, timeRecords }: AppProps) {
+export default function App({ isAuthenticated = false, health, timeRecords, signInWithGoogle, createTimeRecords }: AppProps) {
+  const [signedInTimeRecords, setSignedInTimeRecords] = useState<TimeRecordService>()
+  const activeTimeRecords = signedInTimeRecords ?? (isAuthenticated ? timeRecords : undefined)
+
+  async function signIn() {
+    if (signInWithGoogle && createTimeRecords) {
+      const token = await signInWithGoogle()
+      setSignedInTimeRecords(createTimeRecords(token))
+    }
+  }
   const [state, dispatch] = useReducer(projectTabsReducer, initialProjectTabsState)
 
   return (
@@ -21,7 +32,7 @@ export default function App({ isAuthenticated = false, health, timeRecords }: Ap
         <h1>Kizamu</h1>
         <p className="app-description">作業時間を記録します。</p>
       </header>
-      {!isAuthenticated ? <button type="button">Googleでログイン</button> : <>
+      {!activeTimeRecords ? <button type="button" onClick={signIn}>Googleでログイン</button> : <>
         <section className="project-toolbar" aria-labelledby="projects-title">
           <div className="project-toolbar-heading">
             <h2 id="projects-title">プロジェクト</h2>
@@ -41,7 +52,7 @@ export default function App({ isAuthenticated = false, health, timeRecords }: Ap
             ))}
           </div>
         </section>
-        <TimeRecorder timeRecords={timeRecords} selectedProject={state.selectedProject} />
+        <TimeRecorder timeRecords={activeTimeRecords} selectedProject={state.selectedProject} />
         {state.showProjectDialog && (
           <div className="project-dialog-overlay">
             <div className="project-dialog" role="dialog" aria-labelledby="project-dialog-title">

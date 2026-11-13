@@ -34,6 +34,25 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
+    public void Googleログインに成功すると記録画面を表示し取得したトークンを記録通信へ渡します()
+    {
+        string? 記録通信に渡されたトークン = null;
+        var tested = context.Render<Client.App>(parameters => parameters
+            .Add(it => it.SignInWithGoogle, () => Task.FromResult("google-id-token"))
+            .Add(it => it.CreateTimeRecords, token =>
+            {
+                記録通信に渡されたトークン = token;
+                return new StubTimeRecordService(一つ目の記録, 一つ目の記録);
+            }));
+
+        tested.FindAll("button").Single(it => it.TextContent == "Googleでログイン").Click();
+
+        tested.FindAll(".recorder-panel button").Select(it => it.TextContent).Should().Contain("記録を開始");
+        tested.FindAll("button").Select(it => it.TextContent).Should().NotContain("Googleでログイン");
+        記録通信に渡されたトークン.Should().Be("google-id-token");
+    }
+
+    [Fact]
     public void 全体の画面にアプリ名と記録操作と接続状態を表示します()
     {
         var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
