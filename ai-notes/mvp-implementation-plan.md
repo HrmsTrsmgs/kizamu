@@ -512,7 +512,7 @@ MVPではモックテストを主な自動検証とし、実Clockify確認は公
 
 ## 現在の次作業
 
-* 4組み合わせのAzure公開準備。作業ブランチは codex/portfolio-publish、基準HEADは 6da20b0。Reactの本番API中継のGreen差分は開発者がコミットを了承。
+* 4組み合わせのAzure公開準備。作業ブランチは codex/portfolio-publish、基準HEADは 580def0。Reactの本番API中継をGreenコミット済み。
 * 対象はReactの起動スクリプト、API中継サーバーとテスト。Redはstart未実装で失敗を確認。Windowsの子プロセス後始末を修正後、npm全153テスト、lint、buildが成功。レビュー指摘に応じてテストの起動・URL待機・後始末を整理し、コミット前にWindowsでnpm全153テスト・lint・buildが成功。Linuxでの後始末は未確認。
 * 静的成果物の配信とNode APIのコンテナ向け待受、各Dockerイメージ・Azureデプロイは未着手。認証・利用者分離・永続化は未実装。既存Blazor＋ASP.NET Coreの共有デモだけが公開済み。
-* 次は本番API中継のRefactorを検討し、その後に静的成果物の配信を進める。既存Docker作業ツリーのAzure公開状況記録は未コミットで保持している。
+* 580def0のRefactorを検討し、コード変更なし。中継実装の状態と先行ブランチで確認済みの配置方針を文書へ反映し、開発者がコミットを了承。次は静的成果物の配信を進める。既存Docker作業ツリーのAzure公開状況記録は未コミットで保持している。
