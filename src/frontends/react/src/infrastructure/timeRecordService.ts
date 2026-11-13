@@ -9,25 +9,32 @@ type TimeRecordResponse = {
   endedAt: string | null
 }
 
-export const timeRecordService: TimeRecordService = {
-  async getTimeRecords() {
-    const response = await fetch('/api/time-records')
-    if (!response.ok) {
-      throw new Error()
-    }
-    const records: TimeRecordResponse[] = await response.json()
-    return records.map(toTimeRecord)
-  },
-  startTimeRecord() {
-    return postTimeRecord('/api/time-records/start')
-  },
-  endTimeRecord(id) {
-    return postTimeRecord(`/api/time-records/${id}/end`)
-  },
+export const timeRecordService = createTimeRecordService()
+
+export function createTimeRecordService(token?: string): TimeRecordService {
+  const headers = token === undefined ? undefined : { Authorization: `Bearer ${token}` }
+  return {
+    async getTimeRecords() {
+      const response = headers === undefined
+        ? await fetch('/api/time-records')
+        : await fetch('/api/time-records', { headers })
+      if (!response.ok) {
+        throw new Error()
+      }
+      const records: TimeRecordResponse[] = await response.json()
+      return records.map(toTimeRecord)
+    },
+    startTimeRecord() {
+      return postTimeRecord('/api/time-records/start', headers)
+    },
+    endTimeRecord(id) {
+      return postTimeRecord(`/api/time-records/${id}/end`, headers)
+    },
+  }
 }
 
-async function postTimeRecord(path: string): Promise<TimeRecordPresentation> {
-  const response = await fetch(path, { method: 'POST' })
+async function postTimeRecord(path: string, headers: Record<string, string> | undefined): Promise<TimeRecordPresentation> {
+  const response = await fetch(path, headers === undefined ? { method: 'POST' } : { method: 'POST', headers })
   if (!response.ok) {
     throw new Error()
   }
