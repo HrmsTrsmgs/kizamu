@@ -7,7 +7,8 @@ import type { TimeRecordState } from '../../../src/backends/node/application/tim
 const 開始時刻 = Temporal.Instant.from('2026-08-01T09:00:00Z')
 const 終了時刻 = Temporal.Instant.from('2026-08-01T10:30:00Z')
 
-function createState(records: TimeRecord[] = []): TimeRecordState {
+function createState(): TimeRecordState {
+  const records: TimeRecord[] = []
   return {
     add: (record) => { records.push(record) },
     find: (id) => records.find((record) => record.id === id),
@@ -19,17 +20,16 @@ function createState(records: TimeRecord[] = []): TimeRecordState {
   }
 }
 
-let records: TimeRecord[]
-let id: number
+let state: TimeRecordState
 let now: Temporal.Instant
 let tested: TimeRecords
 
 beforeEach(() => {
-  records = []
-  id = 0
+  state = createState()
+  let nextId = 1
   now = 開始時刻
-  tested = new TimeRecords(createState(records), {
-    newId: () => String(++id), now: () => now,
+  tested = new TimeRecords(state, {
+    newId: () => String(nextId++), now: () => now,
   })
 })
 
@@ -57,8 +57,8 @@ test('一件目を指定して終了すると二件目は変化しません', ()
 test('終了済みの一件目を再度終了すると終了時刻が更新され二件目は変化しません', () => {
   const 再終了時刻 = Temporal.Instant.from('2026-08-01T11:00:00Z')
   const 二件目 = new TimeRecord('2', 開始時刻, null)
-  records.push(new TimeRecord('1', 開始時刻, 終了時刻), 二件目)
-  id = 2
+  state.add(new TimeRecord('1', 開始時刻, 終了時刻))
+  state.add(二件目)
   now = 再終了時刻
   const 再終了後の一件目 = new TimeRecord('1', 開始時刻, 再終了時刻)
 

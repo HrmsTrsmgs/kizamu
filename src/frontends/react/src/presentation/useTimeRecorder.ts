@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from 'react'
 import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from './timeRecordService'
 import type { TimeRecordPresentation } from './timeRecordPresentation'
+import { PendingTimeRecordLoads } from './pendingTimeRecordLoads'
 import { initialTimeRecorderState, timeRecorderReducer, type TimeRecorderAction } from './timeRecorderState'
 import { getTimeRecorderControls, initialTimeRecorderOperationState, timeRecorderOperationReducer } from './timeRecorderOperationState'
 
@@ -9,20 +10,19 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
   const [state, dispatch] = useReducer(timeRecorderReducer, initialTimeRecorderState)
   const [operationState, dispatchOperation] = useReducer(timeRecorderOperationReducer, initialTimeRecorderOperationState)
   const operationPending = useRef(false)
-  const pendingLoads = useRef<TimeRecordPresentation[][]>([])
+  const pendingLoads = useRef(new PendingTimeRecordLoads())
   const loadVersion = useRef(0)
 
   const getTimeRecords = useCallback(async () => {
     const version = loadVersion.current
-    const updatedRecords: TimeRecordPresentation[] = []
-    pendingLoads.current.push(updatedRecords)
+    const load = pendingLoads.current.start()
     try {
       const records = await timeRecords.getTimeRecords()
       if (version !== loadVersion.current) return
-      dispatch({ type: 'recordsLoaded', records, updatedRecords })
+      dispatch({ type: 'recordsLoaded', records, updatedRecords: load.updatedRecords })
       dispatchOperation('recordsConfirmed')
     } finally {
-      pendingLoads.current = pendingLoads.current.filter(pending => pending !== updatedRecords)
+      load.finish()
     }
   }, [timeRecords])
 
@@ -66,7 +66,7 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     return runOperation(async () => {
       try {
         const record = await request()
-        pendingLoads.current.forEach(pending => pending.push(record))
+        pendingLoads.current.recordUpdate(record)
         dispatch(toAction(record))
       } catch (error) {
         loadVersion.current++

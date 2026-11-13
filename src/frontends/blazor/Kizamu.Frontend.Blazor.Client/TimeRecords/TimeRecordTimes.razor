@@ -41,19 +41,14 @@
     [Parameter]
     public bool Labelled { get; set; }
 
-    ITimer? timer;
+    TimeRecordRefreshTimer? refreshTimer;
 
     protected override void OnParametersSet()
     {
-        timer?.Dispose();
-        timer = null;
-        if (EndedAt is null)
-        {
-            timer = Clock.CreateTimer(_ => InvokeAsync(StateHasChanged), null,
-                TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-        }
+        refreshTimer ??= new(Clock, () => InvokeAsync(StateHasChanged));
+        refreshTimer.ScheduleRefresh(EndedAt);
     }
 
     /// <summary>画面から取り除かれた際に、経過時間表示用のタイマーを解放します。</summary>
-    public void Dispose() => timer?.Dispose();
+    public void Dispose() => refreshTimer?.Dispose();
 }

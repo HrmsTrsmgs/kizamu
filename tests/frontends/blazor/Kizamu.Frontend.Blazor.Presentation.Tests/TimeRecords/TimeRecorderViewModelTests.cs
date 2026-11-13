@@ -126,7 +126,7 @@ public sealed class TimeRecorderViewModelTests
     public async Task プロジェクトから未指定へ切り替えて戻ると元の記録中状態を保持する()
     {
         var プロジェクトA = new Project("プロジェクトA");
-        await 未指定とプロジェクトの記録を開始する(tested, service, プロジェクトA);
+        await 未指定とプロジェクトの記録を開始する(プロジェクトA);
         tested.SelectProject(null);
 
         tested.SelectProject(プロジェクトA);
@@ -160,7 +160,8 @@ public sealed class TimeRecorderViewModelTests
         var プロジェクトA = new Project("プロジェクトA");
         var (終了するプロジェクト, 終了する記録ID) =
             プロジェクトを終了する ? (プロジェクトA, 別の記録ID) : ((Project?)null, 記録ID);
-        var (tested, service) = await 未指定対象とプロジェクトで記録中の状態を用意する(プロジェクトA, 終了する記録ID);
+        await 未指定とプロジェクトの記録を開始する(プロジェクトA);
+        終了時の応答を用意する(終了する記録ID);
         tested.SelectProject(終了するプロジェクト);
 
         await tested.EndTimeRecordAsync();
@@ -179,7 +180,8 @@ public sealed class TimeRecorderViewModelTests
             プロジェクトを終了する
                 ? (プロジェクトA, 別の記録ID, (Project?)null, 記録ID)
                 : ((Project?)null, 記録ID, プロジェクトA, 別の記録ID);
-        var (tested, _) = await 未指定対象とプロジェクトで記録中の状態を用意する(プロジェクトA, 終了する記録ID);
+        await 未指定とプロジェクトの記録を開始する(プロジェクトA);
+        終了時の応答を用意する(終了する記録ID);
         tested.SelectProject(終了するプロジェクト);
 
         await tested.EndTimeRecordAsync();
@@ -623,8 +625,7 @@ public sealed class TimeRecorderViewModelTests
         return プロジェクトA;
     }
 
-    static async Task 未指定とプロジェクトの記録を開始する(
-        TimeRecorderViewModel tested, StubTimeRecordService service, Project project)
+    async Task 未指定とプロジェクトの記録を開始する(Project project)
     {
         tested.SelectProject(null);
         await tested.StartTimeRecordAsync();
@@ -662,13 +663,6 @@ public sealed class TimeRecorderViewModelTests
         await tested.StartTimeRecordAsync();
     }
 
-    static async Task<(TimeRecorderViewModel tested, StubTimeRecordService service)> 未指定対象とプロジェクトで記録中の状態を用意する(
-        Project プロジェクト, Guid 終了する記録ID)
-    {
-        var service = new StubTimeRecordService(
-            new(記録ID, 開始時刻, null), new(終了する記録ID, 開始時刻, 終了時刻));
-        var tested = new TimeRecorderViewModel(service);
-        await 未指定とプロジェクトの記録を開始する(tested, service, プロジェクト);
-        return (tested, service);
-    }
+    void 終了時の応答を用意する(Guid id) =>
+        service.EndResponse = Task.FromResult<TimeRecord>(new(id, 開始時刻, 終了時刻));
 }
