@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, it } from 'vitest'
 import { should } from '../../should.mjs'
 import App from '../../../src/frontends/react/src/App'
@@ -19,10 +19,13 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: '追加' }))
     const dialog = screen.getByRole('dialog', { name: 'プロジェクトを追加' })
     const projectName = within(dialog).getByRole('textbox', { name: 'プロジェクト名' })
-    fireEvent.change(projectName, { target: { value: 'プロジェクトA' } })
-    projectName.should.toHaveValue('プロジェクトA')
+    fireEvent.change(projectName, { target: { value: '入力途中' } })
 
-    fireEvent.click(within(dialog).getByRole('button', { name: '登録' }))
+    act(() => {
+      fireEvent.change(projectName, { target: { value: 'プロジェクトA' } })
+      projectName.should.toHaveValue('プロジェクトA')
+      fireEvent.click(within(dialog).getByRole('button', { name: '登録' }))
+    })
 
     screen.getByRole('tab', { name: 'プロジェクトA' }).should.toBeInTheDocument()
     should.not.exist(screen.queryByRole('dialog', { name: 'プロジェクトを追加' }))

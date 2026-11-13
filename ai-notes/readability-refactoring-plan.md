@@ -36,6 +36,52 @@
 
 対象一覧と完了時の作業版を照合し、すべての対象ファイルに最終行までの精査結果があることを確認する。各変更で従来の振る舞い、テスト間の独立性、非同期処理の順序、リソースの破棄が保たれ、関連する検証が通っていることを確かめる。画面から移した状態仕様は、元の条件と期待結果を内側の直接テストで保証できたことを確認してから、重複する画面テストを整理する。保留事項と既存のSkipは理由を記録する。
 
+## 第2回の精査（2026-11-12）
+
+基準はPR #21の統合後の `main`（`23b4932`）、最終コードは `b1dee7c`。基準版の176ファイルを一行ずつ再読した。既存16ファイルを変更し、4ファイルを追加した。変更・追加した20ファイルは最終版を再読し、残る160ファイルは基準と同じ内容であることをGitで照合した。
+
+| 範囲 | 開始時 | 最終版 | 精査した責務と維持の理由 |
+| --- | ---: | ---: | --- |
+| Blazor | 47 | 49 | 画面に残すボタン・通知・時刻属性の接続と、ViewModelで検証する状態を照合した。HTTPの変換、配信、プロキシはそれぞれの入口で確認する。 |
+| React | 48 | 50 | 入力・表示の接続、通信の待機と失敗、Reducerの状態遷移を区別した。実際のサービス応答や選択の順序を必要とするケースはフックで検証する。 |
+| ASP.NET Core | 32 | 32 | HTTP、開始・終了操作、保存状態が返す一覧の参照と列挙の契約を照合した。実際のルートと応答はAPIテストに残した。 |
+| Node | 21 | 21 | HTTPの応答、記録を置き換える順序、サーバーの起動と解放を照合した。個々の契約を観測できるテストを維持した。 |
+| .NET Domain | 7 | 7 | 生成・復元・終了はDomainの公開操作で追える。終了が同じ記録を更新することと、依存先の検査を維持した。 |
+| TypeScript Domain | 16 | 16 | 不変な記録の生成・復元・再終了、日時点からの期間計算、依存方向を照合した。復元時の各値は個別に検証する。 |
+| 共通テスト補助 | 2 | 2 | xUnitのキャンセル取得とVitestのshould登録は各テスト基盤に固有の準備としてまとまっている。 |
+| 起動スクリプト | 3 | 3 | 待機を共用する3本を通読した。BlazorのプロセスとReactの子プロセスでは停止方法が異なり、各入口で起動失敗時の解放順を追える。 |
+
+### リファクタリングとコミット
+
+| コミット | 読みやすくした箇所 |
+| --- | --- |
+| `fabb8f9` | Reactの競合テストで、最初の要求・重複操作・応答・再試行の順序を本文に出し、共通モックの二重受け取りを解消した。 |
+| `f5e8a7f` | プロジェクトの入力名と登録を同じReducerで扱う。入力直後のクリックで最後に入力した名前がタブに現れることを変更前後で確認した。 |
+| `d2b9f4a` | Blazorの再描画タイマーを分離した。再設定、記録終了、破棄は時計を進めて直接検証し、表示の分境界と終了後の再描画停止はRazorとの接続でも確認する。 |
+| `66af17d` | Nodeの再終了テストでは、対象記録ともう一件を保存契約の `add` で用意する。採番や内部配列の管理を本文から取り除いた。 |
+| `9ee862e` | 開始・終了・再終了で返す `TimeRecord` を期待するインスタンスと厳密比較する。元の記録の値と参照、復元コンストラクターに渡した各値は個別に照合する。 |
+| `a7991a3` | ASP.NET Coreの一覧APIテストで、終了済み記録を作る通信と成功の確認を準備にまとめた。開始・終了時刻、一覧GET、期待するJSON配列が本文で読める。 |
+| `e8613af` | 終了操作テストで一件を開始して保存する手順を共通化した。どの記録を再終了し、どの記録が変化しないかを本文に残した。 |
+| `3a0ed83` | Blazorのプロジェクト別の終了テストで、コンストラクターが用意したViewModelとサービスを使う。各ケースで変わる終了応答だけを指定する。 |
+| `d85b85e` | Blazorの通信テストでJSON応答の生成をテスト用HTTPハンドラーに集約した。要求ごとに新しい応答を返し、各テストにはステータスと本文の期待値を残す。 |
+| `2fc8aa7` | Reactで、一覧の取得開始から終了までに受け取った更新を要求ごとに保持する処理を分離した。重なる二つの取得と片方の終了後を直接検証し、失敗後に別の応答が届く順序はフックでも確認する。 |
+| `b1dee7c` | 再開始時に前回の記録を残して終了時刻を消す仕様をReducerで直接確認する。別プロジェクトを表示中に開始応答が届くときの状態と、実際の通信・選択順の接続をそれぞれ検証する。 |
+
+### 第2回で変更・追加したファイル
+
+* **Blazor**　[TimeRecordTimes.razor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecordTimes.razor)、[TimeRecordRefreshTimer.cs](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecordRefreshTimer.cs)、[TimeRecordRefreshTimerTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecordRefreshTimerTests.cs)、[HealthApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/Health/HealthApiTests.cs)、[TimeRecordApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecorderViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs)、[TestHttpMessageHandler.cs](../tests/frontends/blazor/TestSupport/TestHttpMessageHandler.cs)
+* **React**　[App.tsx](../src/frontends/react/src/App.tsx)、[pendingTimeRecordLoads.ts](../src/frontends/react/src/presentation/pendingTimeRecordLoads.ts)、[projectTabsState.ts](../src/frontends/react/src/presentation/projectTabsState.ts)、[useTimeRecorder.ts](../src/frontends/react/src/presentation/useTimeRecorder.ts)、[App.test.tsx](../tests/frontends/react/App.test.tsx)、[pendingTimeRecordLoads.test.ts](../tests/frontends/react/presentation/pendingTimeRecordLoads.test.ts)、[projectTabsState.test.ts](../tests/frontends/react/presentation/projectTabsState.test.ts)、[timeRecorderState.test.ts](../tests/frontends/react/presentation/timeRecorderState.test.ts)、[useTimeRecorder.test.ts](../tests/frontends/react/presentation/useTimeRecorder.test.ts)
+* **ASP.NET Core**　[TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs)、[TimeRecordEndOperationTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs)
+* **Node**　[timeRecords.test.ts](../tests/backends/node/timeRecords.test.ts)
+* **TypeScript Domain**　[timeRecord.test.ts](../tests/domains/typescript/timeRecord.test.ts)
+
+### 最終検証
+
+* .NETは `Kizamu.Blazor.slnx` の16プロジェクトの非増分ビルド、全160テスト、ソリューション全体のformat検査が成功した。ビルドの警告・エラーと16プロジェクトのSARIF診断はいずれも0件。
+* TypeScriptはルートの `npm run lint`、`npm test`、`npm run build` が成功した。Domain 13件、React 115件、Node 23件の計151件。両技術とも失敗・スキップは0件。
+* ChromeでReact＋Node、Blazor＋ASP.NET Coreを起動し、接続表示、追加のキャンセル、入力したプロジェクトの登録・選択、記録開始・終了を確認した。両画面とも操作欄・一覧の開始時刻と終了時刻がAPIの応答に一致した。
+* 一覧取得が重なる場合は従来の応答順を維持した。古い初回応答で未確認状態が解除される既知の制約は[README](../README.md)に記載されている。
+
 ## 精査記録
 
 2026-11-12に完了。開始版 `312279e` の `src/`・`tests/`・`scripts/` にあった166ファイルを先頭から最終行まで精査した。最終コード版は `859955a`。追加12件、削除2件をGitの一覧と突き合わせ、最終版176ファイルの判断を以下に記す。変更・新規ファイルは最終版を再読し、維持したファイルは開始時と内容が一致することを照合した。

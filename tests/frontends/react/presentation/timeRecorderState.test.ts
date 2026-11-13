@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { Project } from 'kizamu-domain-typescript'
 import { describe, it } from 'vitest'
 import {
@@ -196,6 +197,49 @@ describe('timeRecorderReducer', () => {
       startedAt: 開始時刻,
       endedAt: null,
     })
+  })
+
+  it('再び開始すると前回の記録を残して終了時刻を消去します', () => {
+    const 次の開始時刻 = timestamp('2026-08-01T11:00:00Z')
+    const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
+    const 次の記録 = presentedRecord(次の記録ID, 次の開始時刻)
+    const 前回を終了した状態 = {
+      ...initialTimeRecorderState,
+      records: [終了済み記録],
+      startedAt: 開始時刻,
+      endedAt: 終了時刻,
+    }
+
+    const state = timeRecorderReducer(前回を終了した状態, { type: 'recordStarted', record: 次の記録 })
+
+    state.should.toStrictEqual({
+      records: [終了済み記録, 次の記録],
+      timeRecordId: 次の記録ID,
+      startedAt: 次の開始時刻,
+      endedAt: null,
+    })
+  })
+
+  it('未指定で開始した応答を別のプロジェクトで受け取ると、その表示時刻と終了対象を保ちます', () => {
+    const 表示中の状態 = {
+      ...initialTimeRecorderState,
+      selectedProject: new Project('プロジェクトA'),
+      records: [終了済み記録],
+      startedAt: 開始時刻,
+      endedAt: 終了時刻,
+    }
+    const 未指定の記録 = presentedRecord('未指定の記録', timestamp('2026-08-01T11:00:00Z'))
+
+    const state = timeRecorderReducer(表示中の状態, { type: 'recordStarted', project: undefined, record: 未指定の記録 })
+
+    state.records.should.toStrictEqual([終了済み記録, 未指定の記録])
+    state.should.have.property('selectedProject', 表示中の状態.selectedProject)
+    state.should.have.property('timeRecordId', null)
+    state.should.have.property('startedAt', 開始時刻)
+    state.should.have.property('endedAt', 終了時刻)
+
+    const 未指定の状態 = timeRecorderReducer(state, { type: 'projectSelected', project: undefined })
+    未指定の状態.should.have.property('timeRecordId', '未指定の記録')
   })
 
   it('記録を終了すると一覧を更新して現在の記録を解除し終了時刻を保持します', () => {

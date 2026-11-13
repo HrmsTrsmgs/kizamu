@@ -48,7 +48,7 @@ export default function App({ health, timeRecords }: AppProps) {
             <input id="project-name" value={state.projectName} onChange={event => dispatch({ type: 'projectNameChanged', name: event.target.value })} />
             <div className="project-dialog-actions">
               <button className="project-cancel-button" type="button" onClick={() => dispatch({ type: 'dialogCancelled' })}>キャンセル</button>
-              <button className="project-register-button" type="button" onClick={() => dispatch({ type: 'projectRegistered', name: state.projectName })}>登録</button>
+              <button className="project-register-button" type="button" onClick={() => dispatch({ type: 'projectRegistered' })}>登録</button>
             </div>
           </div>
         </div>
