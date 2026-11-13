@@ -31,15 +31,16 @@ public sealed class TimeRecordTimesTests : IDisposable
     }
 
     [Fact]
-    public void 小数秒が3桁を超える開始時刻も時刻要素に有効な日時として設定します()
+    public void 小数秒が3桁を超える日時は秒や日付を繰り上げずに切り捨てます()
     {
-        var 開始時刻 = DateTimeOffset.Parse("2026-08-01T09:00:00.1230000Z");
-        var tested = context.Render<TimeRecordTimes>(it => it.Add(it => it.StartedAt, 開始時刻));
-        var 日時属性 = tested.Find("time").GetAttribute("datetime");
+        var 開始時刻 = DateTimeOffset.Parse("2026-08-01T23:59:59.9999999+09:00");
+        var 終了時刻 = DateTimeOffset.Parse("2026-08-02T00:00:59.9999999+09:00");
+        var tested = context.Render<TimeRecordTimes>(it => it
+            .Add(it => it.StartedAt, 開始時刻)
+            .Add(it => it.EndedAt, 終了時刻));
 
-        日時属性.Should().MatchRegex(@"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$");
-        DateTimeOffset.TryParse(日時属性, out var 日時).Should().BeTrue();
-        日時.Should().Be(開始時刻);
+        tested.FindAll("time").Select(it => it.GetAttribute("datetime")).Should().Equal(
+            "2026-08-01T23:59:59.999+09:00", "2026-08-02T00:00:59.999+09:00");
     }
 
     [Fact]
