@@ -10,6 +10,7 @@ import TimeRecorder, { TimeRecorderView } from '../../../../src/frontends/react/
 import { initialTimeRecorderState } from '../../../../src/frontends/react/src/presentation/timeRecorderState'
 
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
+const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
 const 開始時刻 = timestamp('2026-08-01T09:00:00Z')
 const 終了時刻 = timestamp('2026-08-01T10:30:00Z')
 const 記録 = presentedRecord(記録ID, 開始時刻)
@@ -162,6 +163,7 @@ describe('TimeRecorder', () => {
 
   it('再開始すると直前の終了時刻を消します', async () => {
     await 開始と終了を操作した画面を用意する()
+    startTimeRecord.mockResolvedValueOnce(presentedRecord(次の記録ID, 終了時刻))
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
     await screen.findByRole('button', { name: '記録を終了' })
