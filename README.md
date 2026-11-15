@@ -133,7 +133,7 @@ Blazorの記録画面の状態と操作は `Kizamu.Frontend.Blazor.Presentation`
 
 同じ業務ロジックが必要な場合、ASP.NET CoreとBlazorは.NET版、NodeとReactはTypeScript版のDomainを共用できます。異なる言語間で同じライブラリの直接参照は前提にせず、HTTP API契約で相互運用します。Domainが通信用DTOへ依存する構成にはしません。
 
-フロントエンドはブラウザーだけを意味しません。BlazorのServerは静的ファイル配信と `/api/...` の中継を担当し、記録処理は持ちません。業務APIへのプロジェクト参照はせず、接続先URLだけを設定します。SSR・Autoは採用しておらず、UIは引き続きWebAssemblyとしてブラウザー内で実行します。React公開時にもフロント側の配信・API中継サーバーを置く方針です。API中継は実装済みで、静的成果物の配信は未実装です。開発時は既存のVite proxyが中継します。
+フロントエンドはブラウザーだけを意味しません。BlazorのServerは静的ファイル配信と `/api/...` の中継を担当し、記録処理は持ちません。業務APIへのプロジェクト参照はせず、接続先URLだけを設定します。SSR・Autoは採用しておらず、UIは引き続きWebAssemblyとしてブラウザー内で実行します。React公開時にもフロント側の配信・API中継サーバーを置く方針です。公開用サーバーのAPI中継と、serve-handlerによる静的ファイルの配信を実装しています。開発時は既存のVite proxyが中継します。
 
 作業記録の開始・終了APIは、`Sec-Fetch-Site: same-origin` の要求だけを受け付けます。ASP.NET CoreとNodeのHTTP境界で検証し、情報の欠落や他の値では、記録を変更する前に `403 Forbidden` を返します。一覧とhealthのGETには、この制約を設けません。対応ブラウザーが標準情報を自動付与するため、BlazorやReactで独自ヘッダーを追加する必要はありません。
 

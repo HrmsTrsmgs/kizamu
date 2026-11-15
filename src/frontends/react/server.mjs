@@ -1,10 +1,13 @@
 import { createServer, request as httpRequest } from 'node:http'
 import { request as httpsRequest } from 'node:https'
+import { fileURLToPath } from 'node:url'
+import serveHandler from 'serve-handler'
 
 const apiBaseUrl = new URL(process.env.API_BASE_URL)
-const server = createServer((request, response) => {
+const distPath = fileURLToPath(new URL('./dist/', import.meta.url))
+const server = createServer(async (request, response) => {
   if (!request.url?.startsWith('/api/')) {
-    response.writeHead(404).end()
+    await serveHandler(request, response, { public: distPath, directoryListing: false, cleanUrls: false, rewrites: [{ source: '/', destination: '/index.html' }] })
     return
   }
 

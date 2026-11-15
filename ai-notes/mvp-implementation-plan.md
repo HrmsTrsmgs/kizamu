@@ -512,7 +512,7 @@ MVPではモックテストを主な自動検証とし、実Clockify確認は公
 
 ## 現在の次作業
 
-* 4組み合わせのAzure公開準備。作業ブランチは codex/portfolio-publish、基準HEADは 580def0。Reactの本番API中継をGreenコミット済み。
-* 対象はReactの起動スクリプト、API中継サーバーとテスト。Redはstart未実装で失敗を確認。Windowsの子プロセス後始末を修正後、npm全153テスト、lint、buildが成功。レビュー指摘に応じてテストの起動・URL待機・後始末を整理し、コミット前にWindowsでnpm全153テスト・lint・buildが成功。Linuxでの後始末は未確認。
-* 静的成果物の配信とNode APIのコンテナ向け待受、各Dockerイメージ・Azureデプロイは未着手。認証・利用者分離・永続化は未実装。既存Blazor＋ASP.NET Coreの共有デモだけが公開済み。
-* 580def0のRefactorを検討し、コード変更なし。中継実装の状態と先行ブランチで確認済みの配置方針を文書へ反映し、開発者がコミットを了承。次は静的成果物の配信を進める。既存Docker作業ツリーのAzure公開状況記録は未コミットで保持している。
+* 4組み合わせのAzure公開準備。作業ブランチは codex/portfolio-publish。React公開用サーバーの静的配信を実装し、開発者がコミットを了承。
+* 開発者の了承を得て serve-handler 6.1.8 を追加。HTML・JavaScript・CSS・PNGとクエリ付きトップページの配信、既存API中継のテストが成功。Windowsでnpm全154テスト、lint、build、diff --checkが成功。ReactとNode APIの実ブラウザーでの画面表示と記録開始・終了も確認。開発者の指摘を受け、静的配信のテストを対象ごとに分け、同じ変更単位で扱う。整理後はnpm全158テスト、lint、buildが成功。全体テストで起動待ち・共通準備のタイムアウトが各1回発生し、待機上限を調整して再実行した。Linuxでの実行は未確認。
+* npm install時に脆弱性18件（moderate 12、high 6）が報告された。npm audit --omit=dev は0件。Node APIのコンテナ向け待受、各Dockerイメージと残り3組み合わせのAzureデプロイは未着手。認証・利用者分離・永続化は未実装。
+* 次はNode APIのコンテナ向け待受とReact・NodeのDockerイメージを確認し、残りの組み合わせのAzure公開準備を進める。既存Docker作業ツリーのAzure公開状況記録は未コミットで保持している。

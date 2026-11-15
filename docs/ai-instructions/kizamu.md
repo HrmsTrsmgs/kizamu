@@ -63,7 +63,7 @@ Kizamuを第三者がビルド、テスト、利用、レビューできるア�
 * 同じ業務ロジックが必要なら、ブラウザーで動作する.NETのDomainをASP.NET CoreとBlazorで、実行環境に依存しないTypeScriptのDomainをNodeとReactで共用してよい。ApplicationやInfrastructureの共用、全利用側への同じ内部モデルの強制、異なる言語間での直接ライブラリ参照は前提にしない。Domainを通信用DTOへ依存させない。
 * .NETの実装固有プロジェクト名と名前空間は `Kizamu.<所属>.<技術>.<役割>` に揃える。ASP.NET Coreは `Kizamu.Backend.AspNetCore.Api`、`Application`、`Infrastructure`、Blazorは `Kizamu.Frontend.Blazor.Client`、`Server`、`Presentation`、`Infrastructure` とする。ClientとServerは同じUI実装内の対として扱い、業務APIをServerと呼んで混同しない。共用Domainは `Kizamu.Domain`、将来の通信用DTOは `Kizamu.Api.Contracts` として別の所属にする。
 * npmパッケージ名は `kizamu-frontend-react`、`kizamu-backend-node`、将来の `kizamu-domain-typescript`、`kizamu-api-typescript` のように小文字のハイフン区切りにする。テスト名は.NETの `.Tests`、npmの `-tests` とし、`.esproj` 名もnpmパッケージ名に揃える。予定の名前を決めただけで空プロジェクトを作らない。
-* フロントエンドはブラウザーだけを意味しない。画面配信・API中継サーバーはフロント側へ置き、業務APIとプロジェクトを分けて、独立した配置と近接した配置のどちらも可能にする。現在は別プロセスで起動する。Blazor ServerはYARPで `/api/...` を中継し、バックエンド実装を参照せず接続先URLだけを設定する。Reactも同じ責務分担とし、開発時はVite proxyを使う。公開用サーバーのAPI中継は実装済み、静的成果物の配信は未実装として扱う。SSR・Autoへの変更はこの分離とは別に判断する。
+* フロントエンドはブラウザーだけを意味しない。画面配信・API中継サーバーはフロント側へ置き、業務APIとプロジェクトを分けて、独立した配置と近接した配置のどちらも可能にする。現在は別プロセスで起動する。Blazor ServerはYARPで `/api/...` を中継し、バックエンド実装を参照せず接続先URLだけを設定する。Reactも同じ責務分担とし、開発時はVite proxyを使う。公開用サーバーのAPI中継と、serve-handlerによる静的ファイルの配信は実装済みとして扱う。SSR・Autoへの変更はこの分離とは別に判断する。
 * npmの製品・テストパッケージはルートのworkspacesで管理し、依存関係のインストールとlockfile更新はルートで行う。個別の `.esproj` で自動 `npm install` を実行してlockfileを分散させない。
 * リポジトリの物理配置、Visual Studioのソリューション表示、公開時の組み合わせを別の関心事として扱う。
 * 日常の開発、差分レビュー、デバッグ、テスト確認はVisual Studioを基本とする。ReactやNodeを含め、サーバーとクライアントの技術や組み合わせによってIDEを使い分けることを前提にしない。
