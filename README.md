@@ -219,6 +219,24 @@ dotnet run --project src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api --no-
 
 正常性確認は `http://localhost:5213/api/health`、記録一覧は `http://localhost:5213/api/time-records` です。
 
+## React・Node版のDockerイメージをビルド
+
+PowerShell 7とDocker Engineを使用します。WindowsではWSLのUbuntu内のDockerを、Linuxでは実行ユーザーが使えるDockerを利用します。リポジトリルートから実行してください。
+
+```powershell
+./scripts/Build-ReactNodeImages.ps1
+```
+
+`kizamu-node-api:local` と `kizamu-react:local` が作成されます。同じタグが既にある場合は新しいイメージを指すようになります。WindowsでUbuntu以外のWSLディストリビューションを使うときは `-Distribution` で指定できます。
+
+コンテナ間で接続する際はNode APIに `HOST=0.0.0.0` を指定し、Reactの `API_BASE_URL` にNode APIのURLを指定します。ポートはそれぞれ環境変数 `PORT` で設定できます。
+
+二つのコンテナを一時的に起動して画面配信とAPI中継を確認するには、次を実行します。検証用のコンテナ・ネットワーク・イメージは終了時に削除されます。
+
+```powershell
+./scripts/Test-ReactNodeContainers.ps1
+```
+
 ## Node版業務APIのセットアップと起動
 
 リポジトリルートで実行します。
@@ -228,7 +246,7 @@ npm ci
 npm run dev --workspace=kizamu-backend-node
 ```
 
-TypeScriptをビルドして `http://localhost:5213` でAPIを起動します。変更後は停止・再実行します。画面は配信しません。ASP.NET Core版と同じポートを使うため、両バックエンドを同時に起動しないでください。
+TypeScriptをビルドして `http://localhost:5213` でAPIを起動します。待受アドレスは環境変数 `HOST` で変更でき、未指定時は `localhost` です。ポートは環境変数 `PORT` で変更できます。変更後は停止・再実行します。画面は配信しません。ASP.NET Core版と同じポートを使うため、両バックエンドを同時に起動しないでください。
 
 別のターミナルで、Blazor ServerまたはReactのViteを上記・下記の手順で起動します。既存の `/api` 中継先を変更せず、そのままNodeへ接続できます。Visual Studioでは `Kizamu.slnx` の `Blazor + Node` または `React + Node` を選びます。Nodeのデバッグ設定は製品ディレクトリの `.vscode/launch.json` に置き、ビルド済みの `dist/server.js` を起動します（[Visual StudioのNodeデバッグ設定](https://learn.microsoft.com/en-us/visualstudio/javascript/tutorial-nodejs?view=visualstudio#examine-the-launchjson-file)）。
 

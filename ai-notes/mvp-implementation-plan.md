@@ -512,7 +512,8 @@ MVPではモックテストを主な自動検証とし、実Clockify確認は公
 
 ## 現在の次作業
 
-* 4組み合わせのAzure公開準備。作業ブランチは codex/portfolio-publish。React公開用サーバーの静的配信を実装し、開発者がコミットを了承。
-* 開発者の了承を得て serve-handler 6.1.8 を追加。HTML・JavaScript・CSS・PNGとクエリ付きトップページの配信、既存API中継のテストが成功。Windowsでnpm全154テスト、lint、build、diff --checkが成功。ReactとNode APIの実ブラウザーでの画面表示と記録開始・終了も確認。開発者の指摘を受け、静的配信のテストを対象ごとに分け、同じ変更単位で扱う。整理後はnpm全158テスト、lint、buildが成功。全体テストで起動待ち・共通準備のタイムアウトが各1回発生し、待機上限を調整して再実行した。Linuxでの実行は未確認。
-* npm install時に脆弱性18件（moderate 12、high 6）が報告された。npm audit --omit=dev は0件。Node APIのコンテナ向け待受、各Dockerイメージと残り3組み合わせのAzureデプロイは未着手。認証・利用者分離・永続化は未実装。
-* 次はNode APIのコンテナ向け待受とReact・NodeのDockerイメージを確認し、残りの組み合わせのAzure公開準備を進める。既存Docker作業ツリーのAzure公開状況記録は未コミットで保持している。
+* 4組み合わせのAzure公開準備。作業ブランチは codex/portfolio-publish、基準HEADは bf1f553。Node APIの待受設定とReact・NodeのDockerイメージのコミットを開発者が了承。
+* Node APIは HOST 指定で待受アドレスを変更でき、未指定時は localhost。HOST=0.0.0.0で別アドレスからの接続をRed・Greenで確認。対象2件、npm全159テスト、lint、buildがWindowsで成功。既定のlocalhost限定待受そのものは直接テストしていない。
+* 開発者が node:24.18.0-bookworm-slim の追加を了承。WSL UbuntuでReact・Node両イメージをビルドし、非rootで起動してReactのHTML・JavaScript配信とNode APIへの中継を確認。PowerShellのビルドスクリプトでも両イメージを生成。検証スクリプトのLinux直接実行は未確認。
+* Docker buildの開発依存監査はNode側10件、React側17件。本番依存は両方0件。認証・利用者分離・永続化は未実装で、残り3組み合わせのAzureデプロイは未着手。
+* 次はAzureの既存リソースと接続設定を確認し、残る組み合わせの公開準備を進める。既存Docker作業ツリーのAzure公開状況記録は未コミットで保持している。

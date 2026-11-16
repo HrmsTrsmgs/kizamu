@@ -13,10 +13,21 @@ test('Nodeの起動入口を空きポートで実行すると出力されたURL�
   })
 }, 10000)
 
-async function withListeningServer(verify: (listeningUrl: string) => Promise<void>) {
+test('待受アドレスに0.0.0.0を指定すると別のアドレスから業務APIに接続できます', async () => {
+  await withListeningServer(async (listeningUrl) => {
+    const port = new URL(listeningUrl).port
+    const response = await fetch(`http://127.0.0.2:${port}/api/health`, { signal: AbortSignal.timeout(3000) })
+
+    response.status.should.equal(200)
+    const content = { body: await response.json() }
+    content.should.have.property('body').that.deep.equal({ status: 'ok' })
+  }, '0.0.0.0')
+}, 10000)
+
+async function withListeningServer(verify: (listeningUrl: string) => Promise<void>, host?: string) {
   const serverEntry = fileURLToPath(new URL('../../../src/backends/node/dist/server.js', import.meta.url))
   const server = spawn(process.execPath, [serverEntry], {
-    env: { ...process.env, PORT: '0' },
+    env: { ...process.env, HOST: host, PORT: '0' },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
@@ -49,7 +60,7 @@ async function waitForListeningUrl(server: ChildProcessByStdio<null, Readable, R
       })
       server.stdout.on('data', (chunk: string) => {
         standardOutput += chunk
-        const url = standardOutput.match(/http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):[1-9]\d*/)?.[0]
+        const url = standardOutput.match(/http:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]):[1-9]\d*/)?.[0]
         if (url) resolve(url)
       })
     })
