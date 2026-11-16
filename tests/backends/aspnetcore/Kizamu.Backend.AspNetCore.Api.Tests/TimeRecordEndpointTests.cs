@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,11 +37,10 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         using var response = await client.SendAsync(request, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>(CancellationToken);
-        body.Should().NotBeNull();
-        body.Id.Should().NotBe(Guid.Empty);
-        body.StartedAt.Should().Be(早い時刻);
-        body.EndedAt.Should().BeNull();
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(CancellationToken));
+        body.RootElement.GetProperty("id").GetGuid().Should().NotBe(Guid.Empty);
+        body.RootElement.GetProperty("startedAt").GetDateTimeOffset().Should().Be(早い時刻);
+        body.RootElement.GetProperty("endedAt").ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     [Fact]
