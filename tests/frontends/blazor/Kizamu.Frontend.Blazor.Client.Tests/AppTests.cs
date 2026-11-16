@@ -53,6 +53,29 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
+    public void ログアウトするとログイン表示に戻り再ログイン時に前の記録を表示しません()
+    {
+        var tested = context.Render<Client.App>(parameters => parameters
+            .Add(it => it.SignInWithGoogle, () => Task.FromResult("google-id-token"))
+            .Add(it => it.CreateTimeRecords, _ => new StubTimeRecordService(一つ目の記録, 一つ目の記録)));
+        var ログインの場所 = tested.Find("main").Children.ToList().FindIndex(it => it.Children.Any(child => child.LocalName == "button" && child.TextContent == "Googleでログイン"));
+        ログインの場所.Should().BeGreaterThanOrEqualTo(0);
+        tested.FindAll("button").Single(it => it.TextContent == "Googleでログイン").Click();
+        tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
+        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を終了");
+
+        var ログアウト = tested.FindAll("button").Single(it => it.TextContent == "ログアウト");
+        tested.Find("main").Children.ToList().FindIndex(it => it.Children.Any(child => child.LocalName == "button" && child.TextContent == "ログアウト")).Should().Be(ログインの場所);
+        ログアウト.Click();
+
+        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
+        tested.FindAll(".recorder-panel").Should().BeEmpty();
+        tested.FindAll("button").Single(it => it.TextContent == "Googleでログイン").Click();
+        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を開始").And.NotContain("記録を終了");
+        tested.FindAll("ul[aria-label='作業記録一覧'] li").Should().BeEmpty();
+    }
+
+    [Fact]
     public void 全体の画面にアプリ名と記録操作と接続状態を表示します()
     {
         var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));

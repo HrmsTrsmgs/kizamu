@@ -18,12 +18,12 @@ type AppProps = {
 export default function App({ isAuthenticated = false, health, timeRecords, signInWithGoogle, createTimeRecords, renderGoogleButton }: AppProps) {
   const [signedInTimeRecords, setSignedInTimeRecords] = useState<TimeRecordService>()
   const googleButton = useRef<HTMLDivElement>(null)
+  const activeTimeRecords = signedInTimeRecords ?? (isAuthenticated ? timeRecords : undefined)
   useEffect(() => {
     if (googleButton.current && renderGoogleButton && createTimeRecords) {
       renderGoogleButton(googleButton.current, token => setSignedInTimeRecords(createTimeRecords(token)))
     }
-  }, [renderGoogleButton, createTimeRecords])
-  const activeTimeRecords = signedInTimeRecords ?? (isAuthenticated ? timeRecords : undefined)
+  }, [renderGoogleButton, createTimeRecords, activeTimeRecords])
 
   async function signIn() {
     if (signInWithGoogle && createTimeRecords) {
@@ -33,6 +33,11 @@ export default function App({ isAuthenticated = false, health, timeRecords, sign
   }
   const [state, dispatch] = useReducer(projectTabsReducer, initialProjectTabsState)
 
+  function signOut() {
+    setSignedInTimeRecords(undefined)
+    dispatch({ type: 'signedOut' })
+  }
+
   return (
     <main>
       <header className="app-header">
@@ -40,6 +45,7 @@ export default function App({ isAuthenticated = false, health, timeRecords, sign
         <p className="app-description">作業時間を記録します。</p>
       </header>
       {!activeTimeRecords ? (renderGoogleButton ? <div ref={googleButton} /> : <button type="button" onClick={signIn}>Googleでログイン</button>) : <>
+        <button type="button" onClick={signOut}>ログアウト</button>
         <section className="project-toolbar" aria-labelledby="projects-title">
           <div className="project-toolbar-heading">
             <h2 id="projects-title">プロジェクト</h2>

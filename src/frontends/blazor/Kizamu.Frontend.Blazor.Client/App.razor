@@ -6,18 +6,24 @@
         <h1>Kizamu</h1>
         <p class="app-description">作業時間を記録します。</p>
     </header>
-    @if (!IsAuthenticated && timeRecorder is null)
-    {
-        @if (Services.GetService(typeof(IGoogleSignIn)) is not null)
+    <div>
+        @if (!IsAuthenticated && timeRecorder is null)
         {
-            <div @ref="googleButton"></div>
+            @if (Services.GetService(typeof(IGoogleSignIn)) is not null)
+            {
+                <div @ref="googleButton"></div>
+            }
+            else
+            {
+                <button type="button" @onclick="SignInAsync">Googleでログイン</button>
+            }
         }
         else
         {
-            <button type="button" @onclick="SignInAsync">Googleでログイン</button>
+            <button type="button" @onclick="SignOut">ログアウト</button>
         }
-    }
-    else
+    </div>
+    @if (IsAuthenticated || timeRecorder is not null)
     {
         <section class="project-toolbar" aria-labelledby="projects-title">
             <div class="project-toolbar-heading">
@@ -56,12 +62,16 @@
 @code {
     TimeRecorderViewModel? timeRecorder;
     ElementReference googleButton;
+    bool renderGoogleButton = true;
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !IsAuthenticated && Services.GetService(typeof(IGoogleSignIn)) is IGoogleSignIn google)
+        if (renderGoogleButton && !IsAuthenticated && timeRecorder is null && Services.GetService(typeof(IGoogleSignIn)) is IGoogleSignIn google)
+        {
+            renderGoogleButton = false;
             await google.RenderButtonAsync(googleButton, OnCredential);
+        }
     }
 
     void OnCredential(string token)
@@ -79,6 +89,13 @@
     /// <summary>認証トークンを使う記録サービスの生成操作を取得または設定します。</summary>
     [Parameter]
     public Func<string, ITimeRecordService>? CreateTimeRecords { get; set; }
+
+    void SignOut()
+    {
+        timeRecorder = null;
+        ViewModel = new();
+        renderGoogleButton = true;
+    }
 
     async Task SignInAsync()
     {

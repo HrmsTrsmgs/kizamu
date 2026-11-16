@@ -8,6 +8,7 @@ type ProjectTabsState = Readonly<{
 }>
 
 type ProjectTabsAction =
+  | { type: 'signedOut' }
   | { type: 'dialogOpened' }
   | { type: 'dialogCancelled' }
   | { type: 'projectNameChanged', name: string }
@@ -23,6 +24,8 @@ export const initialProjectTabsState: ProjectTabsState = {
 
 export function projectTabsReducer(state: ProjectTabsState, action: ProjectTabsAction): ProjectTabsState {
   switch (action.type) {
+    case 'signedOut':
+      return initialProjectTabsState
     case 'dialogOpened':
       return { ...state, showProjectDialog: true }
     case 'dialogCancelled':

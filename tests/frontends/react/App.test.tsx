@@ -17,6 +17,24 @@ describe('未ログインのApp', () => {
     createTimeRecords.should.have.been.calledWith('google-id-token')
   })
 
+  it('ログアウトするとログイン表示に戻り再ログイン時に前の記録を表示しません', async () => {
+    render(<App health={{ checkHealth: async () => true }} signInWithGoogle={async () => 'google-id-token'} createTimeRecords={() => createTimeRecordServiceStub()} />)
+    const loginPlace = screen.getByRole('button', { name: 'Googleでログイン' }).parentElement
+    fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+    fireEvent.click(await screen.findByRole('button', { name: '記録を開始' }))
+    await screen.findByRole('button', { name: '記録を終了' })
+
+    const logout = screen.getByRole('button', { name: 'ログアウト' })
+    logout.should.have.property('parentElement', loginPlace)
+    fireEvent.click(logout)
+
+    screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
+    should.not.exist(screen.queryByRole('list', { name: '作業記録一覧' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+    ;(await screen.findByRole('button', { name: '記録を開始' })).should.toBeInTheDocument()
+    should.not.exist(screen.queryByText('記録中', { selector: '.status-badge' }))
+  })
+
   it('Googleログインを表示し記録画面を表示しません', () => {
     render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
 
