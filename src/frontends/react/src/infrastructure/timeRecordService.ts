@@ -35,6 +35,9 @@ async function postTimeRecord(path: string): Promise<TimeRecordPresentation> {
 }
 
 function toTimeRecord(response: TimeRecordResponse): TimeRecordPresentation {
+  if (response.id === undefined) {
+    throw new Error()
+  }
   return {
     record: new TimeRecord(
       response.id,
