@@ -512,8 +512,8 @@ MVPではモックテストを主な自動検証とし、実Clockify確認は公
 
 ## 現在の次作業
 
-* 4組み合わせのAzure公開準備。作業ブランチは codex/portfolio-publish、基準HEADは bf1f553。Node APIの待受設定とReact・NodeのDockerイメージのコミットを開発者が了承。
-* Node APIは HOST 指定で待受アドレスを変更でき、未指定時は localhost。HOST=0.0.0.0で別アドレスからの接続をRed・Greenで確認。対象2件、npm全159テスト、lint、buildがWindowsで成功。既定のlocalhost限定待受そのものは直接テストしていない。
-* 開発者が node:24.18.0-bookworm-slim の追加を了承。WSL UbuntuでReact・Node両イメージをビルドし、非rootで起動してReactのHTML・JavaScript配信とNode APIへの中継を確認。PowerShellのビルドスクリプトでも両イメージを生成。検証スクリプトのLinux直接実行は未確認。
-* Docker buildの開発依存監査はNode側10件、React側17件。本番依存は両方0件。認証・利用者分離・永続化は未実装で、残り3組み合わせのAzureデプロイは未着手。
-* 次はAzureの既存リソースと接続設定を確認し、残る組み合わせの公開準備を進める。既存Docker作業ツリーのAzure公開状況記録は未コミットで保持している。
+* 4組み合わせのAzure公開準備。作業ブランチは codex/portfolio-publish、基準HEADは df1a8cd。React・NodeのDocker対応をコミット済み。
+* 2026-11-17、既存の kizamu-demo-rg、kizamu-demo-env、Standardレジストリ、取得用マネージドIDを使用し、React・Nodeイメージ df1a8cd をレジストリへ登録。Node API、React＋ASP.NET Core、React＋Node、Blazor＋NodeのContainer Appを追加し、内部向け・最小0／最大1レプリカで作成した。Blazorは既存 9a2606e イメージを使用。
+* Azure環境内から新しい3画面のHTTP表示とAPI healthを確認。React＋Node経由で記録を開始し、Blazor＋Node経由で一覧から確認・終了した。Node API上に終了済み検証記録が1件残る可能性がある。Node APIは最小0レプリカ、メモリ保存のため停止・再起動時に記録が消える。
+* 既存Blazor＋ASP.NET Core共有デモは引き続き外部公開、ASP.NET Core APIは内部向け・最小1レプリカ。認証・利用者分離・永続化が未実装のため、新しい3画面は一般公開していない。起動時間や利用料金、LinuxでのPowerShellスクリプト実行は未確認。
+* 作業中に origin/main が進み、ブランチは10コミット遅れている。現在のAzureイメージには後続変更が含まれていない。次は差分の取り込み方法を確認し、登録・認証と利用者ごとのデータ分離を進めて一般公開の条件を満たす。既存Docker作業ツリーのAzure公開状況記録は未コミットで保持している。
