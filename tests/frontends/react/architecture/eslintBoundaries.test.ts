@@ -14,6 +14,7 @@ describe('Reactの依存境界', () => {
   it.each([
     { file: 'src/presentation/example.ts', code: "import { timeRecordService } from '../infrastructure/timeRecordService'" },
     { file: 'src/presentation/example.ts', code: "import TimeRecorder from '../timeRecords/TimeRecorder'" },
+    { file: 'src/presentation/example.ts', code: "export { default } from '../App.js'" },
     { file: 'src/infrastructure/example.ts', code: "import HealthStatus from '../health/HealthStatus'" },
     { file: 'src/timeRecords/Example.tsx', code: "import { timeRecordService } from '../infrastructure/timeRecordService'" },
   ])('未使用と型専用を含め禁止方向の静的importと再exportを検出します: $file $code', async ({ file, code }) => {

@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
-const viewImports = ['**/App', '**/App.tsx', '**/main', '**/main.tsx', '**/timeRecords/**', '**/health/**']
+const viewImports = ['**/App', '**/App.tsx', '**/App.js', '**/main', '**/main.tsx', '**/timeRecords/**', '**/health/**']
 const browserGlobals = ['fetch', 'XMLHttpRequest', 'window', 'document', 'navigator', 'self', 'globalThis']
 
 export default tseslint.config(

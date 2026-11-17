@@ -10,6 +10,7 @@ import TimeRecorder, { TimeRecorderView } from '../../../../src/frontends/react/
 import { initialTimeRecorderState } from '../../../../src/frontends/react/src/presentation/timeRecorderState'
 
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
+const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
 const 開始時刻 = timestamp('2026-08-01T09:00:00Z')
 const 終了時刻 = timestamp('2026-08-01T10:30:00Z')
 const 記録 = presentedRecord(記録ID, 開始時刻)
@@ -67,8 +68,8 @@ describe('TimeRecorderView', () => {
 
     screen.getByText('1件').should.toBeInTheDocument()
     const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
-    list.getByText('2026/08/01 18:00').should.toHaveAttribute('datetime', 開始時刻.isoText)
-    list.getByText('2026/08/01 19:30').should.toHaveAttribute('datetime', 終了時刻.isoText)
+    list.getByText('2026/08/01 18:00').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
+    list.getByText('2026/08/01 19:30').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
     list.getByText('作業時間').should.toBeInTheDocument()
     list.getByText('1時間30分').should.toBeInTheDocument()
     screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
@@ -144,7 +145,7 @@ describe('TimeRecorder', () => {
     const endButton = await screen.findByRole('button', { name: '記録を終了' })
     startTimeRecord.should.have.callCount(1)
     should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
-    screen.getByLabelText('開始時刻').should.toHaveAttribute('datetime', 開始時刻.isoText)
+    screen.getByLabelText('開始時刻').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
     screen.getByLabelText('開始時刻').should.toHaveTextContent('2026/08/01 18:00')
     screen.getByRole('listitem').should.toHaveTextContent('2026/08/01 18:00')
 
@@ -154,7 +155,7 @@ describe('TimeRecorder', () => {
     startButton.should.toBeInTheDocument()
     endTimeRecord.should.have.been.calledOnceWith(記録ID)
     should.not.exist(screen.queryByRole('button', { name: '記録を終了' }))
-    screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', 終了時刻.isoText)
+    screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
     screen.getByLabelText('終了時刻').should.toHaveTextContent('2026/08/01 19:30')
     screen.getByText('待機中').should.toBeInTheDocument()
     screen.getAllByText('1時間30分').should.have.lengthOf(2)
@@ -162,6 +163,7 @@ describe('TimeRecorder', () => {
 
   it('再開始すると直前の終了時刻を消します', async () => {
     await 開始と終了を操作した画面を用意する()
+    startTimeRecord.mockResolvedValueOnce(presentedRecord(次の記録ID, 終了時刻))
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
     await screen.findByRole('button', { name: '記録を終了' })
