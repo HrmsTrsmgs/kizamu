@@ -7,7 +7,7 @@
         <p class="app-description">作業時間を記録します。</p>
     </header>
     <div>
-        @if (!IsAuthenticated && timeRecorder is null)
+        @if (!ShowAuthenticatedContent)
         {
             @if (Services.GetService(typeof(IGoogleSignIn)) is not null)
             {
@@ -23,7 +23,7 @@
             <button type="button" @onclick="SignOut">ログアウト</button>
         }
     </div>
-    @if (IsAuthenticated || timeRecorder is not null)
+    @if (ShowAuthenticatedContent)
     {
         <section class="project-toolbar" aria-labelledby="projects-title">
             <div class="project-toolbar-heading">
@@ -64,10 +64,12 @@
     ElementReference googleButton;
     bool renderGoogleButton = true;
 
+    bool ShowAuthenticatedContent => IsAuthenticated || timeRecorder is not null;
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (renderGoogleButton && !IsAuthenticated && timeRecorder is null && Services.GetService(typeof(IGoogleSignIn)) is IGoogleSignIn google)
+        if (renderGoogleButton && !ShowAuthenticatedContent && Services.GetService(typeof(IGoogleSignIn)) is IGoogleSignIn google)
         {
             renderGoogleButton = false;
             await google.RenderButtonAsync(googleButton, OnCredential);
