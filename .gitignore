@@ -14,6 +14,9 @@
 # Local launch profile for the hosted Blazor WebAssembly client
 /src/frontends/blazor/Kizamu.Frontend.Blazor.Client/Properties/launchSettings.json
 
+# Local configuration for the Blazor WebAssembly client
+/src/frontends/blazor/Kizamu.Frontend.Blazor.Client/wwwroot/appsettings.json
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
