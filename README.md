@@ -2,7 +2,9 @@
 
 作業を中断せず、プロジェクトごとの時間を素早く記録するタイムトラッカー。
 
-現在はASP.NET Core／Nodeの業務APIと、Blazor WebAssembly／既存React版を組み合わせて、プロジェクト未指定の時間記録の開始、終了、一覧、開始・終了時刻、作業時間の表示を利用できます。記録は業務APIのメモリ上だけに保持し、そのサーバーを再起動すると失われます。
+現在、両画面はGoogle Identity Servicesのログインボタンを表示し、取得したIDトークンを記録APIへ送る構成です。2026-11-17にWindowsのChrome・localhostで、Blazor＋ASP.NET Core、React＋ASP.NET Core、React＋Nodeの実Googleログイン、記録の開始・終了、ログアウトを確認しました。確認対象のコードは327e58bで、main統合後の実Googleログイン操作は再実行していません。Blazor＋Nodeは確認未完了です。記録は業務APIのメモリ上だけに保持し、そのサーバーを再起動すると失われます。
+
+Googleログインの準備は、[Googleログインのローカル設定](#googleログインのローカル設定)を参照してください。クライアントIDの入手、クローン後に作るファイル、APIへ渡す環境変数を説明しています。
 
 開始・終了に失敗すると、失敗を表示して一覧を再取得します。その再取得にも失敗した場合は、最後に確認できた一覧を残して「最新状態を確認できません」と表示します。「再取得」で状態を確認できるまで開始・終了は停止し、再取得に成功すると操作を再開できます。
 
@@ -179,6 +181,71 @@ Pop-Location
 BlazorとASP.NET Coreだけを開発・起動する場合はNode.jsとnpmは不要です。
 
 標準のIDEはVisual Studio 2026（ASP.NETとWeb開発ワークロード）です。VS Codeでは `Kizamu.code-workspace` を開くとリポジトリ全体を扱えます。C#拡張向けに既定のソリューションを `Kizamu.slnx` に指定しています。IDE上の起動・テスト操作は今回のCLI検証とは別に確認が必要です。VS Code専用の起動・デバッグ設定はまだ用意していません。
+
+## Googleログインのローカル設定
+
+別マシンへクローンしても、ローカルのクライアントID設定は復元されません。必要な環境を準備した後、使う画面と業務APIに同じWebクライアントIDを設定します。以下のパスとコマンドはリポジトリルートを基準にしています。
+
+### Google側の設定とクライアントIDの入手
+
+既存の開発用WebクライアントIDをプロジェクト管理者から受け取るか、Google Cloudの対象プロジェクトの「Google Auth Platform → クライアント」で確認します。新しく用意する場合は、[Google公式の設定手順](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid)に従って「ウェブ アプリケーション」用のクライアントIDと同意画面を設定します。同じ開発用IDを使う場合、マシンごとの再発行は不要です。
+
+Google側の「承認済みのJavaScript生成元」には、このREADMEの起動URLに対応する以下の値を登録します。
+
+- `http://localhost`
+- `http://localhost:5214`（Blazorを使う場合）
+- `http://localhost:5173`（Reactを使う場合）
+
+ポートやホスト名を変えた場合は、その画面URLの生成元も登録してください。ブラウザーで開く画面の生成元を指定し、業務APIのポート5213はこの一覧へ追加する必要はありません。現在の実装はJavaScriptコールバックで結果を受け取るため、認証結果を受信するリダイレクトURLの追加は不要です。[Google公式の生成元・リダイレクト設定](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid#get_your_google_api_client_id)
+
+以下の `YOUR_GOOGLE_CLIENT_ID` は、入手したクライアントID全体に置き換えます。クライアントシークレットは使用しません。画面のクライアントIDはブラウザーへ配信されるため、これらのファイルに秘密情報を置かないでください。
+
+### 画面側の設定
+
+使う画面の設定ファイルを作成します。両方の画面を試す場合は両方を作成します。
+
+Blazorは `src/frontends/blazor/Kizamu.Frontend.Blazor.Client/wwwroot/appsettings.json` を次の内容で作成します。
+
+```json
+{
+  "Google": {
+    "ClientId": "YOUR_GOOGLE_CLIENT_ID"
+  }
+}
+```
+
+Reactは `src/frontends/react/.env.local` を次の内容で作成します。
+
+```dotenv
+VITE_GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+```
+
+Reactの設定はViteの起動時またはビルド時に読み込まれます。変更後は開発サーバーを再起動し、配布する場合はビルドし直します。[Viteの環境変数の説明](https://vite.dev/guide/env-and-mode)
+
+### 業務API側の設定と起動
+
+ASP.NET Core版・Node版とも、APIを起動するPowerShellで次を実行します。
+
+```powershell
+$env:GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'
+```
+
+そのターミナルで、下記の各セットアップ手順にあるAPI起動コマンドを実行します。画面側とAPI側に同じIDを指定してください。Reactの `.env.local` は業務APIには読み込まれません。
+
+この環境変数は現在のターミナルとそこから起動するプロセスだけに有効です。新しいターミナルでは再設定します。一括起動用の `scripts/Check-Blazor.ps1` または `scripts/Check-React.ps1` を使う場合も、スクリプトを実行するターミナルで先に設定します。設定を変えた場合はAPIを再起動してください。
+
+Visual Studioで起動する場合は、Windowsの「環境変数」画面で、ユーザー環境変数に名前 `GOOGLE_CLIENT_ID`、値に同じクライアントIDを設定し、Visual Studioを再起動してから共有起動プロファイルを使います。これはターミナルの一時設定と異なり、次回以降もそのマシンのユーザー環境に残ります。IDE経由でのGoogleログインの実機確認は未実施です。
+
+### Gitの除外設定と動作確認
+
+上記のBlazor設定ファイルとReactの `.env.local` はGitの追跡対象から除外しています。作成後、次のコマンドで各ファイルに対応する除外ルールが表示されることを確認できます。
+
+```powershell
+git check-ignore -v -- src/frontends/blazor/Kizamu.Frontend.Blazor.Client/wwwroot/appsettings.json
+git check-ignore -v -- src/frontends/react/.env.local
+```
+
+下記の起動手順で画面を開き、Googleログイン、記録の開始・終了、ログアウトを確認します。設定内容とファイル形式は実装・公式資料と照合しています。実Googleログインの確認範囲は冒頭に記載したローカルの組み合わせに限り、別マシンへのクローンからのセットアップ、IDE起動、公開環境での一連の操作は未検証です。
 
 ## Blazor版のセットアップと起動
 

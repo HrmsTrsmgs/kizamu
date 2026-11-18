@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Kizamu.Domain;
@@ -8,15 +9,22 @@ namespace Kizamu.Frontend.Blazor.Infrastructure.TimeRecords;
 
 /// <summary>作業記録のHTTP APIを呼び出します。HttpClientの所有権は呼び出し側にあります。</summary>
 /// <param name="client">APIと同じオリジンを基底URIとするHTTPクライアント。</param>
-public sealed partial class TimeRecordApi(HttpClient client) : ITimeRecordService
+/// <param name="token">APIへ送信する認証トークン。</param>
+public sealed partial class TimeRecordApi(HttpClient client, string? token = null) : ITimeRecordService
 {
     /// <summary>サーバーが保持している作業記録を取得します。</summary>
     /// <returns>記録中と終了済みの記録を含む一覧。</returns>
-    public async Task<ImmutableArray<TimeRecord>> GetTimeRecordsAsync() =>
+    public async Task<ImmutableArray<TimeRecord>> GetTimeRecordsAsync()
+    {
+        using var request = CreateRequest(HttpMethod.Get, "api/time-records");
+        using var response = await client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        return
         [
-            .. (await client.GetFromJsonAsync("api/time-records", TimeRecordJsonContext.Default.ImmutableArrayTimeRecordResponse))
+            .. (await response.Content.ReadFromJsonAsync(TimeRecordJsonContext.Default.ImmutableArrayTimeRecordResponse))
                 .Select(it => it.ToDomain())
         ];
+    }
 
     /// <summary>プロジェクト未指定の記録を開始します。</summary>
     /// <returns>サーバーが確定した記録と開始時刻。</returns>
@@ -30,9 +38,18 @@ public sealed partial class TimeRecordApi(HttpClient client) : ITimeRecordServic
     /// <summary>開始・終了で共通するHTTP応答の成功確認、読み取り、破棄を一か所で行います。</summary>
     async Task<TimeRecord> PostTimeRecordAsync(string endpoint)
     {
-        using var response = await client.PostAsync(endpoint, null);
+        using var request = CreateRequest(HttpMethod.Post, endpoint);
+        using var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync(TimeRecordJsonContext.Default.TimeRecordResponse)).ToDomain();
+    }
+
+    HttpRequestMessage CreateRequest(HttpMethod method, string endpoint)
+    {
+        var request = new HttpRequestMessage(method, endpoint);
+        if (token is not null)
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return request;
     }
 
     /// <summary>公開時のコード縮小でも、応答の読み取りに必要な型情報を保持します。</summary>

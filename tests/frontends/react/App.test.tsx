@@ -1,12 +1,51 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, describe, it } from 'vitest'
+import { beforeEach, describe, it, vi } from 'vitest'
 import { should } from '../../should.mjs'
 import App from '../../../src/frontends/react/src/App'
 import { createTimeRecordServiceStub } from './test/createTimeRecordServiceStub'
 
+describe('未ログインのApp', () => {
+  it('Googleログインに成功すると記録画面を表示し取得したトークンを記録通信へ渡します', async () => {
+    const signInWithGoogle = vi.fn(async () => 'google-id-token')
+    const createTimeRecords = vi.fn(() => createTimeRecordServiceStub())
+    render(<App health={{ checkHealth: async () => true }} signInWithGoogle={signInWithGoogle} createTimeRecords={createTimeRecords} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+
+    ;(await screen.findByRole('button', { name: '記録を開始' })).should.toBeInTheDocument()
+    should.not.exist(screen.queryByRole('button', { name: 'Googleでログイン' }))
+    createTimeRecords.should.have.been.calledWith('google-id-token')
+  })
+
+  it('ログアウトするとログイン表示に戻り再ログイン時に前の記録を表示しません', async () => {
+    render(<App health={{ checkHealth: async () => true }} signInWithGoogle={async () => 'google-id-token'} createTimeRecords={() => createTimeRecordServiceStub()} />)
+    const loginPlace = screen.getByRole('button', { name: 'Googleでログイン' }).parentElement
+    fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+    fireEvent.click(await screen.findByRole('button', { name: '記録を開始' }))
+    await screen.findByRole('button', { name: '記録を終了' })
+
+    const logout = screen.getByRole('button', { name: 'ログアウト' })
+    logout.should.have.property('parentElement', loginPlace)
+    fireEvent.click(logout)
+
+    screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
+    should.not.exist(screen.queryByRole('list', { name: '作業記録一覧' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+    ;(await screen.findByRole('button', { name: '記録を開始' })).should.toBeInTheDocument()
+    should.not.exist(screen.queryByText('記録中', { selector: '.status-badge' }))
+  })
+
+  it('Googleログインを表示し記録画面を表示しません', () => {
+    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+
+    screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
+    should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
+  })
+})
+
 describe('App', () => {
   beforeEach(() => {
-    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+    render(<App isAuthenticated health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
   })
 
   it('追加ボタンを押すとプロジェクト追加ダイアログを表示します', () => {
