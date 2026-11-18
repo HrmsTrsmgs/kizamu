@@ -12,3 +12,4 @@ dist
 .artifacts
 **/.vscode
 **/Properties/launchSettings.json
+src/frontends/blazor/Kizamu.Frontend.Blazor.Client/wwwroot/appsettings.json

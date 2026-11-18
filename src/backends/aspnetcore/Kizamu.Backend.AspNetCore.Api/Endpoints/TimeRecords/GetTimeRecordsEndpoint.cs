@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
 using Kizamu.Backend.AspNetCore.Application.TimeRecords;
 
 namespace Kizamu.Backend.AspNetCore.Api.Endpoints.TimeRecords;
@@ -12,14 +14,19 @@ static class GetTimeRecordsEndpoint
         /// <summary>
         /// 作業記録一覧APIをアプリケーションへ登録します。
         /// </summary>
-        internal void MapGetTimeRecordsEndpoint()
+        internal void MapGetTimeRecordsEndpoint(ConcurrentDictionary<Guid, string> owners)
         {
             self.MapGet(
                 "/api/time-records",
-                (TimeRecordReader timeRecordReader) =>
-                    Results.Ok(
-                        timeRecordReader.Execute().Select(it =>
-                            new TimeRecordResponse(it))));
+                async (HttpRequest request, TimeRecordReader timeRecordReader, GoogleIdTokenVerifier verifier) =>
+                {
+                    var owner = await TimeRecordAuthentication.GetOwnerAsync(request, verifier);
+                    if (owner is null) return Results.Unauthorized();
+
+                    return Results.Ok(timeRecordReader.Execute()
+                        .Where(it => owners.TryGetValue(it.Id, out var recordOwner) && recordOwner == owner)
+                        .Select(it => new TimeRecordResponse(it)));
+                });
         }
     }
 }

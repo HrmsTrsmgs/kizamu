@@ -73,7 +73,7 @@ try {
     if ($page.StatusCode -ne 200 -or $page.Headers['Content-Type'] -notmatch 'text/html' -or $page.Content -notmatch '<title>Kizamu</title>') {
         throw 'Reactの画面が配信されませんでした。'
     }
-    if ($page.Content -notmatch '<script[^>]+src="([^"]+)"') { throw '画面にJavaScriptの参照がありません。' }
+    if ($page.Content -notmatch '<script[^>]+src="(/assets/[^"]+)"') { throw '画面にReactのJavaScriptの参照がありません。' }
     $script = Invoke-WebRequest -Uri ([uri]::new([uri]"$url/", $Matches[1])) -UseBasicParsing -TimeoutSec 5
     if ($script.StatusCode -ne 200 -or $script.Headers['Content-Type'] -notmatch 'javascript' -or -not $script.Content) {
         throw 'ReactのJavaScriptが配信されませんでした。'

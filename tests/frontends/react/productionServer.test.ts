@@ -58,10 +58,10 @@ describe('公開用サーバーの静的成果物配信', () => {
     ;(await pageWithQuery.text()).should.equal(await page.text())
   })
 
-  test('画面から参照されるJavaScriptを配信します', async () => {
+  test('画面から参照されるReactのJavaScriptを配信します', async () => {
     const page = await fetch(listeningUrl, { signal: AbortSignal.timeout(3000) })
-    const scriptPath = (await page.text()).match(/<script[^>]+src="([^"]+)"/)?.[1]
-    if (!scriptPath) throw new Error('画面にJavaScriptの参照がありません')
+    const scriptPath = (await page.text()).match(/<script[^>]+src="(\/assets\/[^"]+)"/)?.[1]
+    if (!scriptPath) throw new Error('画面にReactのJavaScriptの参照がありません')
 
     const script = await fetch(new URL(scriptPath, listeningUrl), { signal: AbortSignal.timeout(3000) })
     script.status.should.equal(200)

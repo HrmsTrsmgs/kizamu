@@ -2,10 +2,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import { healthService } from './infrastructure/healthService'
-import { timeRecordService } from './infrastructure/timeRecordService'
+import { createTimeRecordService } from './infrastructure/timeRecordService'
+import { renderGoogleButton } from './googleSignIn'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App health={healthService} timeRecords={timeRecordService} />
+    <App health={healthService} createTimeRecords={createTimeRecordService} renderGoogleButton={renderGoogleButton} />
   </StrictMode>,
 )

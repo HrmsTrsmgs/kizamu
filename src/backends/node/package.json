@@ -10,7 +10,12 @@
     "build": "tsc",
     "lint": "eslint ."
   },
-  "dependencies": { "fastify": "5.12.8", "kizamu-domain-typescript": "0.0.0", "temporal-polyfill": "1.0.2" },
+  "dependencies": {
+    "fastify": "5.12.8",
+    "google-auth-library": "11.3.4",
+    "kizamu-domain-typescript": "0.0.0",
+    "temporal-polyfill": "1.0.2"
+  },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "26.1.1",

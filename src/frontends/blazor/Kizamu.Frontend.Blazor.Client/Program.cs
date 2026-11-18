@@ -14,5 +14,6 @@ builder.Services.AddTransient<HealthStatusViewModel>();
 builder.Services.AddScoped<ITimeRecordService, TimeRecordApi>();
 builder.Services.AddTransient<ITimeRecorderViewModel, TimeRecorderViewModel>();
 builder.Services.AddTransient<ProjectTabsViewModel>();
+builder.Services.AddScoped<IGoogleSignIn, GoogleSignIn>();
 builder.Services.AddSingleton(TimeProvider.System);
 await builder.Build().RunAsync();
