@@ -147,9 +147,9 @@ Visual Studio用の共有一括起動設定は `Kizamu.slnLaunch` と `Kizamu.Bl
 2. .NETの業務APIと画面配信を分離し、Node版に現在の正常性確認・記録の開始・終了・一覧APIを追加しました。Reactの追加機能開発は引き続き保留し、NodeやReactが将来のMVPと同じ機能を持つとは扱いません。
 3. 業務APIとフロントサーバーのプロジェクトを分け、独立した配置と近接した配置のどちらも可能にする方針です。現在は別プロセスで起動します。ブラウザーはフロントサーバーだけに接続し、API通信はそこから業務APIへ中継します。
 
-当初は製品として一つのリリースバージョンを使い、含まれる実装の機能範囲と検証済みの組み合わせを明示する方針です。全組み合わせを毎回配布する前提にはしません。HTTP APIの互換性と保存データの互換性は別に設計し、別サーバーに同じデータベース構造を強制しません。
+当初は製品として一つのリリースバージョンを使い、含まれる実装の機能範囲と検証済みの組み合わせを明示する方針です。現在の共有デモでは2種類ずつの画面・APIの4組み合わせを配置します。将来実装を追加した場合の公開対象は、その時点で判断します。HTTP APIの互換性と保存データの互換性は別に設計し、別サーバーに同じデータベース構造を強制しません。
 
-対応OS、ランタイム同梱、ZIPやインストーラーなどの配布形態と、その組み立て処理は未実装・未確定です。
+各実装のDockerイメージを組み立て、Azure Container Appsへ配置する手順を用意しています。ZIPやインストーラーなど、その他の配布形態は未確定です。
 
 標準の `dotnet publish` で業務APIとBlazorサーバーを別々の出力先へ公開します。Blazorサーバーの出力にはClientの静的ファイルが含まれます。以下は動作確認用のフレームワーク依存の出力であり、利用環境にはASP.NET Core Runtime 10が必要です。
 
@@ -219,6 +219,10 @@ dotnet run --project src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api --no-
 
 正常性確認は `http://localhost:5213/api/health`、記録一覧は `http://localhost:5213/api/time-records` です。
 
+## Azure共有デモのCI/CD
+
+GitHub Actionsでビルド・テスト後に4組み合わせを配置する定義と、BicepによるAzure環境の構成を用意しています。初回のAzure・GitHub設定、プレビュー、手動実行は [CI/CDの手順](docs/deployment.md) を参照してください。
+
 ## React・Node版のDockerイメージをビルド
 
 PowerShell 7とDocker Engineを使用します。WindowsではWSLのUbuntu内のDockerを、Linuxでは実行ユーザーが使えるDockerを利用します。リポジトリルートから実行してください。
@@ -257,7 +261,7 @@ npm run build --workspace=kizamu-backend-node
 npm start --workspace=kizamu-backend-node
 ```
 
-ポートは環境変数 `PORT` で変更できます。その場合はフロント側のAPI中継先も合わせます。Nodeの起動に.NETは不要ですが、Blazor Serverと組み合わせる場合は.NETも必要です。配布用成果物の組み立てはまだ用意していません。
+ポートは環境変数 `PORT` で変更できます。その場合はフロント側のAPI中継先も合わせます。Nodeの起動に.NETは不要ですが、Blazor Serverと組み合わせる場合は.NETも必要です。Dockerイメージの組み立て手順は [CI/CDの手順](docs/deployment.md) を参照してください。
 
 互換性の範囲は、既存画面から行う正常性確認・開始・終了・一覧と、[NodeのHTTPテスト](tests/backends/node/)で確認しています。不明なIDの終了など未確定の異常系まで、両実装が同じ応答を保証するものではありません。
 
@@ -343,7 +347,7 @@ BlazorサーバーのAPI中継には、Microsoft提供の [Yarp.ReverseProxy](ht
 
 ## 未実装
 
-プロジェクト登録・タブ切替、プロジェクト単位の複数同時記録、記録の修正、作業ツリー、時間配分、Clockify連携、ログイン、ユーザー管理、永続化、集計、公開用成果物の組み立ては未実装です。直近の作業状況は実装計画の「現在の次作業」を参照してください。
+プロジェクト登録・タブ切替、プロジェクト単位の複数同時記録、記録の修正、作業ツリー、時間配分、Clockify連携、ログイン、ユーザー管理、永続化、集計は未実装です。直近の作業状況は実装計画の「現在の次作業」を参照してください。
 
 AsData連携およびWord・Excel・PDFの入出力は今後の検討対象です。今回のBlazor移行には含めず、対応形式、処理場所、依存ライブラリを決めてから別の作業単位として扱います。
 

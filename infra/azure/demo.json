@@ -1,0 +1,20 @@
+{
+  "resourceGroup": "kizamu-demo-rg",
+  "location": "japaneast",
+  "registryName": "kizamudemo20261112",
+  "registrySku": "Standard",
+  "environmentName": "kizamu-demo-env",
+  "logsName": "workspace-kizamudemorgehrm",
+  "pullIdentityName": "kizamu-demo-pull",
+  "deploymentIdentityName": "kizamu-demo-github",
+  "githubRepository": "HrmsTrsmgs/kizamu",
+  "githubEnvironment": "azure-demo",
+  "apps": {
+    "aspnetApi": { "name": "kizamu-demo-api", "cpu": "0.25", "memory": "0.5Gi", "minReplicas": 1 },
+    "nodeApi": { "name": "kizamu-node-api", "cpu": "0.5", "memory": "1Gi", "minReplicas": 0 },
+    "blazorAspnet": { "name": "kizamu-demo-web", "cpu": "0.25", "memory": "0.5Gi", "minReplicas": 0 },
+    "blazorNode": { "name": "kizamu-blazor-node", "cpu": "0.5", "memory": "1Gi", "minReplicas": 0 },
+    "reactAspnet": { "name": "kizamu-react-aspnet", "cpu": "0.5", "memory": "1Gi", "minReplicas": 0 },
+    "reactNode": { "name": "kizamu-react-node", "cpu": "0.5", "memory": "1Gi", "minReplicas": 0 }
+  }
+}

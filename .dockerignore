@@ -9,3 +9,6 @@ dist
 **/obj
 **/.env
 **/.env.*
+.artifacts
+**/.vscode
+**/Properties/launchSettings.json

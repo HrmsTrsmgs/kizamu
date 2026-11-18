@@ -512,11 +512,9 @@ MVPではモックテストを主な自動検証とし、実Clockify確認は公
 
 ## 現在の次作業
 
-* 4組み合わせのAzure公開準備。作業ブランチは codex/portfolio-publish、基準HEADは df1a8cd。React・NodeのDocker対応をコミット済み。
-* 2026-11-17、既存の kizamu-demo-rg、kizamu-demo-env、Standardレジストリ、取得用マネージドIDを使用し、React・Nodeイメージ df1a8cd をレジストリへ登録。Node API、React＋ASP.NET Core、React＋Node、Blazor＋NodeのContainer Appを追加し、内部向け・最小0／最大1レプリカで作成した。Blazorは既存 9a2606e イメージを使用。
-* Azure環境内から新しい3画面のHTTP表示とAPI healthを確認。React＋Node経由で記録を開始し、Blazor＋Node経由で一覧から確認・終了した。Node API上に終了済み検証記録が1件残る可能性がある。Node APIは最小0レプリカ、メモリ保存のため停止・再起動時に記録が消える。
-* 2026-11-17、開発者の指示で認証完成を待たず、残る3画面も共有デモとして外部公開した（[D013](../docs/decisions.md#d013公開サービス向けユーザー管理をmvpで優先する)）。4画面のHTTPS表示・health・記録一覧は外部から正常応答。両APIのingressは内部向けで、画面経由のAPIは公開されている。認証・利用者分離・永続化は未実装。ASP.NET Core APIは最小1レプリカ、Node APIと4画面は最小0レプリカ。停止・再起動でメモリ上の記録が消える。利用料金、LinuxでのPowerShellスクリプト実行は未確認。
+* CI/CDとAzure環境自動構成の整備。作業ブランチは codex/portfolio-publish、基準HEADは 0c7d6b9。開発者が定義・スクリプト・文書のPR作成を了承。詳細は [CI/CDの手順](../docs/deployment.md) と [D016](../docs/decisions.md#d016azure共有デモの構成とデプロイをコード化する) を参照。
+* 開発者の了承を得てBicep CLIと公式Actionsを使用。GitHub ActionsでPRを検証し、mainで検証成功後に4イメージと6サービスを構成する定義を作成。初回セットアップは既存Azure環境とGitHubのazure-demo Environmentに適用済み。CI用IDの対象グループContributor・レジストリAcrPush、main限定の信頼条件、3変数を確認。初期化の再実行で同じIDを維持した。
+* Windowsでnpm全159テスト・.NET全161テスト、lint・build、PowerShellとYAMLの構文検証、Bicepコンパイルが成功。4イメージをWSLでビルドして ci-validation-0c7d6b9 タグでレジストリへ登録し、構成と登録済みイメージ再配置をAzureでプレビューした。初期化のWindows引数と新規ID照会の不具合は修正して再実行成功。
+* GitHub上の実workflow、LinuxでのPowerShell直接実行、空のリソースグループからの作成は未確認。公開中のイメージは従来の9a2606e（.NET）とdf1a8cd（React・Node）を維持し、4画面の公開経路確認が成功。認証・DBは別作業のまま。
 * 公開URL： [Blazor＋ASP.NET Core](https://kizamu-demo-web.jollybush-ccde0076.japaneast.azurecontainerapps.io/)、[React＋ASP.NET Core](https://kizamu-react-aspnet.jollybush-ccde0076.japaneast.azurecontainerapps.io/)、[React＋Node](https://kizamu-react-node.jollybush-ccde0076.japaneast.azurecontainerapps.io/)、[Blazor＋Node](https://kizamu-blazor-node.jollybush-ccde0076.japaneast.azurecontainerapps.io/)。
-* 2026-11-17の公開準備確認：Azure上の各イメージは認証機能追加前の版。別作業 codex/google-login-plan の 327e58b ではGoogleログインと両APIの本人確認・記録分離を進めており、実際のログイン確認は進行中。DB永続化は別作業 codex/database-persistence で検討中で、DB製品・実装は未確定。
-* 認証側の現行実装では両APIに GOOGLE_CLIENT_ID、Blazor画面に Google:ClientId、React画面にビルド時の VITE_GOOGLE_CLIENT_ID を設定する。公開用の各画面URLをGoogleの承認済みJavaScript生成元に登録する必要がある（[Google公式](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid)）。現在のDockerイメージは認証ブランチと統合・検証していない。
-* 作業中に origin/main が進み、このブランチは10コミット遅れている。次は並行作業の完了・統合状況を確認し、認証済みイメージと公開用設定を準備する。認証導入時に両利用者のデータ分離、各画面・APIの組み合わせ、Googleログインを公開経路で検証する。DBの扱いは並行作業の決定を確認する。既存Docker作業ツリーのAzure公開状況記録は未コミットで保持している。
+* 次はコミット・pushとmainへの統合を行い、最初のGitHub Actions実行を確認する。main側は別作業で進んでおり、このブランチは12コミット遅れている。既存の未追跡Blazor PropertiesとDocker作業ツリーの記録は変更していない。
