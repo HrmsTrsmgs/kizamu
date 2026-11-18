@@ -26,8 +26,7 @@ public sealed class TimeRecordEndOperationTests
         DateTimeOffset startedAt,
         DateTimeOffset endedAt)
     {
-        var timeRecord = TimeRecord.Start(startedAt);
-        state.Add(timeRecord);
+        var timeRecord = 記録を開始して保存する(startedAt);
         var tested = new TimeRecordEndOperation(new FakeTimeProvider(endedAt), state);
 
         tested.Execute(timeRecord.Id).Should().Be(new EndTimeRecordResult(timeRecord.Id, startedAt, endedAt));
@@ -37,7 +36,8 @@ public sealed class TimeRecordEndOperationTests
     [Fact]
     public void 複数の記録から指定した記録だけを終了する()
     {
-        var (最初の記録, 次の記録) = 開始時刻の異なる二件の記録を保存する(早い時刻, 中間の時刻);
+        var 最初の記録 = 記録を開始して保存する(早い時刻);
+        var 次の記録 = 記録を開始して保存する(中間の時刻);
         var tested = new TimeRecordEndOperation(new FakeTimeProvider(遅い時刻), state);
 
         tested.Execute(最初の記録.Id).Should().Be(new EndTimeRecordResult(最初の記録.Id, 早い時刻, 遅い時刻));
@@ -48,7 +48,9 @@ public sealed class TimeRecordEndOperationTests
     [Fact]
     public void 終了済みの記録を再度指定すると終了時刻を更新し他の記録は変化しない()
     {
-        var (最初の記録, 次の記録) = 終了済みの記録と次の記録を保存する(早い時刻, 中間の時刻, 中間の時刻);
+        var 最初の記録 = 記録を開始して保存する(早い時刻);
+        最初の記録.End(中間の時刻);
+        var 次の記録 = 記録を開始して保存する(中間の時刻);
         var tested = new TimeRecordEndOperation(new FakeTimeProvider(遅い時刻), state);
 
         tested.Execute(最初の記録.Id).Should().Be(new EndTimeRecordResult(最初の記録.Id, 早い時刻, 遅い時刻));
@@ -59,8 +61,7 @@ public sealed class TimeRecordEndOperationTests
     [Fact]
     public void 異なる識別子で終了を要求しても現在の記録は終了しない()
     {
-        var timeRecord = TimeRecord.Start(早い時刻);
-        state.Add(timeRecord);
+        var timeRecord = 記録を開始して保存する(早い時刻);
         var tested = new TimeRecordEndOperation(new FakeTimeProvider(遅い時刻), state);
 
         // 対象が異なる場合の戻り値や例外は未確定のため、記録への影響だけを確認する。
@@ -69,24 +70,10 @@ public sealed class TimeRecordEndOperationTests
         timeRecord.EndedAt.Should().BeNull();
     }
 
-    (TimeRecord 最初の記録, TimeRecord 次の記録) 開始時刻の異なる二件の記録を保存する(
-        DateTimeOffset 最初の開始時刻, DateTimeOffset 次の開始時刻)
+    TimeRecord 記録を開始して保存する(DateTimeOffset startedAt)
     {
-        var 最初の記録 = TimeRecord.Start(最初の開始時刻);
-        var 次の記録 = TimeRecord.Start(次の開始時刻);
-        state.Add(最初の記録);
-        state.Add(次の記録);
-        return (最初の記録, 次の記録);
-    }
-
-    (TimeRecord 最初の記録, TimeRecord 次の記録) 終了済みの記録と次の記録を保存する(
-        DateTimeOffset 最初の開始時刻, DateTimeOffset 最初の終了時刻, DateTimeOffset 次の開始時刻)
-    {
-        var 最初の記録 = TimeRecord.Start(最初の開始時刻);
-        最初の記録.End(最初の終了時刻);
-        var 次の記録 = TimeRecord.Start(次の開始時刻);
-        state.Add(最初の記録);
-        state.Add(次の記録);
-        return (最初の記録, 次の記録);
+        var record = TimeRecord.Start(startedAt);
+        state.Add(record);
+        return record;
     }
 }

@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using AwesomeAssertions;
 using Kizamu.Frontend.Blazor.Infrastructure.Health;
 using Kizamu.Frontend.Blazor.TestSupport;
@@ -21,7 +20,7 @@ public sealed class HealthApiTests : IDisposable
     [Fact]
     public async Task 正常性確認APIへGETします()
     {
-        応答する(new { status = "ok" });
+        handler.RespondWithJson(new { status = "ok" });
 
         await tested.CheckHealthAsync();
 
@@ -31,7 +30,7 @@ public sealed class HealthApiTests : IDisposable
     [Fact]
     public async Task 正常な応答ではtrueを返します()
     {
-        応答する(new { status = "ok" });
+        handler.RespondWithJson(new { status = "ok" });
 
         (await tested.CheckHealthAsync()).Should().BeTrue();
     }
@@ -54,9 +53,6 @@ public sealed class HealthApiTests : IDisposable
 
         (await tested.CheckHealthAsync()).Should().BeFalse();
     }
-
-    void 応答する<T>(T body) => handler.Respond = it =>
-        Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(body) });
 
     public void Dispose() => client.Dispose();
 }

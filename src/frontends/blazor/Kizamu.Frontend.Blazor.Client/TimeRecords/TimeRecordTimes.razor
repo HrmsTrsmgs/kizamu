@@ -1,11 +1,10 @@
-@using System.Globalization
 @inject TimeProvider Clock
 @implements IDisposable
 
 <div class="time-record-times">
     <div class="record-time">
         <span>開始</span>
-        <time aria-label="@(Labelled ? "開始時刻" : null)" datetime="@StartedAt.ToString("O", CultureInfo.InvariantCulture)">
+        <time aria-label="@(Labelled ? "開始時刻" : null)" datetime="@StartedAt.ToHtmlDateTimeAttribute()">
             @TimeRecordTimesFormatter.FormatDateTime(StartedAt)
         </time>
     </div>
@@ -13,7 +12,7 @@
         <span>終了</span>
         @if (EndedAt is { } endedAt)
         {
-            <time aria-label="@(Labelled ? "終了時刻" : null)" datetime="@endedAt.ToString("O", CultureInfo.InvariantCulture)">
+            <time aria-label="@(Labelled ? "終了時刻" : null)" datetime="@endedAt.ToHtmlDateTimeAttribute()">
                 @TimeRecordTimesFormatter.FormatDateTime(endedAt)
             </time>
         }
@@ -41,19 +40,14 @@
     [Parameter]
     public bool Labelled { get; set; }
 
-    ITimer? timer;
+    TimeRecordRefreshTimer? refreshTimer;
 
     protected override void OnParametersSet()
     {
-        timer?.Dispose();
-        timer = null;
-        if (EndedAt is null)
-        {
-            timer = Clock.CreateTimer(_ => InvokeAsync(StateHasChanged), null,
-                TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-        }
+        refreshTimer ??= new(Clock, () => InvokeAsync(StateHasChanged));
+        refreshTimer.ScheduleRefresh(EndedAt);
     }
 
     /// <summary>画面から取り除かれた際に、経過時間表示用のタイマーを解放します。</summary>
-    public void Dispose() => timer?.Dispose();
+    public void Dispose() => refreshTimer?.Dispose();
 }

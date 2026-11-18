@@ -30,9 +30,9 @@ describe('projectTabsReducer', () => {
   })
 
   it('追加画面から登録するとダイアログを閉じます', () => {
-    const opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
+    const opened = { ...initialProjectTabsState, showProjectDialog: true, projectName: 'プロジェクトA' }
 
-    const state = projectTabsReducer(opened, { type: 'projectRegistered', name: 'プロジェクトA' })
+    const state = projectTabsReducer(opened, { type: 'projectRegistered' })
 
     state.showProjectDialog.should.equal(false)
   })
@@ -41,14 +41,15 @@ describe('projectTabsReducer', () => {
     const opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
     const named = projectTabsReducer(opened, { type: 'projectNameChanged', name: 'プロジェクトA' })
 
-    const registered = projectTabsReducer(named, { type: 'projectRegistered', name: named.projectName })
+    const registered = projectTabsReducer(named, { type: 'projectRegistered' })
     const reopened = projectTabsReducer(registered, { type: 'dialogOpened' })
 
     reopened.projectName.should.equal('')
   })
 
   it('登録したプロジェクトを選択すると選択した対象を保持します', () => {
-    const registered = projectTabsReducer(initialProjectTabsState, { type: 'projectRegistered', name: 'プロジェクトA' })
+    const named = { ...initialProjectTabsState, projectName: 'プロジェクトA' }
+    const registered = projectTabsReducer(named, { type: 'projectRegistered' })
     const project = registered.projects[0]
 
     const state = projectTabsReducer(registered, { type: 'projectSelected', project })
@@ -57,9 +58,11 @@ describe('projectTabsReducer', () => {
   })
 
   it('登録したプロジェクトを一覧に保持します', () => {
-    const first = projectTabsReducer(initialProjectTabsState, { type: 'projectRegistered', name: 'プロジェクトA' })
+    const named = { ...initialProjectTabsState, projectName: 'プロジェクトA' }
+    const first = projectTabsReducer(named, { type: 'projectRegistered' })
+    const next = projectTabsReducer(first, { type: 'projectNameChanged', name: 'プロジェクトB' })
 
-    const state = projectTabsReducer(first, { type: 'projectRegistered', name: 'プロジェクトB' })
+    const state = projectTabsReducer(next, { type: 'projectRegistered' })
 
     state.projects.should.toStrictEqual([new Project('プロジェクトA'), new Project('プロジェクトB')])
   })

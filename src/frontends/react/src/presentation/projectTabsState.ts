@@ -12,7 +12,7 @@ type ProjectTabsAction =
   | { type: 'dialogOpened' }
   | { type: 'dialogCancelled' }
   | { type: 'projectNameChanged', name: string }
-  | { type: 'projectRegistered', name: string }
+  | { type: 'projectRegistered' }
   | { type: 'projectSelected', project: Project | undefined }
 
 export const initialProjectTabsState: ProjectTabsState = {
@@ -35,7 +35,7 @@ export function projectTabsReducer(state: ProjectTabsState, action: ProjectTabsA
     case 'projectRegistered':
       return {
         ...state,
-        projects: [...state.projects, new Project(action.name)],
+        projects: [...state.projects, new Project(state.projectName)],
         projectName: '',
         showProjectDialog: false,
       }

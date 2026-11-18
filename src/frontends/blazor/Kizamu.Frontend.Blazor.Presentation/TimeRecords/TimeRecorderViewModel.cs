@@ -8,6 +8,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
 {
     List<TimeRecord> records = [];
     readonly List<List<TimeRecord>> pendingLoads = [];
+    int loadVersion;
     Project? selectedProject;
     Guid? unspecifiedCurrentId;
     readonly Dictionary<Project, Guid?> projectCurrentIds = [];
@@ -80,6 +81,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     /// <returns>読み込みと画面状態の更新の完了。</returns>
     public async Task LoadAsync()
     {
+        var version = loadVersion;
         var isRecovery = IsStateUnconfirmed;
         if (isRecovery)
         {
@@ -91,6 +93,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         try
         {
             var loadedRecords = await service.GetTimeRecordsAsync();
+            if (version != loadVersion) return;
             records = MergeLoadedRecords(loadedRecords, updatesDuringLoad);
             CurrentId = FindCurrentIdAfterLoad(updatesDuringLoad);
             IsStateUnconfirmed = false;
@@ -183,6 +186,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         }
         catch
         {
+            loadVersion++;
             await ReloadAfterOperationFailureAsync();
             throw;
         }
