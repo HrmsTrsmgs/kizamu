@@ -135,7 +135,7 @@ Blazorの記録画面の状態と操作は `Kizamu.Frontend.Blazor.Presentation`
 
 同じ業務ロジックが必要な場合、ASP.NET CoreとBlazorは.NET版、NodeとReactはTypeScript版のDomainを共用できます。異なる言語間で同じライブラリの直接参照は前提にせず、HTTP API契約で相互運用します。Domainが通信用DTOへ依存する構成にはしません。
 
-フロントエンドはブラウザーだけを意味しません。BlazorのServerは静的ファイル配信と `/api/...` の中継を担当し、記録処理は持ちません。業務APIへのプロジェクト参照はせず、接続先URLだけを設定します。SSR・Autoは採用しておらず、UIは引き続きWebAssemblyとしてブラウザー内で実行します。React公開時にもフロント側の配信・API中継サーバーを置く方針ですが、未実装です。開発時は既存のVite proxyが中継します。
+フロントエンドはブラウザーだけを意味しません。BlazorのServerは静的ファイル配信と `/api/...` の中継を担当し、記録処理は持ちません。業務APIへのプロジェクト参照はせず、接続先URLだけを設定します。SSR・Autoは採用しておらず、UIは引き続きWebAssemblyとしてブラウザー内で実行します。React公開時にもフロント側の配信・API中継サーバーを置く方針です。公開用サーバーのAPI中継と、serve-handlerによる静的ファイルの配信を実装しています。開発時は既存のVite proxyが中継します。
 
 作業記録の開始・終了APIは、`Sec-Fetch-Site: same-origin` の要求だけを受け付けます。ASP.NET CoreとNodeのHTTP境界で検証し、情報の欠落や他の値では、記録を変更する前に `403 Forbidden` を返します。一覧とhealthのGETには、この制約を設けません。対応ブラウザーが標準情報を自動付与するため、BlazorやReactで独自ヘッダーを追加する必要はありません。
 
@@ -147,11 +147,11 @@ Visual Studio用の共有一括起動設定は `Kizamu.slnLaunch` と `Kizamu.Bl
 
 1. 既存の時間記録機能はBlazorへ移行済みです。ASP.NET Coreとの組み合わせを第一実装としてMVPを進めます。
 2. .NETの業務APIと画面配信を分離し、Node版に現在の正常性確認・記録の開始・終了・一覧APIを追加しました。Reactの追加機能開発は引き続き保留し、NodeやReactが将来のMVPと同じ機能を持つとは扱いません。
-3. 業務APIとフロントサーバーを独立した起動・配備単位にします。ブラウザーはフロントサーバーだけに接続し、API通信はそこから業務APIへ中継します。
+3. 業務APIとフロントサーバーのプロジェクトを分け、独立した配置と近接した配置のどちらも可能にする方針です。現在は別プロセスで起動します。ブラウザーはフロントサーバーだけに接続し、API通信はそこから業務APIへ中継します。
 
-当初は製品として一つのリリースバージョンを使い、含まれる実装の機能範囲と検証済みの組み合わせを明示する方針です。全組み合わせを毎回配布する前提にはしません。HTTP APIの互換性と保存データの互換性は別に設計し、別サーバーに同じデータベース構造を強制しません。
+当初は製品として一つのリリースバージョンを使い、含まれる実装の機能範囲と検証済みの組み合わせを明示する方針です。現在の共有デモでは2種類ずつの画面・APIの4組み合わせを配置します。将来実装を追加した場合の公開対象は、その時点で判断します。HTTP APIの互換性と保存データの互換性は別に設計し、別サーバーに同じデータベース構造を強制しません。
 
-対応OS、ランタイム同梱、ZIPやインストーラーなどの配布形態と、その組み立て処理は未実装・未確定です。
+各実装のDockerイメージを組み立て、Azure Container Appsへ配置する手順を用意しています。ZIPやインストーラーなど、その他の配布形態は未確定です。
 
 標準の `dotnet publish` で業務APIとBlazorサーバーを別々の出力先へ公開します。Blazorサーバーの出力にはClientの静的ファイルが含まれます。以下は動作確認用のフレームワーク依存の出力であり、利用環境にはASP.NET Core Runtime 10が必要です。
 
@@ -286,6 +286,28 @@ dotnet run --project src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api --no-
 
 正常性確認は `http://localhost:5213/api/health`、記録一覧は `http://localhost:5213/api/time-records` です。
 
+## Azure共有デモのCI/CD
+
+GitHub Actionsでビルド・テスト後に4組み合わせを配置する定義と、BicepによるAzure環境の構成を用意しています。初回のAzure・GitHub設定、プレビュー、手動実行は [CI/CDの手順](docs/deployment.md) を参照してください。
+
+## React・Node版のDockerイメージをビルド
+
+PowerShell 7とDocker Engineを使用します。WindowsではWSLのUbuntu内のDockerを、Linuxでは実行ユーザーが使えるDockerを利用します。リポジトリルートから実行してください。
+
+```powershell
+./scripts/Build-ReactNodeImages.ps1
+```
+
+`kizamu-node-api:local` と `kizamu-react:local` が作成されます。同じタグが既にある場合は新しいイメージを指すようになります。WindowsでUbuntu以外のWSLディストリビューションを使うときは `-Distribution` で指定できます。
+
+コンテナ間で接続する際はNode APIに `HOST=0.0.0.0` を指定し、Reactの `API_BASE_URL` にNode APIのURLを指定します。ポートはそれぞれ環境変数 `PORT` で設定できます。
+
+二つのコンテナを一時的に起動して画面配信とAPI中継を確認するには、次を実行します。検証用のコンテナ・ネットワーク・イメージは終了時に削除されます。
+
+```powershell
+./scripts/Test-ReactNodeContainers.ps1
+```
+
 ## Node版業務APIのセットアップと起動
 
 リポジトリルートで実行します。
@@ -295,7 +317,7 @@ npm ci
 npm run dev --workspace=kizamu-backend-node
 ```
 
-TypeScriptをビルドして `http://localhost:5213` でAPIを起動します。変更後は停止・再実行します。画面は配信しません。ASP.NET Core版と同じポートを使うため、両バックエンドを同時に起動しないでください。
+TypeScriptをビルドして `http://localhost:5213` でAPIを起動します。待受アドレスは環境変数 `HOST` で変更でき、未指定時は `localhost` です。ポートは環境変数 `PORT` で変更できます。変更後は停止・再実行します。画面は配信しません。ASP.NET Core版と同じポートを使うため、両バックエンドを同時に起動しないでください。
 
 別のターミナルで、Blazor ServerまたはReactのViteを上記・下記の手順で起動します。既存の `/api` 中継先を変更せず、そのままNodeへ接続できます。Visual Studioでは `Kizamu.slnx` の `Blazor + Node` または `React + Node` を選びます。Nodeのデバッグ設定は製品ディレクトリの `.vscode/launch.json` に置き、ビルド済みの `dist/server.js` を起動します（[Visual StudioのNodeデバッグ設定](https://learn.microsoft.com/en-us/visualstudio/javascript/tutorial-nodejs?view=visualstudio#examine-the-launchjson-file)）。
 
@@ -306,7 +328,7 @@ npm run build --workspace=kizamu-backend-node
 npm start --workspace=kizamu-backend-node
 ```
 
-ポートは環境変数 `PORT` で変更できます。その場合はフロント側のAPI中継先も合わせます。Nodeの起動に.NETは不要ですが、Blazor Serverと組み合わせる場合は.NETも必要です。配布用成果物の組み立てはまだ用意していません。
+ポートは環境変数 `PORT` で変更できます。その場合はフロント側のAPI中継先も合わせます。Nodeの起動に.NETは不要ですが、Blazor Serverと組み合わせる場合は.NETも必要です。Dockerイメージの組み立て手順は [CI/CDの手順](docs/deployment.md) を参照してください。
 
 互換性の範囲は、既存画面から行う正常性確認・開始・終了・一覧と、[NodeのHTTPテスト](tests/backends/node/)で確認しています。不明なIDの終了など未確定の異常系まで、両実装が同じ応答を保証するものではありません。
 
@@ -392,7 +414,7 @@ BlazorサーバーのAPI中継には、Microsoft提供の [Yarp.ReverseProxy](ht
 
 ## 未実装
 
-プロジェクト登録・タブ切替、プロジェクト単位の複数同時記録、記録の修正、作業ツリー、時間配分、Clockify連携、ログイン、ユーザー管理、永続化、集計、公開用成果物の組み立ては未実装です。直近の作業状況は実装計画の「現在の次作業」を参照してください。
+プロジェクト登録・タブ切替、プロジェクト単位の複数同時記録、記録の修正、作業ツリー、時間配分、Clockify連携、ログイン、ユーザー管理、永続化、集計は未実装です。直近の作業状況は実装計画の「現在の次作業」を参照してください。
 
 AsData連携およびWord・Excel・PDFの入出力は今後の検討対象です。今回のBlazor移行には含めず、対応形式、処理場所、依存ライブラリを決めてから別の作業単位として扱います。
 

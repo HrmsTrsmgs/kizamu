@@ -518,13 +518,10 @@ MVPではモックテストを主な自動検証とし、実Clockify確認は公
 
 ## 現在の次作業
 
-* 作業ブランチはcodex/google-login-plan。実機確認の基準は327e58b。実機記録のコミットはbbf2fbc。mainのd28c367を統合。Googleログイン接続、ログアウト、表示条件のRefactorとローカル設定手順はコミット済み。
-* mainの記録ID欠落拒否、古い一覧応答の制御、表示・テスト整理を取り込み、Reactの認証付き画面とReducer内のプロジェクト名参照を両立させる。統合版は.NETテスト186件、npmテスト180件、全体ビルド・npm lint・C# formatが成功。非増分ビルドの警告・エラー0、16件のSARIFの診断0を確認した。統合版の実Googleログイン操作は再実行していない。main側の記録ID欠落修正の経緯はPR #25とd28c367以前の履歴を参照。JSONキー名の扱いは引き続き検討事項。
-* 2026-11-17に、指定アカウントの既存WebクライアントIDをBlazorのwwwroot/appsettings.jsonとReactの.env.localへ設定した。両ファイルのID一致とGit除外を確認済み。実値は出力・追跡対象へ保存せず、業務APIには起動プロセスの環境変数で渡した。Windowsの永続的なユーザー環境変数は設定していない。
-* このマシンのWindows・Chrome・localhostで、Blazor＋ASP.NET Core、React＋ASP.NET Core、React＋Nodeの実Googleログイン、認証付き一覧取得、記録開始・終了、ログアウトを確認した。Blazor＋ASP.NET Coreではログアウト後の再ログインも確認した。実際のGoogle署名検証を含むローカル確認であり、別マシンへのクローン、IDE起動、公開環境、別利用者との分離の実機確認ではない。
-* Blazor＋Nodeはブラウザー操作のタイムアウトにより確認を完了できなかった。成功・アプリケーションの不具合とは判定していない。
-* ASP.NET Core API・Blazor Serverのビルド（警告0・エラー0）、Node APIビルド、Reactの本番ビルドが成功。製品コードの変更はなく、既済の単体テストと静的解析は再実行していない。ローカル設定への最初の受け渡しは形式検査で停止し、Google Cloudのコピー操作から取得し直してからファイルを作成した。
-* 認証済み状態を直接注入する既存のテスト経路ではログアウト後も認証済み表示が残る。実起動はこの値を注入していない。BlazorのGoogleボタン再描画では旧DotNetObjectReferenceを破棄せず上書きする。いずれも未修正で、今回の実ログイン成功は参照解放の保証ではない。
-* 確認用のASP.NET Core、Node、Blazor Server、Viteを停止し、ポート5213・5214・5173に待受が残っていないことを確認した。テスト記録はAPIのメモリ保持だけで、停止により失われる。確認画面の画像はリポジトリ外のローカル成果物として保存した。
-* 実機確認の記録はbbf2fbcとして保存済み。mainとの競合を解消し、Google認証・利用者別記録・画面接続・ローカル設定手順をPRの対象とする。次の確認対象は未完了のBlazor＋Nodeと既知のログアウト関連課題。
-* Google Cloudは既存クライアントとlocalhost、localhost:5214、localhost:5173のJavaScript生成元を読み取り確認し、設定は変更していない。以前に指定と異なるアカウントへ誤作成したプロジェクトは、開発者の了承で2026-11-13にシャットダウンし、その時点で削除保留・2026-12-13以降の削除予定を確認した。指定アカウント側のプロジェクトとクライアントを使用した。テストユーザー登録が常に必須との過去の説明は誤りで、[Google公式](https://support.google.com/cloud/answer/15549945)はGoogleログインのみの場合を例外としている。
+* CI/CDとAzure環境自動構成の整備。作業ブランチは codex/portfolio-publish、CI/CDコミットは c4c090d、統合したmainは 0fd4fff。2026-11-18の開発者指示により、今回の到達点はドラフトPRの作成と検証までとし、マージ・公開更新は保留する。手順と判断は [CI/CD](../docs/deployment.md) と [D016](../docs/decisions.md#d016azure共有デモの構成とデプロイをコード化する) を参照。
+* Bicep CLI・公式Actionsは追加了承済み。既存Azure環境とGitHubのazure-demo Environmentへの初回設定を確認済み。CI用IDの対象グループContributor・レジストリAcrPush、main限定の信頼条件、3変数を確認し、初期化を繰り返しても同じIDを維持した。
+* 最新mainを統合した版で、Windowsのnpm全187テスト・.NET全186テストとlint・buildが成功。WSLの一時コンテナでReact・Nodeのビルド、画面・React自身のJavaScript配信、API healthの中継を確認し、検証用コンテナ等を削除した。Googleスクリプト追加に合わせ、配信確認が外部JavaScriptを取得しないよう検証対象を絞った。
+* npm監査は実行時依存が0件、開発用を含む全体が23件（moderate 11・high 12）。依存の更新は行っていない。PowerShell・YAMLの構文検証、Bicepコンパイル、4イメージの検証用タグ登録と既存環境のプレビューは成功済み。詳細はデプロイ文書を参照。
+* 公開中のイメージは従来の9a2606e（.NET）とdf1a8cd（React・Node）を維持し、4画面の公開経路を確認済み。今回のPR作業ではAzureの構成・配置を更新していない。既存のローカルBlazor設定は保持し、Git・Dockerの対象から除外する。
+* mainの認証実装は保持した。認証側の実機確認と既知の制約はPR #26・bbf2fbc、記録応答と表示の修正はPR #24・#25を参照。JSONキー名など別作業の検討事項をこのPRで確定しない。
+* 次の公開作業には、GoogleクライアントIDを画面のビルドと両APIへ渡す設定、4画面の承認済みJavaScript生成元、公開環境でのログイン・利用者別操作の確認が必要。初回の自動デプロイと空のリソースグループからの作成は未確認。GitHub上のPR検証結果はPRのChecksを参照する。マージ・公開再開は開発者の指示を待つ。DBは別作業のまま。

@@ -1,0 +1,69 @@
+name: CI and Azure demo
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - run: npm ci
+      - name: Build, lint and test
+        shell: pwsh
+        run: ./scripts/Test-CI.ps1
+      - name: Validate Azure templates
+        shell: pwsh
+        run: |
+          az bicep install --version v0.49.2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          az bicep build --file infra/azure/foundation.bicep --stdout > $null
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          az bicep build --file infra/azure/apps.bicep --stdout > $null
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: azure-demo
+    concurrency:
+      group: azure-demo
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: Azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Install Bicep
+        shell: pwsh
+        run: |
+          az bicep install --version v0.49.2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Configure environment, publish images and deploy
+        shell: pwsh
+        run: ./scripts/Deploy-AzureDemo.ps1 -ImageTag $env:GITHUB_SHA
