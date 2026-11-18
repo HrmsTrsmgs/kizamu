@@ -58,6 +58,12 @@ describe('timeRecordService', () => {
     startedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻)))
   })
 
+  it('記録開始APIの成功応答に記録IDがなければ失敗を通知します', async () => {
+    fetchMock.mockImplementation(async () => Response.json({ startedAt: 開始時刻, endedAt: null }, { status: 201 }))
+
+    await tested.startTimeRecord().should.rejects.toThrow()
+  })
+
   it('指定した記録の終了APIへPOSTします', async () => {
     fetchMock.mockImplementation(async () => Response.json(終了済みの応答))
 

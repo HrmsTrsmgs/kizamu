@@ -21,8 +21,26 @@ public sealed class TimeRecordTimesTests : IDisposable
         var 時刻要素 = tested.FindAll("time");
 
         時刻要素.Select(it => it.TextContent).Should().Equal("2026/08/01 18:00", "2026/08/01 19:30");
-        時刻要素.Select(it => it.GetAttribute("datetime")).Should().Equal(
-            "2026-08-01T09:00:00.0000000+00:00", "2026-08-01T10:30:00.0000000+00:00");
+        時刻要素.Should().HaveCount(2);
+        時刻要素.Select(it => it.GetAttribute("datetime")).Should().AllSatisfy(it =>
+            it.Should().MatchRegex(@"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$"));
+        DateTimeOffset.TryParse(時刻要素[0].GetAttribute("datetime"), out var 開始日時).Should().BeTrue();
+        DateTimeOffset.TryParse(時刻要素[1].GetAttribute("datetime"), out var 終了日時).Should().BeTrue();
+        開始日時.Should().Be(開始時刻);
+        終了日時.Should().Be(開始時刻.AddMinutes(90));
+    }
+
+    [Fact]
+    public void 小数秒が3桁を超える日時は秒や日付を繰り上げずに切り捨てます()
+    {
+        var 開始時刻 = DateTimeOffset.Parse("2026-08-01T23:59:59.9999999+09:00");
+        var 終了時刻 = DateTimeOffset.Parse("2026-08-02T00:00:59.9999999+09:00");
+        var tested = context.Render<TimeRecordTimes>(it => it
+            .Add(it => it.StartedAt, 開始時刻)
+            .Add(it => it.EndedAt, 終了時刻));
+
+        tested.FindAll("time").Select(it => it.GetAttribute("datetime")).Should().Equal(
+            "2026-08-01T23:59:59.999+09:00", "2026-08-02T00:00:59.999+09:00");
     }
 
     [Fact]

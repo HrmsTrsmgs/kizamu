@@ -20,6 +20,12 @@ describe('共有Domainの依存境界', () => {
     report.messages.map(message => message.ruleId).should.include('no-restricted-imports')
   })
 
+  it('型importによるReactへの依存を検出します', async () => {
+    const [report] = await lint.lintText("export type Example = import('react').ReactNode", { filePath: 'example.ts' })
+
+    report.messages.filter(message => message.ruleId?.startsWith('no-restricted')).should.not.deep.equal([])
+  })
+
   it.each([
     { code: "void fetch('/api/time-records')", rule: 'no-restricted-globals' },
     { code: "void import('../../backends/node/app.js')", rule: 'no-restricted-syntax' },

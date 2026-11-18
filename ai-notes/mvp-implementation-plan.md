@@ -512,9 +512,10 @@ MVPではモックテストを主な自動検証とし、実Clockify確認は公
 
 ## 現在の次作業
 
-* CI/CDとAzure環境自動構成の整備。作業ブランチは codex/portfolio-publish、基準HEADは 0c7d6b9。開発者が定義・スクリプト・文書のPR作成を了承。詳細は [CI/CDの手順](../docs/deployment.md) と [D016](../docs/decisions.md#d016azure共有デモの構成とデプロイをコード化する) を参照。
+* CI/CDとAzure環境自動構成の整備。作業ブランチは codex/portfolio-publish、CI/CDコミットは c4c090d。開発者が定義・スクリプト・文書のPR作成を了承。詳細は [CI/CDの手順](../docs/deployment.md) と [D016](../docs/decisions.md#d016azure共有デモの構成とデプロイをコード化する) を参照。
 * 開発者の了承を得てBicep CLIと公式Actionsを使用。GitHub ActionsでPRを検証し、mainで検証成功後に4イメージと6サービスを構成する定義を作成。初回セットアップは既存Azure環境とGitHubのazure-demo Environmentに適用済み。CI用IDの対象グループContributor・レジストリAcrPush、main限定の信頼条件、3変数を確認。初期化の再実行で同じIDを維持した。
-* Windowsでnpm全159テスト・.NET全161テスト、lint・build、PowerShellとYAMLの構文検証、Bicepコンパイルが成功。4イメージをWSLでビルドして ci-validation-0c7d6b9 タグでレジストリへ登録し、構成と登録済みイメージ再配置をAzureでプレビューした。初期化のWindows引数と新規ID照会の不具合は修正して再実行成功。
+* mainの d28c367 を統合したWindowsでnpm全164テスト・.NET全163テスト、lint・build、PowerShellとYAMLの構文検証、Bicepコンパイルが成功。4イメージをWSLでビルドして ci-validation-0c7d6b9 タグでレジストリへ登録し、構成と登録済みイメージ再配置をAzureでプレビューした。初期化のWindows引数と新規ID照会の不具合は修正して再実行成功。
 * GitHub上の実workflow、LinuxでのPowerShell直接実行、空のリソースグループからの作成は未確認。公開中のイメージは従来の9a2606e（.NET）とdf1a8cd（React・Node）を維持し、4画面の公開経路確認が成功。認証・DBは別作業のまま。
 * 公開URL： [Blazor＋ASP.NET Core](https://kizamu-demo-web.jollybush-ccde0076.japaneast.azurecontainerapps.io/)、[React＋ASP.NET Core](https://kizamu-react-aspnet.jollybush-ccde0076.japaneast.azurecontainerapps.io/)、[React＋Node](https://kizamu-react-node.jollybush-ccde0076.japaneast.azurecontainerapps.io/)、[Blazor＋Node](https://kizamu-blazor-node.jollybush-ccde0076.japaneast.azurecontainerapps.io/)。
-* 次はコミット・pushとmainへの統合を行い、最初のGitHub Actions実行を確認する。main側は別作業で進んでおり、このブランチは12コミット遅れている。既存の未追跡Blazor PropertiesとDocker作業ツリーの記録は変更していない。
+* 次はコミット・pushとmainへの統合を行い、最初のGitHub Actions実行を確認する。mainの d28c367 を取り込み、記録ID欠落の拒否と表示・依存境界の修正を保持した。既存の未追跡Blazor PropertiesとDocker作業ツリーの記録は変更していない。
+* mainから取り込んだレビュー対応の根拠と検証はPR #24・#25を参照。JSONキー名の扱いなど、別作業の未確定事項をこのCI/CD作業で確定しない。

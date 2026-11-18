@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Net;
+using System.Text.Json;
 using AwesomeAssertions;
 using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Infrastructure.TimeRecords;
@@ -61,6 +62,16 @@ public sealed class TimeRecordApiTests : IDisposable
         TimeRecord 受信した記録 = await tested.StartTimeRecordAsync();
 
         受信した記録.Should().BeEquivalentTo(記録);
+    }
+
+    [Fact]
+    public async Task 記録開始APIの成功応答に記録IDがなければ失敗を通知します()
+    {
+        handler.RespondWithJson(new { startedAt = 開始時刻, endedAt = (DateTimeOffset?)null }, HttpStatusCode.Created);
+
+        var 操作 = () => tested.StartTimeRecordAsync();
+
+        await 操作.Should().ThrowAsync<JsonException>();
     }
 
     [Fact]
