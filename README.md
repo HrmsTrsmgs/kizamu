@@ -2,7 +2,7 @@
 
 作業を中断せず、プロジェクトごとの時間を素早く記録するタイムトラッカー。
 
-現在、両画面はGoogle Identity Servicesのログインボタンを表示し、取得したIDトークンを記録APIへ送る構成です。Google側の設定を含む実ブラウザーでのログインは未確認です。記録は業務APIのメモリ上だけに保持し、そのサーバーを再起動すると失われます。
+現在、両画面はGoogle Identity Servicesのログインボタンを表示し、取得したIDトークンを記録APIへ送る構成です。2026-11-17にWindowsのChrome・localhostで、Blazor＋ASP.NET Core、React＋ASP.NET Core、React＋Nodeの実Googleログイン、記録の開始・終了、ログアウトを確認しました。Blazor＋Nodeは確認未完了です。記録は業務APIのメモリ上だけに保持し、そのサーバーを再起動すると失われます。
 
 Googleログインの準備は、[Googleログインのローカル設定](#googleログインのローカル設定)を参照してください。クライアントIDの入手、クローン後に作るファイル、APIへ渡す環境変数を説明しています。
 
@@ -247,7 +247,7 @@ git check-ignore -v -- src/frontends/blazor/Kizamu.Frontend.Blazor.Client/wwwroo
 git check-ignore -v -- src/frontends/react/.env.local
 ```
 
-下記の起動手順で画面を開き、Googleログイン、記録の開始・終了、ログアウトを確認します。設定内容とファイル形式は実装・公式資料と照合していますが、別マシンへのクローンから実際のGoogleログインまでの一連の操作はまだ未検証です。
+下記の起動手順で画面を開き、Googleログイン、記録の開始・終了、ログアウトを確認します。設定内容とファイル形式は実装・公式資料と照合しています。実Googleログインの確認範囲は冒頭に記載したローカルの組み合わせに限り、別マシンへのクローンからのセットアップ、IDE起動、公開環境での一連の操作は未検証です。
 
 ## Blazor版のセットアップと起動
 
