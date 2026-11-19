@@ -25,6 +25,15 @@ public sealed class TimeRecordTests
     }
 
     [Fact]
+    public void 識別子と開始時刻と終了時刻が同じ記録は等しくなります()
+    {
+        var 記録 = new TimeRecord(記録ID, 開始時刻, 終了時刻);
+        var 復元した記録 = new TimeRecord(記録ID, 開始時刻, 終了時刻);
+
+        (記録 == 復元した記録).Should().BeTrue();
+    }
+
+    [Fact]
     public void 記録を開始すると空でない識別子が割り当てられます()
     {
         tested.Id.Should().NotBeEmpty();
