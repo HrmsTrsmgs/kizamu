@@ -57,7 +57,7 @@ public sealed class TimeRecordEndOperationTests
         tested.Execute(最初の記録.Id).Should().Be(new EndTimeRecordResult(最初の記録.Id, 早い時刻, 遅い時刻));
     }
 
-    [Fact(Skip = "記録終了 3：終了前の記録を検証している。保存した複数の記録から更新対象を確認する際に解除する。")]
+    [Fact]
     public void 複数の記録から指定した記録だけを終了する()
     {
         var (最初の記録, 次の記録) = 二件の記録を開始して保存する();
@@ -65,8 +65,13 @@ public sealed class TimeRecordEndOperationTests
 
         tested.Execute(最初の記録.Id);
 
-        最初の記録.EndedAt.Should().Be(遅い時刻);
-        次の記録.EndedAt.Should().BeNull();
+        var 指定した記録 = state.Find(最初の記録.Id);
+        指定した記録.Should().NotBeNull();
+        指定した記録.EndedAt.Should().Be(遅い時刻);
+
+        var 対象外の記録 = state.Find(次の記録.Id);
+        対象外の記録.Should().NotBeNull();
+        対象外の記録.EndedAt.Should().BeNull();
     }
 
     [Fact]
