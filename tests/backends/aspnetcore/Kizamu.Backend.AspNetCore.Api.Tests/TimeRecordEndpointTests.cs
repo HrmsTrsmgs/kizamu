@@ -165,7 +165,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         body.EndedAt.Should().Be(遅い時刻);
     }
 
-    [Fact(Skip = "記録終了 5：終了後の一覧に終了時刻が反映されない。API経由で終了結果の反映を確認する際に解除する。")]
+    [Fact]
     public async Task 開始して終了した記録の一覧を取得すると200とJSON配列が返されます()
     {
         var recordId = await 終了済みの記録を用意する(早い時刻, 遅い時刻);
