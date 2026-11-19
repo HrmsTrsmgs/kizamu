@@ -34,7 +34,7 @@ public sealed class TimeRecordEndOperationTests
     }
 
     [Theory]
-    [MemberData(nameof(記録時刻の例), Skip = "記録終了 2：終了前の記録を検証している。終了操作後の保存内容を検証する際に解除する。")]
+    [MemberData(nameof(記録時刻の例))]
     public void 記録を終了すると保存された記録の終了時刻を現在時刻に更新する(
         DateTimeOffset startedAt, DateTimeOffset endedAt)
     {
@@ -43,7 +43,9 @@ public sealed class TimeRecordEndOperationTests
 
         tested.Execute(timeRecord.Id);
 
-        timeRecord.EndedAt.Should().Be(endedAt);
+        var 保存された記録 = state.Find(timeRecord.Id);
+        保存された記録.Should().NotBeNull();
+        保存された記録.EndedAt.Should().Be(endedAt);
     }
 
     [Fact]

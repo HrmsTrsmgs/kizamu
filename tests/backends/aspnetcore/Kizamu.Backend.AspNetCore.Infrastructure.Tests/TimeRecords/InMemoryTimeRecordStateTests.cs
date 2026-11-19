@@ -53,6 +53,18 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
+    public void 終了した記録で更新すると一覧の元の位置に反映される()
+    {
+        tested.Add(最初の記録);
+        tested.Add(次の記録);
+        var 終了した記録 = 最初の記録.End(次の開始時刻);
+
+        tested.Update(終了した記録);
+
+        tested.All.Should().Equal(終了した記録, 次の記録);
+    }
+
+    [Fact]
     public void コピー後に追加した記録はコピーした一覧に含まれません()
     {
         tested.Add(最初の記録);

@@ -29,6 +29,17 @@ public sealed class InMemoryTimeRecordState : ITimeRecordState
     }
 
     /// <inheritdoc />
+    public void Update(TimeRecord timeRecord)
+    {
+        lock (sync)
+        {
+            var index = timeRecords.FindIndex(it => it.Id == timeRecord.Id);
+            if (index >= 0)
+                timeRecords[index] = timeRecord;
+        }
+    }
+
+    /// <inheritdoc />
     public TimeRecord[] CopyAll()
     {
         lock (sync)

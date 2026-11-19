@@ -31,6 +31,12 @@ public interface ITimeRecordState
     TimeRecord? Find(Guid id);
 
     /// <summary>
+    /// 同じ識別子の作業記録を、保存順を保って差し替えます。
+    /// </summary>
+    /// <param name="timeRecord">更新後の作業記録。</param>
+    void Update(TimeRecord timeRecord);
+
+    /// <summary>
     /// 作業記録を追加します。
     /// </summary>
     /// <param name="timeRecord">追加する作業記録。</param>
