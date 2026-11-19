@@ -26,13 +26,13 @@ test('メールが同じでもsubが異なる利用者を区別する', async ()
 })
 
 test.each([
-  ['signature', () => createToken({ signingKey: attackerKey.privateKey })],
-  ['issuer', () => createToken({ issuer: 'https://attacker.example.test' })],
-  ['audience', () => createToken({ audience: 'another-client' })],
-  ['expired', () => createToken({ expired: true })],
-  ['missing-sub', () => createToken({ subject: null })],
-  ['malformed', () => 'not-a-jwt'],
-])('不正なGoogleトークンから本人識別子を返さない (%s)', async (_, token) => {
+  ['Googleの公開鍵で署名を検証できないトークン', () => createToken({ signingKey: attackerKey.privateKey })],
+  ['発行者がGoogleでないトークン', () => createToken({ issuer: 'https://attacker.example.test' })],
+  ['対象のクライアントが異なるトークン', () => createToken({ audience: 'another-client' })],
+  ['有効期限が過ぎたトークン', () => createToken({ expired: true })],
+  ['subがないトークン', () => createToken({ subject: null })],
+  ['JWT形式でない文字列', () => 'not-a-jwt'],
+])('%sから本人識別子を返さない', async (_, token) => {
   const tested = new GoogleIdTokenVerifier('kizamu-client', publicKeyFetch)
 
   ;({ subject: await tested.verify(token()) }).should.deep.equal({ subject: null })

@@ -63,38 +63,68 @@ describe('TimeRecorderView', () => {
     startTimeRecord.should.have.callCount(0)
   })
 
-  it('終了済み記録の日本時間と作業時間を一覧に表示します', () => {
-    render(<TimeRecorderView {...view} state={{ ...view.state, records: [終了済み記録] }} />)
+  describe('一覧に終了済みの記録が1件あるとき', () => {
+    beforeEach(() => {
+      render(<TimeRecorderView {...view} state={{ ...view.state, records: [終了済み記録] }} />)
+    })
 
-    screen.getByText('1件').should.toBeInTheDocument()
-    const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
-    list.getByText('2026/08/01 18:00').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
-    list.getByText('2026/08/01 19:30').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
-    list.getByText('作業時間').should.toBeInTheDocument()
-    list.getByText('1時間30分').should.toBeInTheDocument()
-    screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
+    it('一覧の件数を表示します', () => {
+      screen.getByText('1件').should.toBeInTheDocument()
+    })
+
+    it('一覧に開始・終了の日時点を日本時間で表示します', () => {
+      const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
+
+      list.getByText('2026/08/01 18:00').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
+      list.getByText('2026/08/01 19:30').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
+    })
+
+    it('一覧に作業時間を表示します', () => {
+      const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
+
+      list.getByText('作業時間').should.toBeInTheDocument()
+      list.getByText('1時間30分').should.toBeInTheDocument()
+    })
+
+    it('操作パネルに開始ボタンを表示します', () => {
+      screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
+    })
   })
 
-  it('記録中の状態を一覧に表示します', () => {
-    render(<TimeRecorderView {...view} state={{ ...view.state, records: [記録], timeRecordId: 記録ID }} />)
+  describe('一覧の記録が記録中で終了対象になっているとき', () => {
+    beforeEach(() => {
+      render(<TimeRecorderView {...view} state={{ ...view.state, records: [記録], timeRecordId: 記録ID }} />)
+    })
 
-    screen.getByRole('button', { name: '記録を終了' }).should.toBeInTheDocument()
-    should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
-    screen.getByText('記録中', { selector: '.status-badge' }).should.toBeInTheDocument()
-    const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
-    list.getByText('2026/08/01 18:00').should.toBeInTheDocument()
-    list.getByText('記録中').should.toBeInTheDocument()
+    it('操作パネルに記録中の表示と終了ボタンを出します', () => {
+      screen.getByRole('button', { name: '記録を終了' }).should.toBeInTheDocument()
+      should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
+      screen.getByText('記録中', { selector: '.status-badge' }).should.toBeInTheDocument()
+    })
+
+    it('一覧に開始時刻と記録中の表示を出します', () => {
+      const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
+      list.getByText('2026/08/01 18:00').should.toBeInTheDocument()
+      list.getByText('記録中').should.toBeInTheDocument()
+    })
   })
 
-  it.each([
+  describe.each([
     { timeRecordId: null, operationName: '記録を開始' },
     { timeRecordId: 記録ID, operationName: '記録を終了' },
-  ])('最新状態を確認できないときは$operationNameを無効にして再取得を案内します', ({ timeRecordId, operationName }) => {
-    render(<TimeRecorderView {...view} state={{ ...view.state, timeRecordId }} controls={未確認時の操作} />)
+  ])('最新状態が未確認で「$operationName」を表示するとき', ({ timeRecordId, operationName }) => {
+    beforeEach(() => {
+      render(<TimeRecorderView {...view} state={{ ...view.state, timeRecordId }} controls={未確認時の操作} />)
+    })
 
-    screen.getByRole('alert').should.toHaveTextContent('最新状態を確認できません')
-    screen.getByRole('button', { name: operationName }).should.toBeDisabled()
-    screen.getByRole('button', { name: '再取得' }).should.toBeEnabled()
+    it('記録操作を無効にします', () => {
+      screen.getByRole('button', { name: operationName }).should.toBeDisabled()
+    })
+
+    it('未確認の案内と操作できる再取得ボタンを表示します', () => {
+      screen.getByRole('alert').should.toHaveTextContent('最新状態を確認できません')
+      screen.getByRole('button', { name: '再取得' }).should.toBeEnabled()
+    })
   })
 
   it('再取得ボタンを押すと一覧再取得を呼びます', () => {
@@ -137,17 +167,23 @@ describe('TimeRecorder', () => {
     alert.should.toHaveTextContent('失敗')
   })
 
-  it('開始と終了の操作を画面状態と時刻表示へ接続します', async () => {
+  it('開始ボタンで記録を開始したら終了操作と確定した開始時刻を表示します', async () => {
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
 
-    const endButton = await screen.findByRole('button', { name: '記録を終了' })
+    ;(await screen.findByRole('button', { name: '記録を終了' })).should.toBeInTheDocument()
     startTimeRecord.should.have.callCount(1)
     should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
     screen.getByLabelText('開始時刻').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
     screen.getByLabelText('開始時刻').should.toHaveTextContent('2026/08/01 18:00')
     screen.getByRole('listitem').should.toHaveTextContent('2026/08/01 18:00')
+  })
+
+  it('終了ボタンで記録を終了したら待機中に戻り確定した終了時刻と作業時間を表示します', async () => {
+    render(<TimeRecorder timeRecords={timeRecords} />)
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+    const endButton = await screen.findByRole('button', { name: '記録を終了' })
 
     fireEvent.click(endButton)
 
@@ -180,7 +216,15 @@ describe('TimeRecorder', () => {
 
     await screen.findByText('記録操作に失敗しました。')
     should.not.exist(screen.queryByRole('button', { name: '再取得' }))
-    screen.getByRole('button', { name: '記録を開始' }).should.toBeEnabled()
+  })
+
+  it('再取得で空の一覧を確認すると記録を開始できるようになります', async () => {
+    const retry = await 一覧を確認できず再取得を待つ画面を用意する()
+    getTimeRecords.mockResolvedValueOnce([])
+
+    fireEvent.click(retry)
+
+    await waitFor(() => screen.getByRole('button', { name: '記録を開始' }).should.toBeEnabled())
   })
 
   it('再取得に失敗しても未確認の案内と再取得操作を表示します', async () => {

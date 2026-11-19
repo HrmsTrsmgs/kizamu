@@ -39,28 +39,42 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
         (await tested.VerifyAsync(CreateToken(subject: "second-user"))).Should().Be("second-user");
     }
 
-    [Theory]
-    [InlineData("signature")]
-    [InlineData("issuer")]
-    [InlineData("audience")]
-    [InlineData("expired")]
-    [InlineData("missing-sub")]
-    [InlineData("malformed")]
-    public async Task 不正なGoogleトークンから本人識別子を返さない(string invalidPart)
+    [Fact]
+    public async Task Googleの公開鍵で検証できない署名から本人識別子を返さない()
     {
         using var attackerKey = RSA.Create(2048);
-        var token = invalidPart switch
-        {
-            "signature" => CreateToken(signingKey: attackerKey),
-            "issuer" => CreateToken(issuer: "https://attacker.example.test"),
-            "audience" => CreateToken(audience: "another-client"),
-            "expired" => CreateToken(expired: true),
-            "missing-sub" => CreateToken(subject: null),
-            "malformed" => "not-a-jwt",
-            _ => throw new ArgumentOutOfRangeException(nameof(invalidPart))
-        };
 
-        (await tested.VerifyAsync(token)).Should().BeNull();
+        (await tested.VerifyAsync(CreateToken(signingKey: attackerKey))).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task 発行者がGoogleでないトークンから本人識別子を返さない()
+    {
+        (await tested.VerifyAsync(CreateToken(issuer: "https://attacker.example.test"))).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task 対象のクライアントが異なるトークンから本人識別子を返さない()
+    {
+        (await tested.VerifyAsync(CreateToken(audience: "another-client"))).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task 有効期限が過ぎたトークンから本人識別子を返さない()
+    {
+        (await tested.VerifyAsync(CreateToken(expired: true))).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task トークンにsubがなければ本人識別子を返さない()
+    {
+        (await tested.VerifyAsync(CreateToken(subject: null))).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task JWT形式でない文字列から本人識別子を返さない()
+    {
+        (await tested.VerifyAsync("not-a-jwt")).Should().BeNull();
     }
 
     string CreateToken(

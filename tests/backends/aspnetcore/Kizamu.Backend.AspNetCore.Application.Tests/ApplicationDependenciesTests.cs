@@ -5,15 +5,28 @@ namespace Kizamu.Backend.AspNetCore.Application.Tests;
 
 public sealed class ApplicationDependenciesTests
 {
-    [Fact]
-    public void ユースケースはAPIと保存実装を参照せずDomainだけに依存する()
-    {
-        var references = typeof(TimeRecordStartOperation).Assembly.GetReferencedAssemblies();
+    readonly IEnumerable<string> 参照先 =
+        from reference in typeof(TimeRecordStartOperation).Assembly.GetReferencedAssemblies()
+        let name = reference.Name
+        where name is not null
+        select name!;
 
-        references.Select(it => it.Name).Where(it => it is not null && it.StartsWith("Kizamu.", StringComparison.Ordinal))
-            .Should().Equal("Kizamu.Domain");
-        references.Select(it => it.Name).Should().NotContain(it =>
-            it == "System.Net.Http" || it == "System.Net.Http.Json" || it == "System.Text.Json"
-            || (it != null && it.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal)));
+    [Fact]
+    public void ユースケースが参照するKizamuの層はDomainのみ()
+    {
+        参照先.Where(it => it.StartsWith("Kizamu.", StringComparison.Ordinal)).Should().Equal("Kizamu.Domain");
+    }
+
+    [Fact]
+    public void ユースケースはHTTPを参照しない()
+    {
+        参照先.Should().NotContain(it => it == "System.Net.Http" || it == "System.Net.Http.Json"
+            || it.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ユースケースはJSONを参照しない()
+    {
+        参照先.Should().NotContain(it => it == "System.Text.Json" || it == "System.Net.Http.Json");
     }
 }

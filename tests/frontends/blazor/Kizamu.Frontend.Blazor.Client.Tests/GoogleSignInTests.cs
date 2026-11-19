@@ -10,32 +10,46 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kizamu.Frontend.Blazor.Client.Tests;
 
-public sealed class GoogleSignInTests
+public sealed class GoogleSignInTests : IDisposable
 {
-    [Fact]
-    public async Task Googleのログイン結果を記録画面へ渡します()
+    readonly BunitContext context = new();
+    readonly StubGoogleSignIn google = new();
+    readonly IRenderedComponent<Client.App> tested;
+    string? 記録通信に渡されたトークン;
+
+    public GoogleSignInTests()
     {
-        using var context = new BunitContext();
-        var google = new StubGoogleSignIn();
         var 記録 = new TimeRecord(Guid.Parse("019cde5b-4c00-7000-8000-000000000001"), DateTimeOffset.Parse("2026-08-01T09:00:00Z"), null);
         context.Services.AddSingleton<Client.IGoogleSignIn>(google);
         context.Services.AddSingleton(new HealthStatusViewModel(new StubHealthService()));
         context.Services.AddSingleton<ITimeRecorderViewModel>(new TimeRecorderViewModel(new StubTimeRecordService(記録, 記録)));
         context.Services.AddSingleton(new ProjectTabsViewModel());
         context.Services.AddSingleton(TimeProvider.System);
-        string? 記録通信に渡されたトークン = null;
-        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.CreateTimeRecords, token =>
+        tested = context.Render<Client.App>(parameters => parameters.Add(it => it.CreateTimeRecords, token =>
         {
             記録通信に渡されたトークン = token;
             return new StubTimeRecordService(記録, 記録);
         }));
-
         google.OnCredential.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Googleのログイン結果を受け取ると記録画面を表示します()
+    {
         await tested.InvokeAsync(() => google.OnCredential?.Invoke("google-id-token"));
 
         tested.WaitForAssertion(() => tested.FindAll(".recorder-panel button").Select(it => it.TextContent).Should().Contain("記録を開始"));
+    }
+
+    [Fact]
+    public async Task Googleのログイン結果を記録通信へ渡します()
+    {
+        await tested.InvokeAsync(() => google.OnCredential?.Invoke("google-id-token"));
+
         記録通信に渡されたトークン.Should().Be("google-id-token");
     }
+
+    public void Dispose() => context.Dispose();
 
     sealed class StubGoogleSignIn : Client.IGoogleSignIn
     {

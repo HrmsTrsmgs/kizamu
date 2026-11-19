@@ -12,33 +12,38 @@ describe('Reactの依存境界', () => {
   }, 30_000)
 
   it.each([
-    { file: 'src/presentation/example.ts', code: "import { timeRecordService } from '../infrastructure/timeRecordService'" },
-    { file: 'src/presentation/example.ts', code: "import TimeRecorder from '../timeRecords/TimeRecorder'" },
-    { file: 'src/presentation/example.ts', code: "export { default } from '../App.js'" },
-    { file: 'src/infrastructure/example.ts', code: "import HealthStatus from '../health/HealthStatus'" },
-    { file: 'src/timeRecords/Example.tsx', code: "import { timeRecordService } from '../infrastructure/timeRecordService'" },
-  ])('未使用と型専用を含め禁止方向の静的importと再exportを検出します: $file $code', async ({ file, code }) => {
+    { from: 'Presentation', to: 'Infrastructure', file: 'src/presentation/example.ts', code: "import { timeRecordService } from '../infrastructure/timeRecordService'" },
+    { from: 'Presentation', to: '画面', file: 'src/presentation/example.ts', code: "import TimeRecorder from '../timeRecords/TimeRecorder'" },
+    { from: 'Presentation', to: '画面', file: 'src/presentation/example.ts', code: "export { default } from '../App.js'" },
+    { from: 'Infrastructure', to: '画面', file: 'src/infrastructure/example.ts', code: "import HealthStatus from '../health/HealthStatus'" },
+    { from: '画面', to: 'Infrastructure', file: 'src/timeRecords/Example.tsx', code: "import { timeRecordService } from '../infrastructure/timeRecordService'" },
+  ])('$from から $to への静的参照を検出します: $code', async ({ file, code }) => {
     const [report] = await lint.lintText(code, { filePath: file })
 
     report.messages.map(message => message.ruleId).should.include('no-restricted-imports')
   })
 
   it.each([
-    { file: 'src/presentation/example.ts', code: "void fetch('/api/time-records')", rule: 'no-restricted-globals' },
-    { file: 'src/presentation/example.ts', code: "void window.fetch('/api/time-records')", rule: 'no-restricted-globals' },
-    { file: 'src/presentation/example.ts', code: "void import('../infrastructure/timeRecordService')", rule: 'no-restricted-syntax' },
-  ])('内側への通信と動的importの混入を検出します: $code', async ({ file, code, rule }) => {
-    const [report] = await lint.lintText(code, { filePath: file })
+    "void fetch('/api/time-records')",
+    "void window.fetch('/api/time-records')",
+  ])('Presentationからブラウザーのグローバル変数を使った通信を検出します: %s', async code => {
+    const [report] = await lint.lintText(code, { filePath: 'src/presentation/example.ts' })
 
-    report.messages.map(message => message.ruleId).should.include(rule)
+    report.messages.map(message => message.ruleId).should.include('no-restricted-globals')
+  })
+
+  it('Presentation内の動的importを検出します', async () => {
+    const [report] = await lint.lintText("void import('../infrastructure/timeRecordService')", { filePath: 'src/presentation/example.ts' })
+
+    report.messages.map(message => message.ruleId).should.include('no-restricted-syntax')
   })
 
   it.each([
-    { file: 'src/presentation/example.ts', code: "import type { TimeRecord } from 'kizamu-domain-typescript'; export type Record = TimeRecord" },
-    { file: 'src/infrastructure/example.ts', code: "import type { TimeRecordService } from '../presentation/timeRecordService'; export type Service = TimeRecordService" },
-    { file: 'src/timeRecords/Example.tsx', code: "export { useTimeRecorder } from '../presentation/useTimeRecorder'" },
-    { file: 'src/main.tsx', code: "export { timeRecordService } from './infrastructure/timeRecordService'" },
-  ])('許可した方向の依存は妨げません: $file', async ({ file, code }) => {
+    { from: 'Presentation', to: 'Domain', file: 'src/presentation/example.ts', code: "import type { TimeRecord } from 'kizamu-domain-typescript'; export type Record = TimeRecord" },
+    { from: 'Infrastructure', to: 'Presentation', file: 'src/infrastructure/example.ts', code: "import type { TimeRecordService } from '../presentation/timeRecordService'; export type Service = TimeRecordService" },
+    { from: '画面', to: 'Presentation', file: 'src/timeRecords/Example.tsx', code: "export { useTimeRecorder } from '../presentation/useTimeRecorder'" },
+    { from: '起動処理', to: 'Infrastructure', file: 'src/main.tsx', code: "export { timeRecordService } from './infrastructure/timeRecordService'" },
+  ])('$from から $to への静的参照を許可します: $code', async ({ file, code }) => {
     const [report] = await lint.lintText(code, { filePath: file })
 
     report.messages.filter(message => message.ruleId?.startsWith('no-restricted')).should.deep.equal([])

@@ -27,121 +27,156 @@ describe('useTimeRecorder', () => {
     service = { getTimeRecords, startTimeRecord, endTimeRecord }
   })
 
-  it('開始の通信中は追加操作を受け付けず成功後に終了できます', async () => {
-    const { response, result } = 開始応答を保留する()
+  describe('開始要求と同時に開始と終了を追加で要求したとき', () => {
+    let recorder: ReturnType<typeof 開始応答を保留する>
     let operation: Promise<void>
 
-    act(() => {
-      operation = result.current.startTimeRecord()
-      void result.current.startTimeRecord()
-      void result.current.endTimeRecord()
-    })
-    startTimeRecord.should.have.callCount(1)
-    endTimeRecord.should.have.callCount(0)
-
-    await act(async () => {
-      response.resolve(記録)
-      await operation
+    beforeEach(() => {
+      recorder = 開始応答を保留する()
+      act(() => {
+        operation = recorder.result.current.startTimeRecord()
+        void recorder.result.current.startTimeRecord()
+        void recorder.result.current.endTimeRecord()
+      })
     })
 
-    await act(() => result.current.endTimeRecord())
-    endTimeRecord.should.have.callCount(1)
+    it('開始応答を待つ間は追加の要求を送りません', async () => {
+      startTimeRecord.should.have.callCount(1)
+      endTimeRecord.should.have.callCount(0)
+
+      await act(async () => {
+        recorder.response.resolve(記録)
+        await operation
+      })
+    })
+
+    it('開始が成功した後は終了できます', async () => {
+      await act(async () => {
+        recorder.response.resolve(記録)
+        await operation
+      })
+
+      await act(() => recorder.result.current.endTimeRecord())
+
+      endTimeRecord.should.have.callCount(1)
+    })
+
+    it('開始が失敗した後はもう一度開始できます', async () => {
+      await act(async () => {
+        recorder.response.reject(new Error('failed'))
+        await operation.should.rejects.toThrow('failed')
+      })
+
+      await act(() => recorder.result.current.startTimeRecord())
+
+      startTimeRecord.should.have.callCount(2)
+    })
   })
 
-  it('開始の通信中は追加操作を受け付けず失敗後に再開始できます', async () => {
-    const { response, result } = 開始応答を保留する()
+  describe('終了要求と同時に開始と終了を追加で要求したとき', () => {
+    let recorder: ReturnType<typeof 終了応答を保留する>
     let operation: Promise<void>
 
-    act(() => {
-      operation = result.current.startTimeRecord()
-      void result.current.startTimeRecord()
-      void result.current.endTimeRecord()
-    })
-    startTimeRecord.should.have.callCount(1)
-    endTimeRecord.should.have.callCount(0)
-
-    await act(async () => {
-      response.reject(new Error('failed'))
-      await operation.should.rejects.toThrow('failed')
+    beforeEach(async () => {
+      recorder = 終了応答を保留する()
+      await act(() => recorder.result.current.startTimeRecord())
+      act(() => {
+        operation = recorder.result.current.endTimeRecord()
+        void recorder.result.current.startTimeRecord()
+        void recorder.result.current.endTimeRecord()
+      })
     })
 
-    await act(() => result.current.startTimeRecord())
-    startTimeRecord.should.have.callCount(2)
+    it('終了応答を待つ間は追加の要求を送りません', async () => {
+      startTimeRecord.should.have.callCount(1)
+      endTimeRecord.should.have.callCount(1)
+
+      await act(async () => {
+        recorder.response.resolve(終了済み記録)
+        await operation
+      })
+    })
+
+    it('終了が成功した後は開始できます', async () => {
+      await act(async () => {
+        recorder.response.resolve(終了済み記録)
+        await operation
+      })
+
+      await act(() => recorder.result.current.startTimeRecord())
+
+      startTimeRecord.should.have.callCount(2)
+    })
+
+    it('終了が失敗した後はもう一度終了できます', async () => {
+      await act(async () => {
+        recorder.response.reject(new Error('failed'))
+        await operation.should.rejects.toThrow('failed')
+      })
+
+      await act(() => recorder.result.current.endTimeRecord())
+
+      endTimeRecord.should.have.callCount(2)
+    })
   })
 
-  it('終了の通信中は追加操作を受け付けず成功後に開始できます', async () => {
-    const { response, result } = 終了応答を保留する()
-    await act(() => result.current.startTimeRecord())
-    let operation: Promise<void>
-
-    act(() => {
-      operation = result.current.endTimeRecord()
-      void result.current.startTimeRecord()
-      void result.current.endTimeRecord()
-    })
-    startTimeRecord.should.have.callCount(1)
-    endTimeRecord.should.have.callCount(1)
-
-    await act(async () => {
-      response.resolve(終了済み記録)
-      await operation
-    })
-
-    await act(() => result.current.startTimeRecord())
-    startTimeRecord.should.have.callCount(2)
-  })
-
-  it('終了の通信中は追加操作を受け付けず失敗後に再終了できます', async () => {
-    const { response, result } = 終了応答を保留する()
-    await act(() => result.current.startTimeRecord())
-    let operation: Promise<void>
-
-    act(() => {
-      operation = result.current.endTimeRecord()
-      void result.current.startTimeRecord()
-      void result.current.endTimeRecord()
-    })
-    startTimeRecord.should.have.callCount(1)
-    endTimeRecord.should.have.callCount(1)
-
-    await act(async () => {
-      response.reject(new Error('failed'))
-      await operation.should.rejects.toThrow('failed')
-    })
-
-    await act(() => result.current.endTimeRecord())
-    endTimeRecord.should.have.callCount(2)
-  })
-
-  it('開始の通信に失敗すると一覧を再取得して反映します', async () => {
+  describe('開始の通信に失敗して一覧を再取得できるとき', () => {
     const 開始失敗 = new Error('failed')
-    getTimeRecords.mockResolvedValueOnce([]).mockResolvedValueOnce([記録])
-    startTimeRecord.mockRejectedValue(開始失敗)
-    const { result } = renderRecorder()
-    await waitFor(() => getTimeRecords.should.have.callCount(1))
+    let recorder: ReturnType<typeof renderRecorder>
 
-    await act(async () => { await expect(result.current.startTimeRecord()).rejects.toBe(開始失敗) })
+    beforeEach(async () => {
+      getTimeRecords.mockResolvedValueOnce([]).mockResolvedValueOnce([記録])
+      startTimeRecord.mockRejectedValue(開始失敗)
+      recorder = renderRecorder()
+      await waitFor(() => getTimeRecords.should.have.callCount(1))
+    })
 
-    getTimeRecords.should.have.callCount(2)
-    result.current.state.records.should.deep.equal([記録])
-    result.current.state.should.have.property('timeRecordId', 記録ID)
+    it('呼び出し元に元の開始エラーを返します', async () => {
+      await act(async () => {
+        await expect(recorder.result.current.startTimeRecord()).rejects.toBe(開始失敗)
+      })
+    })
+
+    it('再取得した一覧を公開して記録中の記録を終了対象にします', async () => {
+      await act(async () => {
+        await expect(recorder.result.current.startTimeRecord()).rejects.toThrow()
+      })
+
+      getTimeRecords.should.have.callCount(2)
+      recorder.result.current.state.records.should.deep.equal([記録])
+      recorder.result.current.state.should.have.property('timeRecordId', 記録ID)
+    })
   })
 
-  it('終了の通信に失敗すると一覧を再取得して反映します', async () => {
+  describe('終了の通信に失敗して一覧を再取得できるとき', () => {
     const 終了失敗 = new Error('failed')
-    getTimeRecords.mockResolvedValueOnce([記録]).mockResolvedValueOnce([終了済み記録])
-    endTimeRecord.mockRejectedValue(終了失敗)
-    const { result } = renderRecorder()
-    await waitFor(() => result.current.state.should.have.property('timeRecordId', 記録ID))
+    let recorder: ReturnType<typeof renderRecorder>
 
-    await act(async () => { await expect(result.current.endTimeRecord()).rejects.toBe(終了失敗) })
+    beforeEach(async () => {
+      getTimeRecords.mockResolvedValueOnce([記録]).mockResolvedValueOnce([終了済み記録])
+      endTimeRecord.mockRejectedValue(終了失敗)
+      recorder = renderRecorder()
+      await waitFor(() => recorder.result.current.state.should.have.property('timeRecordId', 記録ID))
+    })
 
-    getTimeRecords.should.have.callCount(2)
-    result.current.state.records.should.deep.equal([終了済み記録])
-    result.current.state.should.have.property('timeRecordId', null)
+    it('呼び出し元に元の終了エラーを返します', async () => {
+      await act(async () => {
+        await expect(recorder.result.current.endTimeRecord()).rejects.toBe(終了失敗)
+      })
+    })
+
+    it('再取得した終了済みの一覧を公開して終了対象を解除します', async () => {
+      await act(async () => {
+        await expect(recorder.result.current.endTimeRecord()).rejects.toThrow()
+      })
+
+      getTimeRecords.should.have.callCount(2)
+      recorder.result.current.state.records.should.deep.equal([終了済み記録])
+      recorder.result.current.state.should.have.property('timeRecordId', null)
+    })
   })
 
-  it('開始失敗後の一覧再取得にも失敗すると直前の一覧を残して未確認状態になります', async () => {
+  it('開始失敗後の一覧再取得にも失敗したら呼び出し元に一覧取得のエラーを返します', async () => {
     const { result } = await 終了済みの一覧を読み込む()
     startTimeRecord.mockRejectedValueOnce(new Error('開始失敗'))
     const 再取得失敗 = new Error('一覧取得失敗')
@@ -150,6 +185,10 @@ describe('useTimeRecorder', () => {
     await act(async () => {
       await expect(result.current.startTimeRecord()).rejects.toBe(再取得失敗)
     })
+  })
+
+  it('開始失敗後の一覧再取得にも失敗すると直前の一覧を残して未確認状態になります', async () => {
+    const { result } = await 開始失敗後の再取得にも失敗させる()
 
     result.current.state.records.should.toStrictEqual([終了済み記録])
     result.current.should.have.property('isStateUnconfirmed', true)
@@ -172,7 +211,7 @@ describe('useTimeRecorder', () => {
     endTimeRecord.should.have.callCount(0)
   })
 
-  it('終了失敗後の一覧再取得にも失敗すると直前の一覧を残して未確認状態になります', async () => {
+  it('終了失敗後の一覧再取得にも失敗したら呼び出し元に一覧取得のエラーを返します', async () => {
     const { result } = await 記録中の一覧を読み込む()
     endTimeRecord.mockRejectedValueOnce(new Error('終了失敗'))
     const 再取得失敗 = new Error('一覧取得失敗')
@@ -181,6 +220,10 @@ describe('useTimeRecorder', () => {
     await act(async () => {
       await expect(result.current.endTimeRecord()).rejects.toBe(再取得失敗)
     })
+  })
+
+  it('終了失敗後の一覧再取得にも失敗すると直前の一覧を残して未確認状態になります', async () => {
+    const { result } = await 終了失敗後の再取得にも失敗させる()
 
     result.current.state.records.should.toStrictEqual([記録])
     result.current.should.have.property('isStateUnconfirmed', true)
@@ -209,7 +252,7 @@ describe('useTimeRecorder', () => {
     getTimeRecords.should.have.callCount(2)
   })
 
-  it('手動再取得に成功すると取得した記録を終了対象として操作を再開できます', async () => {
+  it('手動再取得した記録中の一覧を確認済みにして終了対象を復元します', async () => {
     const { result } = await 開始失敗後の再取得にも失敗させる()
     getTimeRecords.mockResolvedValue([記録])
 
@@ -218,11 +261,19 @@ describe('useTimeRecorder', () => {
     result.current.state.records.should.toStrictEqual([記録])
     result.current.should.have.property('isStateUnconfirmed', false)
     result.current.state.should.have.property('timeRecordId', 記録ID)
+  })
+
+  it('手動再取得で記録中の一覧を確認した後はその記録を終了できます', async () => {
+    const { result } = await 開始失敗後の再取得にも失敗させる()
+    getTimeRecords.mockResolvedValue([記録])
+    await act(() => result.current.reloadTimeRecords())
+
     await act(() => result.current.endTimeRecord())
+
     endTimeRecord.should.have.been.calledOnceWith(記録ID)
   })
 
-  it('手動再取得で終了済みの一覧を確認すると開始できます', async () => {
+  it('手動再取得した終了済みの一覧を確認済みにして終了対象を解除します', async () => {
     const { result } = await 終了失敗後の再取得にも失敗させる()
     getTimeRecords.mockResolvedValue([終了済み記録])
 
@@ -231,7 +282,15 @@ describe('useTimeRecorder', () => {
     result.current.state.records.should.toStrictEqual([終了済み記録])
     result.current.should.have.property('isStateUnconfirmed', false)
     result.current.state.should.have.property('timeRecordId', null)
+  })
+
+  it('手動再取得で終了済みの一覧を確認した後は新しい記録を開始できます', async () => {
+    const { result } = await 終了失敗後の再取得にも失敗させる()
+    getTimeRecords.mockResolvedValue([終了済み記録])
+    await act(() => result.current.reloadTimeRecords())
+
     await act(() => result.current.startTimeRecord())
+
     startTimeRecord.should.have.callCount(1)
   })
 
@@ -273,16 +332,26 @@ describe('useTimeRecorder', () => {
     endTimeRecord.should.have.callCount(0)
   })
 
-  it('初期化で一覧を一度要求し取得した記録と終了対象を公開します', async () => {
+  describe('初期一覧に終了済みと記録中の記録があるとき', () => {
     const 一覧の記録中の記録 = presentedRecord(次の記録ID, 開始時刻)
-    getTimeRecords.mockResolvedValue([終了済み記録, 一覧の記録中の記録])
 
-    const { result } = renderRecorder()
+    beforeEach(() => {
+      getTimeRecords.mockResolvedValue([終了済み記録, 一覧の記録中の記録])
+    })
 
-    await waitFor(() => result.current.state.records.should.have.lengthOf(2))
-    getTimeRecords.should.have.callCount(1)
-    result.current.state.records.should.toStrictEqual([終了済み記録, 一覧の記録中の記録])
-    result.current.state.should.have.property('timeRecordId', 次の記録ID)
+    it('初期化による一覧要求は一度だけです', async () => {
+      const { result } = renderRecorder()
+
+      await waitFor(() => result.current.state.records.should.have.lengthOf(2))
+      getTimeRecords.should.have.callCount(1)
+    })
+
+    it('取得した一覧と記録中の終了対象を公開します', async () => {
+      const { result } = renderRecorder()
+
+      await waitFor(() => result.current.state.records.should.toStrictEqual([終了済み記録, 一覧の記録中の記録]))
+      result.current.state.should.have.property('timeRecordId', 次の記録ID)
+    })
   })
 
   it('開始操作でサービスを呼び出して確定した開始時刻と記録を保持します', async () => {
@@ -317,33 +386,42 @@ describe('useTimeRecorder', () => {
     act(() => result.current.selectProject(プロジェクトA))
     result.current.state.should.have.property('timeRecordId', 記録ID)
   })
-  it('開始後に古い一覧が届いても過去の記録と開始した記録が残り終了できます', async () => {
+
+  describe('記録開始の後に古い初期一覧が届くとき', () => {
     const 過去の記録 = presentedRecord(次の記録ID, 開始時刻, 終了時刻)
-    const initialListResponse = deferred<(typeof 記録)[]>()
-    getTimeRecords.mockReturnValue(initialListResponse.promise)
-    const { result } = renderRecorder()
+    let recorder: ReturnType<typeof renderRecorder>
 
-    await act(() => result.current.startTimeRecord())
-    await act(async () => {
-      initialListResponse.resolve([過去の記録])
-      await initialListResponse.promise
+    beforeEach(async () => {
+      const initialListResponse = deferred<(typeof 記録)[]>()
+      getTimeRecords.mockReturnValue(initialListResponse.promise)
+      recorder = renderRecorder()
+      await act(() => recorder.result.current.startTimeRecord())
+
+      await act(async () => {
+        initialListResponse.resolve([過去の記録])
+        await initialListResponse.promise
+      })
     })
 
-    result.current.state.should.toStrictEqual({
-      records: [過去の記録, 記録],
-      timeRecordId: 記録ID,
-      startedAt: 開始時刻,
-      endedAt: null,
+    it('一覧に過去の記録と開始した記録を残し後者を終了対象に保ちます', () => {
+      recorder.result.current.state.should.toStrictEqual({
+        records: [過去の記録, 記録],
+        timeRecordId: 記録ID,
+        startedAt: 開始時刻,
+        endedAt: null,
+      })
     })
 
-    await act(() => result.current.endTimeRecord())
+    it('古い一覧を受け取った後でも開始した記録を指定して終了できます', async () => {
+      await act(() => recorder.result.current.endTimeRecord())
 
-    endTimeRecord.should.have.been.calledOnceWith(記録ID)
-    result.current.state.should.toStrictEqual({
-      records: [過去の記録, 終了済み記録],
-      timeRecordId: null,
-      startedAt: 開始時刻,
-      endedAt: 終了時刻,
+      endTimeRecord.should.have.been.calledOnceWith(記録ID)
+      recorder.result.current.state.should.toStrictEqual({
+        records: [過去の記録, 終了済み記録],
+        timeRecordId: null,
+        startedAt: 開始時刻,
+        endedAt: 終了時刻,
+      })
     })
   })
 

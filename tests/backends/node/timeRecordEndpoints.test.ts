@@ -11,6 +11,7 @@ interface TimeRecordResponse {
 
 const 開始時刻 = new Date('2026-08-01T09:00:00.000Z')
 const 終了時刻 = new Date('2026-08-01T10:30:00.000Z')
+const 同一オリジンを示さないヘッダー値 = ['same-site', 'cross-site', 'none', 'unknown', undefined]
 const key = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const publicKeyFetch: typeof fetch = async () => Response.json({
   keys: [{ ...key.publicKey.export({ format: 'jwk' }), kid: 'endpoint-test-key', alg: 'RS256', use: 'sig' }],
@@ -45,33 +46,60 @@ test.each(['GET', 'POST'] as const)('Bearer以外の認証方式では%s要求�
 
   response.statusCode.should.equal(401)
 })
+
 test('未認証で記録一覧を取得すると401が返されます', async () => {
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })
 
   response.statusCode.should.equal(401)
 })
 
-test('未認証で記録を開始すると401が返され記録は追加されません', async () => {
-  const response = await app.inject({ method: 'POST', url: '/api/time-records/start', headers: { 'sec-fetch-site': 'same-origin' } })
+test('未認証で記録を開始すると401が返されます', async () => {
+  const response = await postWithoutAuthorization(app, '/api/time-records/start')
+
   response.statusCode.should.equal(401)
+})
+
+test('未認証で記録を開始すると記録は追加されません', async () => {
+  await postWithoutAuthorization(app, '/api/time-records/start')
+
   const records = await readTimeRecords(app)
   records.should.deep.equal([])
 })
 
-test('未認証で記録を終了すると401が返され記録は変更されません', async () => {
+test('未認証で記録を終了すると401が返されます', async () => {
   const startedRecord = await prepareStartedRecord(app)
   vi.setSystemTime(終了時刻)
-  const response = await app.inject({ method: 'POST', url: `/api/time-records/${startedRecord.id}/end`, headers: { 'sec-fetch-site': 'same-origin' } })
+
+  const response = await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
+
   response.statusCode.should.equal(401)
+})
+
+test('未認証で記録を終了すると記録は変更されません', async () => {
+  const startedRecord = await prepareStartedRecord(app)
+  vi.setSystemTime(終了時刻)
+
+  await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
+
   const records = await readTimeRecords(app)
   records.should.deep.equal([startedRecord])
 })
 
-test('他の利用者の記録を終了すると404が返され記録は変更されません', async () => {
+test('他の利用者の記録を終了すると404が返されます', async () => {
   const startedRecord = await prepareStartedRecord(app, 'first-user')
   vi.setSystemTime(終了時刻)
+
   const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
+
   response.statusCode.should.equal(404)
+})
+
+test('他の利用者の記録を終了すると所有者の記録は変更されません', async () => {
+  const startedRecord = await prepareStartedRecord(app, 'first-user')
+  vi.setSystemTime(終了時刻)
+
+  await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
+
   const records = await readTimeRecords(app, 'first-user')
   records.should.deep.equal([startedRecord])
 })
@@ -119,11 +147,18 @@ test('まだ開始していないときに一覧を取得すると空の配列�
   content.should.have.property('body').that.deep.equal([])
 })
 
+test('記録を二件開始すると異なる識別子が発行されます', async () => {
+  const firstRecord = await prepareStartedRecord(app)
+  vi.setSystemTime(終了時刻)
+  const secondRecord = await prepareStartedRecord(app)
+
+  secondRecord.id.should.not.equal(firstRecord.id)
+})
+
 test('二件の記録を開始した後に一覧を取得すると開始した順に両方が返されます', async () => {
   const firstRecord = await prepareStartedRecord(app)
   vi.setSystemTime(終了時刻)
   const secondRecord = await prepareStartedRecord(app)
-  secondRecord.id.should.not.equal(firstRecord.id)
 
   const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
 
@@ -159,33 +194,44 @@ test('別のアプリで開始した記録は新しく生成したアプリの�
   }
 })
 
-test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
-  'Sec-Fetch-Siteが同一オリジンを示さない開始要求は403になり記録が追加されません（%s）',
+test.each(同一オリジンを示さないヘッダー値)(
+  'Sec-Fetch-Siteが同一オリジンを示さない開始要求では403が返されます（%s）',
   async (secFetchSite) => {
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/time-records/start',
-      headers: secFetchSite === undefined ? { authorization: authorization() } : { authorization: authorization(), 'sec-fetch-site': secFetchSite },
-    })
+    const response = await postWithFetchSite(app, '/api/time-records/start', secFetchSite)
+
     response.statusCode.should.equal(403)
+  },
+)
+
+test.each(同一オリジンを示さないヘッダー値)(
+  'Sec-Fetch-Siteが同一オリジンを示さない開始要求では記録が追加されません（%s）',
+  async (secFetchSite) => {
+    await postWithFetchSite(app, '/api/time-records/start', secFetchSite)
 
     const records = await readTimeRecords(app)
     records.should.deep.equal([])
   },
 )
 
-test.each(['same-site', 'cross-site', 'none', 'unknown', undefined])(
-  'Sec-Fetch-Siteが同一オリジンを示さない終了要求は403になり記録が終了されません（%s）',
+test.each(同一オリジンを示さないヘッダー値)(
+  'Sec-Fetch-Siteが同一オリジンを示さない終了要求では403が返されます（%s）',
   async (secFetchSite) => {
     const startedRecord = await prepareStartedRecord(app)
     vi.setSystemTime(終了時刻)
 
-    const response = await app.inject({
-      method: 'POST',
-      url: `/api/time-records/${startedRecord.id}/end`,
-      headers: secFetchSite === undefined ? { authorization: authorization() } : { authorization: authorization(), 'sec-fetch-site': secFetchSite },
-    })
+    const response = await postWithFetchSite(app, `/api/time-records/${startedRecord.id}/end`, secFetchSite)
+
     response.statusCode.should.equal(403)
+  },
+)
+
+test.each(同一オリジンを示さないヘッダー値)(
+  'Sec-Fetch-Siteが同一オリジンを示さない終了要求では記録が終了されません（%s）',
+  async (secFetchSite) => {
+    const startedRecord = await prepareStartedRecord(app)
+    vi.setSystemTime(終了時刻)
+
+    await postWithFetchSite(app, `/api/time-records/${startedRecord.id}/end`, secFetchSite)
 
     const records = await readTimeRecords(app)
     records.should.deep.equal([startedRecord])
@@ -198,9 +244,19 @@ async function readTimeRecords(app: ReturnType<typeof createApp>, user = 'google
   return response.json<TimeRecordResponse[]>()
 }
 
+function postWithoutAuthorization(app: ReturnType<typeof createApp>, url: string) {
+  return app.inject({ method: 'POST', url, headers: { 'sec-fetch-site': 'same-origin' } })
+}
+
 function postFromSameOrigin(app: ReturnType<typeof createApp>, url: string, user = 'google-user') {
+  return postWithFetchSite(app, url, 'same-origin', user)
+}
+
+function postWithFetchSite(app: ReturnType<typeof createApp>, url: string, secFetchSite: string | undefined, user = 'google-user') {
+  const headers = { authorization: authorization(user) }
   return app.inject({
-    method: 'POST', url, headers: { 'sec-fetch-site': 'same-origin', authorization: authorization(user) },
+    method: 'POST', url,
+    headers: secFetchSite === undefined ? headers : { ...headers, 'sec-fetch-site': secFetchSite },
   })
 }
 

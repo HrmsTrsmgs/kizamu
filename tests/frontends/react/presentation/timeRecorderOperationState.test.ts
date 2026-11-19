@@ -17,22 +17,30 @@ describe('timeRecorderOperationReducer', () => {
     getTimeRecorderControls(completed).should.toStrictEqual({ canChangeRecord: true, canReload: true, notice: null })
   })
 
-  it('操作に失敗しても最新状態が確認済みなら操作を続けられ、成功後も失敗の通知を保持します', () => {
+  it('最新状態が確認済みなら失敗通知を表示して記録操作と再取得を許可します', () => {
     const failed = timeRecorderOperationReducer(initialTimeRecorderOperationState, 'operationFailed')
 
     getTimeRecorderControls(failed).should.toStrictEqual({ canChangeRecord: true, canReload: true, notice: 'operationFailed' })
+  })
 
+  it('失敗後に次の操作が成功しても以前の失敗通知を保持します', () => {
+    const failed = timeRecorderOperationReducer(initialTimeRecorderOperationState, 'operationFailed')
     const retrying = timeRecorderOperationReducer(failed, 'operationStarted')
     const completed = timeRecorderOperationReducer(retrying, 'operationSucceeded')
 
     getTimeRecorderControls(completed).should.have.property('notice', 'operationFailed')
   })
 
-  it('未確認の案内を失敗通知より優先し、再取得に失敗しても再取得だけは再開できます', () => {
+  it('操作失敗時に一覧が未確認なら再取得だけを許可し未確認の案内を優先します', () => {
     const unconfirmed = timeRecorderOperationReducer(initialTimeRecorderOperationState, 'recordsUnconfirmed')
     const failed = timeRecorderOperationReducer(unconfirmed, 'operationFailed')
 
     getTimeRecorderControls(failed).should.toStrictEqual({ canChangeRecord: false, canReload: true, notice: 'stateUnconfirmed' })
+  })
+
+  it('未確認の一覧を再取得している間はすべての操作を止め、失敗後は再取得だけを再開します', () => {
+    const unconfirmed = timeRecorderOperationReducer(initialTimeRecorderOperationState, 'recordsUnconfirmed')
+    const failed = timeRecorderOperationReducer(unconfirmed, 'operationFailed')
 
     const retrying = timeRecorderOperationReducer(failed, 'operationStarted')
     getTimeRecorderControls(retrying).should.toStrictEqual({ canChangeRecord: false, canReload: false, notice: 'stateUnconfirmed' })

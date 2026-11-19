@@ -15,15 +15,31 @@ public sealed class TimeRecordTimesTests : IDisposable
     public TimeRecordTimesTests() => context.Services.AddSingleton<TimeProvider>(clock);
 
     [Fact]
-    public void 時刻要素に開始時刻と終了時刻の表示と元の日時を設定します()
+    public void 開始時刻と終了時刻を日本時間で表示します()
     {
         var tested = 表示する(開始時刻.AddMinutes(90));
         var 時刻要素 = tested.FindAll("time");
 
         時刻要素.Select(it => it.TextContent).Should().Equal("2026/08/01 18:00", "2026/08/01 19:30");
+    }
+
+    [Fact]
+    public void 開始時刻と終了時刻のdatetime属性はHTMLで有効な日時形式です()
+    {
+        var tested = 表示する(開始時刻.AddMinutes(90));
+        var 時刻要素 = tested.FindAll("time");
+
         時刻要素.Should().HaveCount(2);
         時刻要素.Select(it => it.GetAttribute("datetime")).Should().AllSatisfy(it =>
             it.Should().MatchRegex(@"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$"));
+    }
+
+    [Fact]
+    public void 開始と終了のdatetime属性は元の時刻を示します()
+    {
+        var tested = 表示する(開始時刻.AddMinutes(90));
+        var 時刻要素 = tested.FindAll("time");
+
         DateTimeOffset.TryParse(時刻要素[0].GetAttribute("datetime"), out var 開始日時).Should().BeTrue();
         DateTimeOffset.TryParse(時刻要素[1].GetAttribute("datetime"), out var 終了日時).Should().BeTrue();
         開始日時.Should().Be(開始時刻);

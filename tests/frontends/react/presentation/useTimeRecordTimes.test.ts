@@ -32,16 +32,23 @@ describe('useTimeRecordTimes', () => {
     result.current.durationText.should.equal(expectedDuration)
   })
 
-  it.each([
+  describe.each([
     { currentTime: 終了時刻.isoText, expectedDuration: '1時間30分' },
     { currentTime: 開始から2時間15分後の終了時刻, expectedDuration: '2時間15分' },
-  ])('記録中は現在時刻までを作業時間とします: $expectedDuration', ({ currentTime, expectedDuration }) => {
-    vi.setSystemTime(currentTime)
+  ])('現在時刻が $currentTime の記録中の表示', ({ currentTime, expectedDuration }) => {
+    beforeEach(() => vi.setSystemTime(currentTime))
 
-    const { result } = renderHook(() => useTimeRecordTimes(開始時刻, null))
+    it('現在時刻までを作業時間とします', () => {
+      const { result } = renderHook(() => useTimeRecordTimes(開始時刻, null))
 
-    result.current.durationText.should.equal(expectedDuration)
-    result.current.should.have.property('endedAtText', null)
+      result.current.durationText.should.equal(expectedDuration)
+    })
+
+    it('終了時刻の表示は未設定です', () => {
+      const { result } = renderHook(() => useTimeRecordTimes(開始時刻, null))
+
+      result.current.should.have.property('endedAtText', null)
+    })
   })
 
   it('記録中に時間が経過すると作業時間を更新します', async () => {
@@ -64,15 +71,20 @@ describe('useTimeRecordTimes', () => {
   })
 
   it('終了した記録の時間は時刻が進んでも変わりません', async () => {
-    const initialProps: { endedAt: RecordTimestamp | null } = { endedAt: null }
-    const { result, rerender } = renderHook(({ endedAt }) => useTimeRecordTimes(開始時刻, endedAt), {
-      initialProps,
-    })
+    const { result, rerender } = 記録中の時刻を表示する()
     rerender({ endedAt: 終了時刻 })
 
     await act(() => vi.advanceTimersByTimeAsync(60_000))
 
     result.current.durationText.should.equal('1時間30分')
+  })
+
+  it('記録が終了したら時刻の更新タイマーを解除します', async () => {
+    const { rerender } = 記録中の時刻を表示する()
+
+    rerender({ endedAt: 終了時刻 })
+    await act(() => vi.advanceTimersByTimeAsync(60_000))
+
     vi.getTimerCount().should.equal(0)
   })
 
@@ -85,3 +97,8 @@ describe('useTimeRecordTimes', () => {
     vi.getTimerCount().should.equal(0)
   })
 })
+
+function 記録中の時刻を表示する() {
+  const initialProps: { endedAt: RecordTimestamp | null } = { endedAt: null }
+  return renderHook(({ endedAt }) => useTimeRecordTimes(開始時刻, endedAt), { initialProps })
+}

@@ -62,19 +62,43 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void 一覧構成のコピーは後から追加されず記録自体は共有します()
+    public void コピー後に追加した記録はコピーした一覧に含まれません()
+    {
+        var 最初の記録 = TimeRecord.Start(開始時刻);
+        tested.Add(最初の記録);
+
+        var コピー = tested.CopyAll();
+        tested.Add(TimeRecord.Start(次の開始時刻));
+
+        コピー.Select(it => it.Id).Should().Equal(最初の記録.Id);
+    }
+
+    [Fact]
+    public void コピーした一覧から元と同じ記録インスタンスを取得できます()
+    {
+        var 最初の記録 = TimeRecord.Start(開始時刻);
+        tested.Add(最初の記録);
+
+        var コピー = tested.CopyAll();
+        tested.Add(TimeRecord.Start(次の開始時刻));
+
+        コピー[0].Should().BeSameAs(最初の記録);
+    }
+
+    [Fact]
+    public void コピー後も元の一覧には追加した記録が反映されます()
     {
         var 最初の記録 = TimeRecord.Start(開始時刻);
         var 次の記録 = TimeRecord.Start(次の開始時刻);
         tested.Add(最初の記録);
         var 一覧 = tested.All;
 
-        var コピー = tested.CopyAll();
+        tested.CopyAll();
         tested.Add(次の記録);
 
-        コピー.Should().ContainSingle().Which.Should().BeSameAs(最初の記録);
         一覧.Should().Equal(最初の記録, 次の記録);
     }
+
     [Fact]
     public void 同じ一覧を列挙するたびに列挙開始前に追加された記録を取得できます()
     {
@@ -88,7 +112,29 @@ public sealed class InMemoryTimeRecordStateTests
         tested.Add(次の記録);
 
         一覧.Should().Equal(最初の記録, 次の記録);
+    }
+
+    [Fact]
+    public void 取得済みの一覧の件数に後から追加した記録が反映されます()
+    {
+        var 一覧 = tested.All;
+
+        tested.Add(TimeRecord.Start(開始時刻));
+        tested.Add(TimeRecord.Start(次の開始時刻));
+
         一覧.Count.Should().Be(2);
+    }
+
+    [Fact]
+    public void 取得済みの一覧の添字で後から追加した記録を追加順に取得できます()
+    {
+        var 一覧 = tested.All;
+        var 最初の記録 = TimeRecord.Start(開始時刻);
+        var 次の記録 = TimeRecord.Start(次の開始時刻);
+
+        tested.Add(最初の記録);
+        tested.Add(次の記録);
+
         一覧[0].Should().BeSameAs(最初の記録);
         一覧[1].Should().BeSameAs(次の記録);
     }

@@ -20,12 +20,19 @@ describe('projectTabsReducer', () => {
     state.showProjectDialog.should.equal(true)
   })
 
-  it('追加をキャンセルすると登録せずダイアログを閉じます', () => {
+  it('追加をキャンセルするとダイアログを閉じます', () => {
     const opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
 
     const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
 
     state.showProjectDialog.should.equal(false)
+  })
+
+  it('追加をキャンセルすると一覧にプロジェクトを登録しません', () => {
+    const opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
+
+    const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
+
     state.projects.should.toStrictEqual([])
   })
 

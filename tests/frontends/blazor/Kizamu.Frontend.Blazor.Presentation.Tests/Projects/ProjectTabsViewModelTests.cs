@@ -19,13 +19,22 @@ public sealed class ProjectTabsViewModelTests
     }
 
     [Fact]
-    public void 追加をキャンセルすると登録せずダイアログを閉じる()
+    public void 追加をキャンセルするとダイアログを閉じる()
     {
         名前を入力した追加ダイアログを開く("プロジェクトA");
 
         tested.CancelProjectDialog();
 
         tested.ShowProjectDialog.Should().BeFalse();
+    }
+
+    [Fact]
+    public void 追加をキャンセルすると入力した名前を登録しない()
+    {
+        名前を入力した追加ダイアログを開く("プロジェクトA");
+
+        tested.CancelProjectDialog();
+
         tested.Projects.Should().BeEmpty();
     }
 

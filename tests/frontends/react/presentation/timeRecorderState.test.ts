@@ -121,22 +121,33 @@ describe('timeRecorderReducer', () => {
     result.should.have.property('timeRecordId', null)
   })
 
-  it('取得した一覧の各位置を保ち、同じIDの最後の更新と元のISO表記を使います', () => {
+  describe('取得した一覧に同じIDの記録が複数あるとき', () => {
     const 変更しない記録 = presentedRecord('保存済み', 開始時刻, 終了時刻)
     const 別表記の開始時刻 = timestamp('2026-08-01T18:00:00.0000000+09:00')
     const 最後の更新 = presentedRecord(記録ID, 別表記の開始時刻, 終了時刻)
 
-    const state = timeRecorderReducer(initialTimeRecorderState, {
-      type: 'recordsLoaded',
-      records: [記録, 変更しない記録, 記録],
-      updatedRecords: [記録, 最後の更新],
+    it('一覧の各位置を保ち同じIDの記録だけを最後に受け取った記録で置き換えます', () => {
+      const state = timeRecorderReducer(initialTimeRecorderState, {
+        type: 'recordsLoaded',
+        records: [記録, 変更しない記録, 記録],
+        updatedRecords: [記録, 最後の更新],
+      })
+
+      state.records.should.toStrictEqual([最後の更新, 変更しない記録, 最後の更新])
+      state.records[0].should.equal(最後の更新)
+      state.records[1].should.equal(変更しない記録)
+      state.records[2].should.equal(最後の更新)
     })
 
-    state.records.should.toStrictEqual([最後の更新, 変更しない記録, 最後の更新])
-    state.records[0].should.equal(最後の更新)
-    state.records[1].should.equal(変更しない記録)
-    state.records[2].should.equal(最後の更新)
-    state.records[0].isoText.startedAt.should.equal(別表記の開始時刻.isoText)
+    it('置き換えた記録の開始時刻は最後の更新のISO表記を保持します', () => {
+      const state = timeRecorderReducer(initialTimeRecorderState, {
+        type: 'recordsLoaded',
+        records: [記録, 変更しない記録, 記録],
+        updatedRecords: [記録, 最後の更新],
+      })
+
+      state.records[0].isoText.startedAt.should.equal(別表記の開始時刻.isoText)
+    })
   })
 
   it('取得した一覧にない記録は各IDの最後の更新順に一度ずつ追加します', () => {
@@ -220,7 +231,7 @@ describe('timeRecorderReducer', () => {
     })
   })
 
-  it('未指定で開始した応答を別のプロジェクトで受け取ると、その表示時刻と終了対象を保ちます', () => {
+  describe('別のプロジェクトを表示中に未指定で開始した記録の応答が届くとき', () => {
     const 表示中の状態 = {
       ...initialTimeRecorderState,
       selectedProject: new Project('プロジェクトA'),
@@ -230,16 +241,23 @@ describe('timeRecorderReducer', () => {
     }
     const 未指定の記録 = presentedRecord('未指定の記録', timestamp('2026-08-01T11:00:00Z'))
 
-    const state = timeRecorderReducer(表示中の状態, { type: 'recordStarted', project: undefined, record: 未指定の記録 })
+    it('共有の一覧に未指定の記録を追加します', () => {
+      const state = timeRecorderReducer(表示中の状態, { type: 'recordStarted', project: undefined, record: 未指定の記録 })
 
-    state.records.should.toStrictEqual([終了済み記録, 未指定の記録])
-    state.should.have.property('selectedProject', 表示中の状態.selectedProject)
-    state.should.have.property('timeRecordId', null)
-    state.should.have.property('startedAt', 開始時刻)
-    state.should.have.property('endedAt', 終了時刻)
+      state.records.should.toStrictEqual([終了済み記録, 未指定の記録])
+    })
 
-    const 未指定の状態 = timeRecorderReducer(state, { type: 'projectSelected', project: undefined })
-    未指定の状態.should.have.property('timeRecordId', '未指定の記録')
+    it('表示中の時刻を保ち終了対象を開始元の未指定に割り当てます', () => {
+      const state = timeRecorderReducer(表示中の状態, { type: 'recordStarted', project: undefined, record: 未指定の記録 })
+
+      state.should.have.property('selectedProject', 表示中の状態.selectedProject)
+      state.should.have.property('timeRecordId', null)
+      state.should.have.property('startedAt', 開始時刻)
+      state.should.have.property('endedAt', 終了時刻)
+
+      const 未指定の状態 = timeRecorderReducer(state, { type: 'projectSelected', project: undefined })
+      未指定の状態.should.have.property('timeRecordId', '未指定の記録')
+    })
   })
 
   it('記録を終了すると一覧を更新して現在の記録を解除し終了時刻を保持します', () => {

@@ -25,63 +25,127 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void 未ログイン時はGoogleログインを表示し記録画面を表示しません()
+    public void 未ログイン時はGoogleログインを表示します()
     {
         var tested = context.Render<Client.App>();
 
         tested.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
+    }
+
+    [Fact]
+    public void 未ログイン時は記録画面を表示しません()
+    {
+        var tested = context.Render<Client.App>();
+
         tested.FindAll(".recorder-panel").Should().BeEmpty();
     }
 
     [Fact]
-    public void Googleログインに成功すると記録画面を表示し取得したトークンを記録通信へ渡します()
+    public void Googleログインに成功すると記録画面を表示します()
     {
-        string? 記録通信に渡されたトークン = null;
-        var tested = context.Render<Client.App>(parameters => parameters
-            .Add(it => it.SignInWithGoogle, () => Task.FromResult("google-id-token"))
-            .Add(it => it.CreateTimeRecords, token =>
-            {
-                記録通信に渡されたトークン = token;
-                return new StubTimeRecordService(一つ目の記録, 一つ目の記録);
-            }));
+        var tested = ログイン可能な画面を表示する();
 
-        tested.FindAll("button").Single(it => it.TextContent == "Googleでログイン").Click();
+        ログインする(tested);
 
         tested.FindAll(".recorder-panel button").Select(it => it.TextContent).Should().Contain("記録を開始");
+    }
+
+    [Fact]
+    public void Googleログインに成功するとログインボタンが消えます()
+    {
+        var tested = ログイン可能な画面を表示する();
+
+        ログインする(tested);
+
         tested.FindAll("button").Select(it => it.TextContent).Should().NotContain("Googleでログイン");
+    }
+
+    [Fact]
+    public void Googleログインで取得したトークンを記録通信へ渡します()
+    {
+        string? 記録通信に渡されたトークン = null;
+        var tested = ログイン可能な画面を表示する(token => 記録通信に渡されたトークン = token);
+
+        ログインする(tested);
+
         記録通信に渡されたトークン.Should().Be("google-id-token");
     }
 
     [Fact]
-    public void ログアウトするとログイン表示に戻り再ログイン時に前の記録を表示しません()
+    public void ログアウトボタンはログインボタンと同じ場所に表示します()
     {
-        var tested = context.Render<Client.App>(parameters => parameters
-            .Add(it => it.SignInWithGoogle, () => Task.FromResult("google-id-token"))
-            .Add(it => it.CreateTimeRecords, _ => new StubTimeRecordService(一つ目の記録, 一つ目の記録)));
-        var ログインの場所 = tested.Find("main").Children.ToList().FindIndex(it => it.Children.Any(child => child.LocalName == "button" && child.TextContent == "Googleでログイン"));
+        var tested = ログイン可能な画面を表示する();
+        var ログインの場所 = 認証ボタンの位置(tested, "Googleでログイン");
         ログインの場所.Should().BeGreaterThanOrEqualTo(0);
-        tested.FindAll("button").Single(it => it.TextContent == "Googleでログイン").Click();
-        tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
-        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を終了");
 
-        var ログアウト = tested.FindAll("button").Single(it => it.TextContent == "ログアウト");
-        tested.Find("main").Children.ToList().FindIndex(it => it.Children.Any(child => child.LocalName == "button" && child.TextContent == "ログアウト")).Should().Be(ログインの場所);
-        ログアウト.Click();
+        ログインする(tested);
+
+        認証ボタンの位置(tested, "ログアウト").Should().Be(ログインの場所);
+    }
+
+    [Fact]
+    public void ログアウトするとGoogleログインを表示します()
+    {
+        var tested = ログイン可能な画面を表示する();
+        ログインする(tested);
+
+        ログアウトする(tested);
 
         tested.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
+    }
+
+    [Fact]
+    public void ログアウトすると記録画面を閉じます()
+    {
+        var tested = ログイン可能な画面を表示する();
+        ログインする(tested);
+
+        ログアウトする(tested);
+
         tested.FindAll(".recorder-panel").Should().BeEmpty();
-        tested.FindAll("button").Single(it => it.TextContent == "Googleでログイン").Click();
+    }
+
+    [Fact]
+    public void 再ログインすると開始操作に戻ります()
+    {
+        var tested = 記録中にログアウトした画面を表示する();
+
+        ログインする(tested);
+
         tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を開始").And.NotContain("記録を終了");
+    }
+
+    [Fact]
+    public void 再ログインすると前のログイン時の記録を一覧に表示しません()
+    {
+        var tested = 記録中にログアウトした画面を表示する();
+
+        ログインする(tested);
+
         tested.FindAll("ul[aria-label='作業記録一覧'] li").Should().BeEmpty();
     }
 
     [Fact]
-    public void 全体の画面にアプリ名と記録操作と接続状態を表示します()
+    public void 画面の見出しにアプリ名を表示します()
     {
         var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
 
         tested.Find("h1").TextContent.Should().Be("Kizamu");
+    }
+
+    [Fact]
+    public void ログイン済みの画面に記録操作を表示します()
+    {
+        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
+
         tested.Find(".recorder-panel button").TextContent.Should().Be("記録を開始");
+    }
+
+    [Fact]
+    public void 画面のフッターに接続状態を表示します()
+    {
+        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
+
         tested.Find("footer").TextContent.Should().Contain("サーバー接続: 正常");
     }
 
@@ -96,13 +160,22 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void プロジェクト追加ポップアップでプロジェクト名を入力できます()
+    public void プロジェクト追加ポップアップに入力した名前を表示します()
     {
         var tested = 追加ダイアログを表示する();
 
         tested.Find("[role=dialog] input").Change("プロジェクトA");
 
         tested.Find("[role=dialog] input").GetAttribute("value").Should().Be("プロジェクトA");
+    }
+
+    [Fact]
+    public void プロジェクト追加ポップアップの入力を登録する名前に反映します()
+    {
+        var tested = 追加ダイアログを表示する();
+
+        tested.Find("[role=dialog] input").Change("プロジェクトA");
+
         projectTabs.ProjectName.Should().Be("プロジェクトA");
     }
 
@@ -188,6 +261,35 @@ public sealed class AppTests : IDisposable
 
         tested.FindAll("button").Select(it => it.TextContent).Should().NotContain("記録を開始").And.Contain("記録を終了");
     }
+
+    IRenderedComponent<Client.App> ログイン可能な画面を表示する(Action<string>? トークンを受け取る = null) =>
+        context.Render<Client.App>(parameters => parameters
+            .Add(it => it.SignInWithGoogle, () => Task.FromResult("google-id-token"))
+            .Add(it => it.CreateTimeRecords, token =>
+            {
+                トークンを受け取る?.Invoke(token);
+                return new StubTimeRecordService(一つ目の記録, 一つ目の記録);
+            }));
+
+    static void ログインする(IRenderedComponent<Client.App> tested) =>
+        tested.FindAll("button").Single(it => it.TextContent == "Googleでログイン").Click();
+
+    static void ログアウトする(IRenderedComponent<Client.App> tested) =>
+        tested.FindAll("button").Single(it => it.TextContent == "ログアウト").Click();
+
+    IRenderedComponent<Client.App> 記録中にログアウトした画面を表示する()
+    {
+        var tested = ログイン可能な画面を表示する();
+        ログインする(tested);
+        tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
+        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を終了");
+        ログアウトする(tested);
+        return tested;
+    }
+
+    static int 認証ボタンの位置(IRenderedComponent<Client.App> tested, string ボタン名) =>
+        tested.Find("main").Children.ToList().FindIndex(it =>
+            it.Children.Any(child => child.LocalName == "button" && child.TextContent == ボタン名));
 
     IRenderedComponent<Client.App> 追加ダイアログを表示する(string プロジェクト名 = "")
     {

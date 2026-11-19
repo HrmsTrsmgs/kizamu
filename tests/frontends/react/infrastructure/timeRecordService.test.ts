@@ -110,13 +110,23 @@ describe('timeRecordService', () => {
     record.should.have.property('endedAt', null)
   })
 
-  it('応答の時差と小数秒の表記を保持して日時点に変換します', async () => {
+  describe('時差と小数秒を含む記録開始応答', () => {
     const 開始時刻の別表記 = '2026-08-01T18:00:00.0000000+09:00'
-    fetchMock.mockImplementation(async () => Response.json({ ...記録中の応答, startedAt: 開始時刻の別表記 }))
 
-    const record = await tested.startTimeRecord()
+    beforeEach(() => {
+      fetchMock.mockImplementation(async () => Response.json({ ...記録中の応答, startedAt: 開始時刻の別表記 }))
+    })
 
-    record.isoText.startedAt.should.equal(開始時刻の別表記)
-    record.record.startedAt.should.deep.equal(timestamp(開始時刻).instant)
+    it('開始時刻の元のISO表記を保持します', async () => {
+      const record = await tested.startTimeRecord()
+
+      record.isoText.startedAt.should.equal(開始時刻の別表記)
+    })
+
+    it('時差を考慮して開始時刻を同じ日時点に変換します', async () => {
+      const record = await tested.startTimeRecord()
+
+      record.record.startedAt.should.deep.equal(timestamp(開始時刻).instant)
+    })
   })
 })

@@ -9,38 +9,62 @@ describe('共有Domainの依存境界', () => {
     await lint.lintText('export {}', { filePath: 'example.ts' })
   }, 30_000)
 
-  it.each([
-    "import type { TimeRecordService } from '../../frontends/react/src/presentation/timeRecordService'",
-    "export { useState } from 'react'",
-    "import { randomUUID } from 'node:crypto'",
-    "import Fastify from 'fastify'",
-  ])('未使用と型専用を含め内側から外側への依存を検出します: %s', async code => {
-    const [report] = await lint.lintText(code, { filePath: 'example.ts' })
+  it('フロントエンドへの型専用importを検出します', async () => {
+    const rules = await reportedRules("import type { TimeRecordService } from '../../frontends/react/src/presentation/timeRecordService'")
 
-    report.messages.map(message => message.ruleId).should.include('no-restricted-imports')
+    rules.should.include('no-restricted-imports')
+  })
+
+  it('Reactからの再エクスポートを検出します', async () => {
+    const rules = await reportedRules("export { useState } from 'react'")
+
+    rules.should.include('no-restricted-imports')
+  })
+
+  it('Node固有APIへの未使用のimportを検出します', async () => {
+    const rules = await reportedRules("import { randomUUID } from 'node:crypto'")
+
+    rules.should.include('no-restricted-imports')
+  })
+
+  it('Fastifyへのimportを検出します', async () => {
+    const rules = await reportedRules("import Fastify from 'fastify'")
+
+    rules.should.include('no-restricted-imports')
   })
 
   it('型importによるReactへの依存を検出します', async () => {
-    const [report] = await lint.lintText("export type Example = import('react').ReactNode", { filePath: 'example.ts' })
+    const rules = await reportedRules("export type Example = import('react').ReactNode")
 
-    report.messages.filter(message => message.ruleId?.startsWith('no-restricted')).should.not.deep.equal([])
+    rules.filter(rule => rule?.startsWith('no-restricted')).should.not.deep.equal([])
   })
 
-  it.each([
-    { code: "void fetch('/api/time-records')", rule: 'no-restricted-globals' },
-    { code: "void import('../../backends/node/app.js')", rule: 'no-restricted-syntax' },
-  ])('直接通信と動的importを検出します: $code', async ({ code, rule }) => {
-    const [report] = await lint.lintText(code, { filePath: 'example.ts' })
+  it('fetchによる直接通信を検出します', async () => {
+    const rules = await reportedRules("void fetch('/api/time-records')")
 
-    report.messages.map(message => message.ruleId).should.include(rule)
+    rules.should.include('no-restricted-globals')
   })
 
-  it.each([
-    "export type { TimeRecord } from './timeRecord.js'",
-    "export type { Temporal } from 'temporal-polyfill'",
-  ])('内部モジュールと既存日時ライブラリの参照を許可します: %s', async code => {
-    const [report] = await lint.lintText(code, { filePath: 'example.ts' })
+  it('バックエンドの動的importを検出します', async () => {
+    const rules = await reportedRules("void import('../../backends/node/app.js')")
 
-    report.messages.filter(message => message.ruleId?.startsWith('no-restricted')).should.deep.equal([])
+    rules.should.include('no-restricted-syntax')
+  })
+
+  it('内部モジュールの参照を許可します', async () => {
+    const rules = await reportedRules("export type { TimeRecord } from './timeRecord.js'")
+
+    rules.filter(rule => rule?.startsWith('no-restricted')).should.deep.equal([])
+  })
+
+  it('既存の日時ライブラリの参照を許可します', async () => {
+    const rules = await reportedRules("export type { Temporal } from 'temporal-polyfill'")
+
+    rules.filter(rule => rule?.startsWith('no-restricted')).should.deep.equal([])
   })
 })
+
+async function reportedRules(code: string) {
+  const [report] = await lint.lintText(code, { filePath: 'example.ts' })
+  return report.messages.map(message => message.ruleId)
+}
