@@ -83,7 +83,7 @@ public sealed class TimeRecordEndOperationTests
         tested.Execute(最初の記録.Id).Should().Be(new EndTimeRecordResult(最初の記録.Id, 早い時刻, 遅い時刻));
     }
 
-    [Fact(Skip = "記録終了 4：準備と検証が元の記録の書き換えに依存している。再終了後の保存内容を検証する際に解除する。")]
+    [Fact]
     public void 終了済みの記録を再度指定するとその記録だけの終了時刻を更新する()
     {
         var (最初の記録, 次の記録) = 終了済みと記録中の二件を保存する();
@@ -91,8 +91,8 @@ public sealed class TimeRecordEndOperationTests
 
         tested.Execute(最初の記録.Id);
 
-        最初の記録.EndedAt.Should().Be(遅い時刻);
-        次の記録.EndedAt.Should().BeNull();
+        state.Find(最初の記録.Id).Should().Be(new TimeRecord(最初の記録.Id, 早い時刻, 遅い時刻));
+        state.Find(次の記録.Id).Should().Be(次の記録);
     }
 
     [Fact]
@@ -112,8 +112,8 @@ public sealed class TimeRecordEndOperationTests
 
     (TimeRecord 終了済み, TimeRecord 記録中) 終了済みと記録中の二件を保存する()
     {
-        var 終了済み = 記録を開始して保存する(早い時刻);
-        終了済み.End(中間の時刻);
+        var 終了済み = TimeRecord.Start(早い時刻).End(中間の時刻);
+        state.Add(終了済み);
         return (終了済み, 記録を開始して保存する(中間の時刻));
     }
 
