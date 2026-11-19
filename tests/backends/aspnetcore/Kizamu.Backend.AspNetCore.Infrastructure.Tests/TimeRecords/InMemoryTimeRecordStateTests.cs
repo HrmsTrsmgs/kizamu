@@ -8,25 +8,21 @@ public sealed class InMemoryTimeRecordStateTests
 {
     static readonly DateTimeOffset 開始時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 次の開始時刻 = new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero);
-    readonly InMemoryTimeRecordState tested;
-
-    public InMemoryTimeRecordStateTests() => tested = new();
+    readonly InMemoryTimeRecordState tested = new();
+    readonly TimeRecord 最初の記録 = TimeRecord.Start(開始時刻);
+    readonly TimeRecord 次の記録 = TimeRecord.Start(次の開始時刻);
 
     [Fact]
     public void 作業記録を保存すると同じ記録を取得できます()
     {
-        var timeRecord = TimeRecord.Start(開始時刻);
+        tested.Add(最初の記録);
 
-        tested.Add(timeRecord);
-
-        tested.Current.Should().BeSameAs(timeRecord);
+        tested.Current.Should().BeSameAs(最初の記録);
     }
 
     [Fact]
     public void 複数の記録から指定した識別子の記録を取得できる()
     {
-        var 最初の記録 = TimeRecord.Start(開始時刻);
-        var 次の記録 = TimeRecord.Start(次の開始時刻);
         tested.Add(最初の記録);
         tested.Add(次の記録);
 
@@ -42,19 +38,14 @@ public sealed class InMemoryTimeRecordStateTests
     [Fact]
     public void 作業記録を一件追加すると追加した記録を取得できます()
     {
-        var 追加する記録 = TimeRecord.Start(開始時刻);
+        tested.Add(最初の記録);
 
-        tested.Add(追加する記録);
-
-        tested.All.Should().Equal(追加する記録);
+        tested.All.Should().Equal(最初の記録);
     }
 
     [Fact]
     public void 作業記録を二件追加すると追加した順に両方取得できます()
     {
-        var 最初の記録 = TimeRecord.Start(開始時刻);
-        var 次の記録 = TimeRecord.Start(次の開始時刻);
-
         tested.Add(最初の記録);
         tested.Add(次の記録);
 
@@ -64,11 +55,10 @@ public sealed class InMemoryTimeRecordStateTests
     [Fact]
     public void コピー後に追加した記録はコピーした一覧に含まれません()
     {
-        var 最初の記録 = TimeRecord.Start(開始時刻);
         tested.Add(最初の記録);
 
         var コピー = tested.CopyAll();
-        tested.Add(TimeRecord.Start(次の開始時刻));
+        tested.Add(次の記録);
 
         コピー.Select(it => it.Id).Should().Equal(最初の記録.Id);
     }
@@ -76,11 +66,10 @@ public sealed class InMemoryTimeRecordStateTests
     [Fact]
     public void コピーした一覧から元と同じ記録インスタンスを取得できます()
     {
-        var 最初の記録 = TimeRecord.Start(開始時刻);
         tested.Add(最初の記録);
 
         var コピー = tested.CopyAll();
-        tested.Add(TimeRecord.Start(次の開始時刻));
+        tested.Add(次の記録);
 
         コピー[0].Should().BeSameAs(最初の記録);
     }
@@ -88,8 +77,6 @@ public sealed class InMemoryTimeRecordStateTests
     [Fact]
     public void コピー後も元の一覧には追加した記録が反映されます()
     {
-        var 最初の記録 = TimeRecord.Start(開始時刻);
-        var 次の記録 = TimeRecord.Start(次の開始時刻);
         tested.Add(最初の記録);
         var 一覧 = tested.All;
 
@@ -103,12 +90,10 @@ public sealed class InMemoryTimeRecordStateTests
     public void 同じ一覧を列挙するたびに列挙開始前に追加された記録を取得できます()
     {
         var 一覧 = tested.All;
-        var 最初の記録 = TimeRecord.Start(開始時刻);
         tested.Add(最初の記録);
 
         一覧.Should().Equal(最初の記録);
 
-        var 次の記録 = TimeRecord.Start(次の開始時刻);
         tested.Add(次の記録);
 
         一覧.Should().Equal(最初の記録, 次の記録);
@@ -119,8 +104,8 @@ public sealed class InMemoryTimeRecordStateTests
     {
         var 一覧 = tested.All;
 
-        tested.Add(TimeRecord.Start(開始時刻));
-        tested.Add(TimeRecord.Start(次の開始時刻));
+        tested.Add(最初の記録);
+        tested.Add(次の記録);
 
         一覧.Count.Should().Be(2);
     }
@@ -129,8 +114,6 @@ public sealed class InMemoryTimeRecordStateTests
     public void 取得済みの一覧の添字で後から追加した記録を追加順に取得できます()
     {
         var 一覧 = tested.All;
-        var 最初の記録 = TimeRecord.Start(開始時刻);
-        var 次の記録 = TimeRecord.Start(次の開始時刻);
 
         tested.Add(最初の記録);
         tested.Add(次の記録);

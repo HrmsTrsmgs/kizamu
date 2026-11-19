@@ -1,6 +1,6 @@
 import { generateKeyPairSync, sign } from 'node:crypto'
 import { GoogleIdTokenVerifier } from '../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
-import { afterEach, beforeEach, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, test, vi } from 'vitest'
 import { createApp } from '../../../src/backends/node/app.js'
 
 interface TimeRecordResponse {
@@ -66,42 +66,104 @@ test('未認証で記録を開始すると記録は追加されません', async
   records.should.deep.equal([])
 })
 
-test('未認証で記録を終了すると401が返されます', async () => {
-  const startedRecord = await prepareStartedRecord(app)
-  vi.setSystemTime(終了時刻)
+describe('記録を開始して終了時刻まで進めたとき', () => {
+  let startedRecord: TimeRecordResponse
 
-  const response = await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
+  beforeEach(async () => {
+    startedRecord = await prepareStartedRecord(app)
+    vi.setSystemTime(終了時刻)
+  })
 
-  response.statusCode.should.equal(401)
+  test('未認証で記録を終了すると401が返されます', async () => {
+    const response = await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
+
+    response.statusCode.should.equal(401)
+  })
+
+  test('未認証で記録を終了すると記録は変更されません', async () => {
+    await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
+
+    const records = await readTimeRecords(app)
+    records.should.deep.equal([startedRecord])
+  })
+
+  test('記録を終了すると同じ識別子と元の開始時刻とサーバーの終了時刻が返されます', async () => {
+    const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`)
+
+    response.statusCode.should.equal(200)
+    const endedRecord = response.json<TimeRecordResponse>()
+    endedRecord.id.should.equal(startedRecord.id)
+    endedRecord.startedAt.should.equal(startedRecord.startedAt)
+    new Date(endedRecord.endedAt ?? '').should.deep.equal(終了時刻)
+    endedRecord.should.have.property('endedAt', 終了時刻.toISOString())
+  })
+
+  test('記録を二件開始すると異なる識別子が発行されます', async () => {
+    const secondRecord = await prepareStartedRecord(app)
+
+    secondRecord.id.should.not.equal(startedRecord.id)
+  })
+
+  test('二件の記録を開始した後に一覧を取得すると開始した順に両方が返されます', async () => {
+    const secondRecord = await prepareStartedRecord(app)
+
+    const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
+
+    response.statusCode.should.equal(200)
+    const content = { body: response.json() }
+    content.should.have.property('body').that.deep.equal([startedRecord, secondRecord])
+  })
+
+  test('記録を終了した後に一覧を取得するとその記録の終了時刻が反映されます', async () => {
+    await prepareEndedRecord(app, startedRecord.id)
+
+    const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
+
+    response.statusCode.should.equal(200)
+    const content = { body: response.json() }
+    content.should.have.property('body').that.deep.equal([{ ...startedRecord, endedAt: 終了時刻.toISOString() }])
+  })
+
+  test.each(同一オリジンを示さないヘッダー値)(
+    'Sec-Fetch-Siteが同一オリジンを示さない終了要求では403が返されます（%s）',
+    async (secFetchSite) => {
+      const response = await postWithFetchSite(app, `/api/time-records/${startedRecord.id}/end`, secFetchSite)
+
+      response.statusCode.should.equal(403)
+    },
+  )
+
+  test.each(同一オリジンを示さないヘッダー値)(
+    'Sec-Fetch-Siteが同一オリジンを示さない終了要求では記録が終了されません（%s）',
+    async (secFetchSite) => {
+      await postWithFetchSite(app, `/api/time-records/${startedRecord.id}/end`, secFetchSite)
+
+      const records = await readTimeRecords(app)
+      records.should.deep.equal([startedRecord])
+    },
+  )
 })
 
-test('未認証で記録を終了すると記録は変更されません', async () => {
-  const startedRecord = await prepareStartedRecord(app)
-  vi.setSystemTime(終了時刻)
+describe('first-user が記録を開始して終了時刻まで進めたとき', () => {
+  let startedRecord: TimeRecordResponse
 
-  await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
+  beforeEach(async () => {
+    startedRecord = await prepareStartedRecord(app, 'first-user')
+    vi.setSystemTime(終了時刻)
+  })
 
-  const records = await readTimeRecords(app)
-  records.should.deep.equal([startedRecord])
-})
+  test('他の利用者の記録を終了すると404が返されます', async () => {
+    const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
 
-test('他の利用者の記録を終了すると404が返されます', async () => {
-  const startedRecord = await prepareStartedRecord(app, 'first-user')
-  vi.setSystemTime(終了時刻)
+    response.statusCode.should.equal(404)
+  })
 
-  const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
+  test('他の利用者の記録を終了すると所有者の記録は変更されません', async () => {
+    await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
 
-  response.statusCode.should.equal(404)
-})
-
-test('他の利用者の記録を終了すると所有者の記録は変更されません', async () => {
-  const startedRecord = await prepareStartedRecord(app, 'first-user')
-  vi.setSystemTime(終了時刻)
-
-  await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
-
-  const records = await readTimeRecords(app, 'first-user')
-  records.should.deep.equal([startedRecord])
+    const records = await readTimeRecords(app, 'first-user')
+    records.should.deep.equal([startedRecord])
+  })
 })
 
 test('二人が開始した記録の一覧にはそれぞれ本人の記録だけが返されます', async () => {
@@ -125,58 +187,12 @@ test('記録を開始すると空でないGUIDとサーバーの開始時刻が�
   startedRecord.should.have.property('endedAt', null)
 })
 
-test('記録を終了すると同じ識別子と元の開始時刻とサーバーの終了時刻が返されます', async () => {
-  const startedRecord = await prepareStartedRecord(app)
-  vi.setSystemTime(終了時刻)
-
-  const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`)
-
-  response.statusCode.should.equal(200)
-  const endedRecord = response.json<TimeRecordResponse>()
-  endedRecord.id.should.equal(startedRecord.id)
-  endedRecord.startedAt.should.equal(startedRecord.startedAt)
-  new Date(endedRecord.endedAt ?? '').should.deep.equal(終了時刻)
-  endedRecord.should.have.property('endedAt', 終了時刻.toISOString())
-})
-
 test('まだ開始していないときに一覧を取得すると空の配列が返されます', async () => {
   const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
 
   response.statusCode.should.equal(200)
   const content = { body: response.json() }
   content.should.have.property('body').that.deep.equal([])
-})
-
-test('記録を二件開始すると異なる識別子が発行されます', async () => {
-  const firstRecord = await prepareStartedRecord(app)
-  vi.setSystemTime(終了時刻)
-  const secondRecord = await prepareStartedRecord(app)
-
-  secondRecord.id.should.not.equal(firstRecord.id)
-})
-
-test('二件の記録を開始した後に一覧を取得すると開始した順に両方が返されます', async () => {
-  const firstRecord = await prepareStartedRecord(app)
-  vi.setSystemTime(終了時刻)
-  const secondRecord = await prepareStartedRecord(app)
-
-  const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
-
-  response.statusCode.should.equal(200)
-  const content = { body: response.json() }
-  content.should.have.property('body').that.deep.equal([firstRecord, secondRecord])
-})
-
-test('記録を終了した後に一覧を取得するとその記録の終了時刻が反映されます', async () => {
-  const startedRecord = await prepareStartedRecord(app)
-  vi.setSystemTime(終了時刻)
-  await prepareEndedRecord(app, startedRecord.id)
-
-  const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
-
-  response.statusCode.should.equal(200)
-  const content = { body: response.json() }
-  content.should.have.property('body').that.deep.equal([{ ...startedRecord, endedAt: 終了時刻.toISOString() }])
 })
 
 test('別のアプリで開始した記録は新しく生成したアプリの一覧には含まれません', async () => {
@@ -210,31 +226,6 @@ test.each(同一オリジンを示さないヘッダー値)(
 
     const records = await readTimeRecords(app)
     records.should.deep.equal([])
-  },
-)
-
-test.each(同一オリジンを示さないヘッダー値)(
-  'Sec-Fetch-Siteが同一オリジンを示さない終了要求では403が返されます（%s）',
-  async (secFetchSite) => {
-    const startedRecord = await prepareStartedRecord(app)
-    vi.setSystemTime(終了時刻)
-
-    const response = await postWithFetchSite(app, `/api/time-records/${startedRecord.id}/end`, secFetchSite)
-
-    response.statusCode.should.equal(403)
-  },
-)
-
-test.each(同一オリジンを示さないヘッダー値)(
-  'Sec-Fetch-Siteが同一オリジンを示さない終了要求では記録が終了されません（%s）',
-  async (secFetchSite) => {
-    const startedRecord = await prepareStartedRecord(app)
-    vi.setSystemTime(終了時刻)
-
-    await postWithFetchSite(app, `/api/time-records/${startedRecord.id}/end`, secFetchSite)
-
-    const records = await readTimeRecords(app)
-    records.should.deep.equal([startedRecord])
   },
 )
 

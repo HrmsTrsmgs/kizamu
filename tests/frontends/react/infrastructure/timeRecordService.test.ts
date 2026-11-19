@@ -43,19 +43,21 @@ describe('timeRecordService', () => {
     ])
   })
 
-  it('記録開始APIへPOSTします', async () => {
-    fetchMock.mockImplementation(async () => Response.json(記録中の応答))
+  describe('記録開始APIが記録中の応答を返すとき', () => {
+    beforeEach(() => {
+      fetchMock.mockImplementation(async () => Response.json(記録中の応答))
+    })
 
-    await tested.startTimeRecord()
+    it('記録開始APIへPOSTします', async () => {
+      await tested.startTimeRecord()
 
-    fetchMock.should.have.been.calledOnceWith('/api/time-records/start', { method: 'POST' })
-  })
+      fetchMock.should.have.been.calledOnceWith('/api/time-records/start', { method: 'POST' })
+    })
 
-  it('記録開始APIのDTOを内部の日時点に変換します', async () => {
-    fetchMock.mockImplementation(async () => Response.json(記録中の応答))
-
-    const startedRecord = await tested.startTimeRecord()
-    startedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻)))
+    it('記録開始APIのDTOを内部の日時点に変換します', async () => {
+      const startedRecord = await tested.startTimeRecord()
+      startedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻)))
+    })
   })
 
   it('記録開始APIの成功応答に記録IDがなければ失敗を通知します', async () => {
@@ -64,19 +66,21 @@ describe('timeRecordService', () => {
     await tested.startTimeRecord().should.rejects.toThrow()
   })
 
-  it('指定した記録の終了APIへPOSTします', async () => {
-    fetchMock.mockImplementation(async () => Response.json(終了済みの応答))
+  describe('記録終了APIが終了済みの応答を返すとき', () => {
+    beforeEach(() => {
+      fetchMock.mockImplementation(async () => Response.json(終了済みの応答))
+    })
 
-    await tested.endTimeRecord(記録ID)
+    it('指定した記録の終了APIへPOSTします', async () => {
+      await tested.endTimeRecord(記録ID)
 
-    fetchMock.should.have.been.calledOnceWith(`/api/time-records/${記録ID}/end`, { method: 'POST' })
-  })
+      fetchMock.should.have.been.calledOnceWith(`/api/time-records/${記録ID}/end`, { method: 'POST' })
+    })
 
-  it('記録終了APIのDTOを内部の日時点に変換します', async () => {
-    fetchMock.mockImplementation(async () => Response.json(終了済みの応答))
-
-    const endedRecord = await tested.endTimeRecord(記録ID)
-    endedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻), timestamp(終了時刻)))
+    it('記録終了APIのDTOを内部の日時点に変換します', async () => {
+      const endedRecord = await tested.endTimeRecord(記録ID)
+      endedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻), timestamp(終了時刻)))
+    })
   })
 
   it('作業記録一覧APIがHTTPエラーを返したら本文が正常でも失敗を通知します', async () => {

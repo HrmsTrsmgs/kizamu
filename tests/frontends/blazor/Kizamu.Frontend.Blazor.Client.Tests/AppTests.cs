@@ -16,6 +16,11 @@ public sealed class AppTests : IDisposable
     readonly ProjectTabsViewModel projectTabs = new();
     readonly TimeRecorderViewModel timeRecorder = new(new StubTimeRecordService(一つ目の記録, 一つ目の記録));
 
+    IRenderedComponent<Client.App> 未ログインの画面 => field ??= context.Render<Client.App>();
+    IRenderedComponent<Client.App> ログイン操作用の画面 => field ??= ログイン可能な画面を表示する();
+    IRenderedComponent<Client.App> ログイン済みの画面 =>
+        field ??= context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
+
     public AppTests()
     {
         context.Services.AddSingleton(new HealthStatusViewModel(new StubHealthService()));
@@ -27,37 +32,29 @@ public sealed class AppTests : IDisposable
     [Fact]
     public void 未ログイン時はGoogleログインを表示します()
     {
-        var tested = context.Render<Client.App>();
-
-        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
+        未ログインの画面.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
     }
 
     [Fact]
     public void 未ログイン時は記録画面を表示しません()
     {
-        var tested = context.Render<Client.App>();
-
-        tested.FindAll(".recorder-panel").Should().BeEmpty();
+        未ログインの画面.FindAll(".recorder-panel").Should().BeEmpty();
     }
 
     [Fact]
     public void Googleログインに成功すると記録画面を表示します()
     {
-        var tested = ログイン可能な画面を表示する();
+        ログインする(ログイン操作用の画面);
 
-        ログインする(tested);
-
-        tested.FindAll(".recorder-panel button").Select(it => it.TextContent).Should().Contain("記録を開始");
+        ログイン操作用の画面.FindAll(".recorder-panel button").Select(it => it.TextContent).Should().Contain("記録を開始");
     }
 
     [Fact]
     public void Googleログインに成功するとログインボタンが消えます()
     {
-        var tested = ログイン可能な画面を表示する();
+        ログインする(ログイン操作用の画面);
 
-        ログインする(tested);
-
-        tested.FindAll("button").Select(it => it.TextContent).Should().NotContain("Googleでログイン");
+        ログイン操作用の画面.FindAll("button").Select(it => it.TextContent).Should().NotContain("Googleでログイン");
     }
 
     [Fact]
@@ -74,107 +71,96 @@ public sealed class AppTests : IDisposable
     [Fact]
     public void ログアウトボタンはログインボタンと同じ場所に表示します()
     {
-        var tested = ログイン可能な画面を表示する();
-        var ログインの場所 = 認証ボタンの位置(tested, "Googleでログイン");
+        var ログインの場所 = 認証ボタンの位置(ログイン操作用の画面, "Googleでログイン");
         ログインの場所.Should().BeGreaterThanOrEqualTo(0);
 
-        ログインする(tested);
+        ログインする(ログイン操作用の画面);
 
-        認証ボタンの位置(tested, "ログアウト").Should().Be(ログインの場所);
+        認証ボタンの位置(ログイン操作用の画面, "ログアウト").Should().Be(ログインの場所);
     }
 
     [Fact]
     public void ログアウトするとGoogleログインを表示します()
     {
-        var tested = ログイン可能な画面を表示する();
-        ログインする(tested);
+        ログインする(ログイン操作用の画面);
 
-        ログアウトする(tested);
+        ログアウトする(ログイン操作用の画面);
 
-        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
+        ログイン操作用の画面.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
     }
 
     [Fact]
     public void ログアウトすると記録画面を閉じます()
     {
-        var tested = ログイン可能な画面を表示する();
-        ログインする(tested);
+        ログインする(ログイン操作用の画面);
 
-        ログアウトする(tested);
+        ログアウトする(ログイン操作用の画面);
 
-        tested.FindAll(".recorder-panel").Should().BeEmpty();
+        ログイン操作用の画面.FindAll(".recorder-panel").Should().BeEmpty();
     }
 
     [Fact]
     public void 再ログインすると開始操作に戻ります()
     {
-        var tested = 記録中にログアウトした画面を表示する();
+        記録中にログアウトしておく();
 
-        ログインする(tested);
+        ログインする(ログイン操作用の画面);
 
-        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を開始").And.NotContain("記録を終了");
+        ログイン操作用の画面.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を開始").And.NotContain("記録を終了");
     }
 
     [Fact]
     public void 再ログインすると前のログイン時の記録を一覧に表示しません()
     {
-        var tested = 記録中にログアウトした画面を表示する();
+        記録中にログアウトしておく();
 
-        ログインする(tested);
+        ログインする(ログイン操作用の画面);
 
-        tested.FindAll("ul[aria-label='作業記録一覧'] li").Should().BeEmpty();
+        ログイン操作用の画面.FindAll("ul[aria-label='作業記録一覧'] li").Should().BeEmpty();
     }
 
     [Fact]
     public void 画面の見出しにアプリ名を表示します()
     {
-        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
-
-        tested.Find("h1").TextContent.Should().Be("Kizamu");
+        ログイン済みの画面.Find("h1").TextContent.Should().Be("Kizamu");
     }
 
     [Fact]
     public void ログイン済みの画面に記録操作を表示します()
     {
-        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
-
-        tested.Find(".recorder-panel button").TextContent.Should().Be("記録を開始");
+        ログイン済みの画面.Find(".recorder-panel button").TextContent.Should().Be("記録を開始");
     }
 
     [Fact]
     public void 画面のフッターに接続状態を表示します()
     {
-        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
-
-        tested.Find("footer").TextContent.Should().Contain("サーバー接続: 正常");
+        ログイン済みの画面.Find("footer").TextContent.Should().Contain("サーバー接続: 正常");
     }
 
     [Fact]
     public void 追加ボタンを押すとプロジェクト追加ポップアップを表示します()
     {
-        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
+        ログイン済みの画面.FindAll("button").Single(it => it.TextContent == "追加").Click();
 
-        tested.FindAll("button").Single(it => it.TextContent == "追加").Click();
-
-        tested.FindAll("[role=dialog]").Should().ContainSingle();
+        ログイン済みの画面.FindAll("[role=dialog]").Should().ContainSingle();
     }
 
     [Fact]
     public void プロジェクト追加ポップアップに入力した名前を表示します()
     {
-        var tested = 追加ダイアログを表示する();
+        追加ダイアログを開いておく();
 
-        tested.Find("[role=dialog] input").Change("プロジェクトA");
+        ログイン済みの画面.Find("[role=dialog] input").Change("プロジェクトA");
 
-        tested.Find("[role=dialog] input").GetAttribute("value").Should().Be("プロジェクトA");
+        ログイン済みの画面.Find("[role=dialog] input").GetAttribute("value").Should().Be("プロジェクトA");
     }
 
     [Fact]
     public void プロジェクト追加ポップアップの入力を登録する名前に反映します()
     {
-        var tested = 追加ダイアログを表示する();
+        追加ダイアログを開いておく();
 
-        tested.Find("[role=dialog] input").Change("プロジェクトA");
+        ログイン済みの画面.Find("[role=dialog] input").Change("プロジェクトA");
 
         projectTabs.ProjectName.Should().Be("プロジェクトA");
     }
@@ -182,84 +168,80 @@ public sealed class AppTests : IDisposable
     [Fact]
     public void プロジェクトの追加をキャンセルするとポップアップを閉じます()
     {
-        var tested = 追加ダイアログを表示する("プロジェクトA");
+        追加ダイアログを開いておく("プロジェクトA");
 
-        tested.FindAll("[role=dialog] button").Single(it => it.TextContent == "キャンセル").Click();
+        ログイン済みの画面.FindAll("[role=dialog] button").Single(it => it.TextContent == "キャンセル").Click();
 
-        tested.FindAll("[role=dialog]").Should().BeEmpty();
+        ログイン済みの画面.FindAll("[role=dialog]").Should().BeEmpty();
     }
 
     [Fact]
     public void 入力したプロジェクト名を登録するとタブを表示します()
     {
-        var tested = 追加ダイアログを表示する("プロジェクトA");
+        追加ダイアログを開いておく("プロジェクトA");
 
-        tested.FindAll("[role=dialog] button").Single(it => it.TextContent == "登録").Click();
+        ログイン済みの画面.FindAll("[role=dialog] button").Single(it => it.TextContent == "登録").Click();
 
-        tested.FindAll("[role=tab]").Select(it => it.TextContent).Should().Contain("プロジェクトA");
+        ログイン済みの画面.FindAll("[role=tab]").Select(it => it.TextContent).Should().Contain("プロジェクトA");
     }
 
     [Fact]
     public void 登録済みプロジェクトを選ぶと記録欄にプロジェクト名を表示します()
     {
-        var tested = 登録済みプロジェクトのある画面を表示する("プロジェクトA");
+        プロジェクトを登録する("プロジェクトA");
 
-        プロジェクトを選ぶ(tested, "プロジェクトA");
+        プロジェクトを選ぶ(ログイン済みの画面, "プロジェクトA");
 
-        tested.Find(".recorder-panel h2").TextContent.Should().Be("プロジェクトA");
+        ログイン済みの画面.Find(".recorder-panel h2").TextContent.Should().Be("プロジェクトA");
     }
 
     [Fact]
     public void 登録済みプロジェクトを選ぶと選択中の表示が未指定からそのタブに移ります()
     {
-        var tested = 登録済みプロジェクトのある画面を表示する("プロジェクトA");
+        プロジェクトを登録する("プロジェクトA");
 
-        プロジェクトを選ぶ(tested, "プロジェクトA");
+        プロジェクトを選ぶ(ログイン済みの画面, "プロジェクトA");
 
-        tested.FindAll("[role=tab]").Single(it => it.TextContent == "プロジェクトA").GetAttribute("aria-selected").Should().Be("true");
-        tested.Find(".project-default").GetAttribute("aria-selected").Should().Be("false");
+        ログイン済みの画面.FindAll("[role=tab]").Single(it => it.TextContent == "プロジェクトA").GetAttribute("aria-selected").Should().Be("true");
+        ログイン済みの画面.Find(".project-default").GetAttribute("aria-selected").Should().Be("false");
     }
 
     [Fact]
     public void プロジェクトを指定せずに記録を開始すると終了操作を表示します()
     {
-        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
+        ログイン済みの画面.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
 
-        tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
-
-        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を終了");
+        ログイン済みの画面.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を終了");
     }
 
     [Fact]
     public void プロジェクトを指定せずに記録を開始すると一覧に記録を表示します()
     {
-        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
+        ログイン済みの画面.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
 
-        tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
-
-        tested.FindAll("ul[aria-label='作業記録一覧'] li").Should().ContainSingle();
+        ログイン済みの画面.FindAll("ul[aria-label='作業記録一覧'] li").Should().ContainSingle();
     }
 
     [Fact]
     public async Task 記録していないプロジェクトへタブを切り替えると開始操作を表示します()
     {
-        var (tested, _) = await プロジェクトAで記録中の画面を表示する();
+        await プロジェクトAで記録を開始しておく();
 
-        プロジェクトを選ぶ(tested, "プロジェクトB");
+        プロジェクトを選ぶ(ログイン済みの画面, "プロジェクトB");
 
-        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を開始");
+        ログイン済みの画面.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を開始");
     }
 
     [Fact]
     public async Task タブを切り替えて戻ると記録中の対象には終了操作を表示します()
     {
-        var (tested, プロジェクトB) = await プロジェクトAで記録中の画面を表示する();
+        var プロジェクトB = await プロジェクトAで記録を開始しておく();
         projectTabs.SelectProject(プロジェクトB);
-        tested.Render();
+        ログイン済みの画面.Render();
 
-        プロジェクトを選ぶ(tested, "プロジェクトA");
+        プロジェクトを選ぶ(ログイン済みの画面, "プロジェクトA");
 
-        tested.FindAll("button").Select(it => it.TextContent).Should().NotContain("記録を開始").And.Contain("記録を終了");
+        ログイン済みの画面.FindAll("button").Select(it => it.TextContent).Should().NotContain("記録を開始").And.Contain("記録を終了");
     }
 
     IRenderedComponent<Client.App> ログイン可能な画面を表示する(Action<string>? トークンを受け取る = null) =>
@@ -277,42 +259,34 @@ public sealed class AppTests : IDisposable
     static void ログアウトする(IRenderedComponent<Client.App> tested) =>
         tested.FindAll("button").Single(it => it.TextContent == "ログアウト").Click();
 
-    IRenderedComponent<Client.App> 記録中にログアウトした画面を表示する()
+    void 記録中にログアウトしておく()
     {
-        var tested = ログイン可能な画面を表示する();
+        var tested = ログイン操作用の画面;
         ログインする(tested);
         tested.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();
         tested.FindAll("button").Select(it => it.TextContent).Should().Contain("記録を終了");
         ログアウトする(tested);
-        return tested;
     }
 
     static int 認証ボタンの位置(IRenderedComponent<Client.App> tested, string ボタン名) =>
         tested.Find("main").Children.ToList().FindIndex(it =>
             it.Children.Any(child => child.LocalName == "button" && child.TextContent == ボタン名));
 
-    IRenderedComponent<Client.App> 追加ダイアログを表示する(string プロジェクト名 = "")
+    void 追加ダイアログを開いておく(string プロジェクト名 = "")
     {
         projectTabs.OpenProjectDialog();
         projectTabs.ProjectName = プロジェクト名;
-        return context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
     }
 
-    IRenderedComponent<Client.App> 登録済みプロジェクトのある画面を表示する(string プロジェクト名)
-    {
-        プロジェクトを登録する(プロジェクト名);
-        return context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
-    }
-
-    async Task<(IRenderedComponent<Client.App> 画面, Project プロジェクトB)> プロジェクトAで記録中の画面を表示する()
+    async Task<Project> プロジェクトAで記録を開始しておく()
     {
         var プロジェクトA = プロジェクトを登録する("プロジェクトA");
         var プロジェクトB = プロジェクトを登録する("プロジェクトB");
         projectTabs.SelectProject(プロジェクトA);
-        var tested = context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
+        var tested = ログイン済みの画面;
         await timeRecorder.StartTimeRecordAsync();
         tested.Render();
-        return (tested, プロジェクトB);
+        return プロジェクトB;
     }
 
     Project プロジェクトを登録する(string name)

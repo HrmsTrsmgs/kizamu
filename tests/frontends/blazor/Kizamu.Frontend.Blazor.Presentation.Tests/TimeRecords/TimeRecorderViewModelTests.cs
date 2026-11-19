@@ -11,6 +11,8 @@ public sealed class TimeRecorderViewModelTests
     static readonly Guid 別の記録ID = Guid.Parse("019cdeac-b600-7000-8000-000000000002");
     static readonly DateTimeOffset 開始時刻 = DateTimeOffset.Parse("2026-08-01T09:00:00Z");
     static readonly DateTimeOffset 終了時刻 = DateTimeOffset.Parse("2026-08-01T10:30:00Z");
+    readonly Project プロジェクトA = new("プロジェクトA");
+    readonly TimeRecord 過去の記録 = new(別の記録ID, 開始時刻, 終了時刻);
     readonly StubTimeRecordService service = new(new(記録ID, 開始時刻, null), new(記録ID, 開始時刻, 終了時刻));
     readonly TimeRecorderViewModel tested;
 
@@ -136,7 +138,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 異なるプロジェクトで開始した記録を両方とも一覧に残す()
     {
-        await 異なるプロジェクトの記録を開始する();
+        await プロジェクトAとBで記録を開始する();
 
         tested.Records.Select(it => it.Id).Should().Equal(記録ID, 別の記録ID);
     }
@@ -144,7 +146,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 異なるプロジェクトで記録を開始すると選択中のプロジェクトが記録中になる()
     {
-        await 異なるプロジェクトの記録を開始する();
+        await プロジェクトAとBで記録を開始する();
 
         tested.IsRecording.Should().BeTrue();
     }
@@ -152,7 +154,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 別のプロジェクトで記録を開始して戻っても元の記録を終了しない()
     {
-        var プロジェクトA = await 異なるプロジェクトの記録を開始する();
+        await プロジェクトAとBで記録を開始する();
 
         tested.SelectProject(プロジェクトA);
 
@@ -162,7 +164,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task プロジェクトを切り替えて戻ると元の記録中状態を保持する()
     {
-        var プロジェクトA = await 異なるプロジェクトの記録を開始する();
+        await プロジェクトAとBで記録を開始する();
 
         tested.SelectProject(プロジェクトA);
 
@@ -172,7 +174,6 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 未指定からプロジェクトへ切り替えて戻ると元の記録中状態を保持する()
     {
-        var プロジェクトA = new Project("プロジェクトA");
         tested.SelectProject(null);
         await tested.StartTimeRecordAsync();
 
@@ -188,7 +189,6 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task プロジェクトから未指定へ切り替えて戻ると元の記録中状態を保持する()
     {
-        var プロジェクトA = new Project("プロジェクトA");
         await 未指定とプロジェクトの記録を開始する(プロジェクトA);
         tested.SelectProject(null);
 
@@ -200,7 +200,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 開始の応答前に対象を切り替えても確定した記録を一覧に加える()
     {
-        var (_, 応答, 開始操作) = 開始の応答待ちに未指定へ切り替える();
+        var (応答, 開始操作) = プロジェクトAの開始応答を待つ間に未指定へ切り替える();
 
         応答.SetResult(service.StartedRecord);
         await 開始操作;
@@ -211,7 +211,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 開始の応答前に対象を切り替えても開始元だけを記録中にする()
     {
-        var (プロジェクトA, 応答, 開始操作) = 開始の応答待ちに未指定へ切り替える();
+        var (応答, 開始操作) = プロジェクトAの開始応答を待つ間に未指定へ切り替える();
 
         応答.SetResult(service.StartedRecord);
         await 開始操作;
@@ -575,8 +575,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 手動再取得にも失敗すると直前の一覧を残す()
     {
-        await 終了済みの履歴を読み込む();
-        await 開始失敗後の再取得にも失敗させる();
+        await 終了済みの履歴がある状態で開始と再取得を失敗させる();
 
         await Assert.ThrowsAsync<HttpRequestException>(() => tested.LoadAsync());
 
@@ -586,8 +585,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 手動再取得にも失敗すると未確認状態を保つ()
     {
-        await 終了済みの履歴を読み込む();
-        await 開始失敗後の再取得にも失敗させる();
+        await 終了済みの履歴がある状態で開始と再取得を失敗させる();
 
         await Assert.ThrowsAsync<HttpRequestException>(() => tested.LoadAsync());
 
@@ -597,8 +595,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 手動再取得にも失敗すると通信中の状態を解除する()
     {
-        await 終了済みの履歴を読み込む();
-        await 開始失敗後の再取得にも失敗させる();
+        await 終了済みの履歴がある状態で開始と再取得を失敗させる();
 
         await Assert.ThrowsAsync<HttpRequestException>(() => tested.LoadAsync());
 
@@ -608,8 +605,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 開始後の自動再取得に失敗しても手動再取得で一覧を再要求する()
     {
-        await 終了済みの履歴を読み込む();
-        await 開始失敗後の再取得にも失敗させる();
+        await 終了済みの履歴がある状態で開始と再取得を失敗させる();
 
         await Assert.ThrowsAsync<HttpRequestException>(() => tested.LoadAsync());
 
@@ -751,7 +747,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 開始後に古い初回一覧が届くと過去の記録の後に開始した記録が残る()
     {
-        var 過去の記録 = await 記録開始後に古い初回一覧を受け取る();
+        await 記録開始後に古い初回一覧を受け取る();
 
         tested.Records.Should().Equal(過去の記録, service.StartedRecord);
     }
@@ -789,7 +785,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 開始後に古い初回一覧が届いても終了時に過去の記録を残す()
     {
-        var 過去の記録 = await 記録開始後に古い初回一覧を受け取る();
+        await 記録開始後に古い初回一覧を受け取る();
 
         await tested.EndTimeRecordAsync();
 
@@ -972,19 +968,17 @@ public sealed class TimeRecorderViewModelTests
         tested.IsRecording.Should().BeFalse();
     }
 
-    (Project 開始元, TaskCompletionSource<TimeRecord> 応答, Task 開始操作) 開始の応答待ちに未指定へ切り替える()
+    (TaskCompletionSource<TimeRecord> 応答, Task 開始操作) プロジェクトAの開始応答を待つ間に未指定へ切り替える()
     {
-        var プロジェクトA = new Project("プロジェクトA");
         var 応答 = service.DelayStartResponse();
         tested.SelectProject(プロジェクトA);
         var 開始操作 = tested.StartTimeRecordAsync();
         tested.SelectProject(null);
-        return (プロジェクトA, 応答, 開始操作);
+        return (応答, 開始操作);
     }
 
     async Task<(Guid 終了する記録ID, Project? 残るプロジェクト, Guid 残る記録ID)> 未指定とプロジェクトの記録から終了対象を選ぶ(bool プロジェクトを終了する)
     {
-        var プロジェクトA = new Project("プロジェクトA");
         var (終了するプロジェクト, 終了する記録ID, 残るプロジェクト, 残る記録ID) =
             プロジェクトを終了する
                 ? (プロジェクトA, 別の記録ID, (Project?)null, 記録ID)
@@ -1059,19 +1053,17 @@ public sealed class TimeRecorderViewModelTests
 
     void 読み込む記録一覧を用意する(bool 記録中の項目を含む) =>
         service.Records = 記録中の項目を含む
-            ? [new(別の記録ID, 開始時刻, 終了時刻), new(記録ID, 開始時刻, null)]
+            ? [過去の記録, new(記録ID, 開始時刻, null)]
             : [new(記録ID, 開始時刻, 終了時刻)];
 
-    async Task<TimeRecord> 記録開始後に古い初回一覧を受け取る()
+    async Task 記録開始後に古い初回一覧を受け取る()
     {
-        var 過去の記録 = new TimeRecord(別の記録ID, 開始時刻, 終了時刻);
         var 初期一覧の応答 = service.DelayListResponse();
 
         var 初期一覧の読み込み = tested.LoadAsync();
         await tested.StartTimeRecordAsync();
         初期一覧の応答.SetResult([過去の記録]);
         await 初期一覧の読み込み;
-        return 過去の記録;
     }
 
     async Task 記録の更新と別の記録の開始後に古い一覧を受け取る()
@@ -1108,15 +1100,13 @@ public sealed class TimeRecorderViewModelTests
         }
     }
 
-    async Task<Project> 異なるプロジェクトの記録を開始する()
+    async Task プロジェクトAとBで記録を開始する()
     {
-        var プロジェクトA = new Project("プロジェクトA");
         tested.SelectProject(プロジェクトA);
         await tested.StartTimeRecordAsync();
         tested.SelectProject(new("プロジェクトB"));
         service.StartedRecord = new(別の記録ID, 終了時刻, null);
         await tested.StartTimeRecordAsync();
-        return プロジェクトA;
     }
 
     async Task 未指定とプロジェクトの記録を開始する(Project project)
@@ -1145,9 +1135,15 @@ public sealed class TimeRecorderViewModelTests
         await Assert.ThrowsAsync<HttpRequestException>(() => tested.EndTimeRecordAsync());
     }
 
+    async Task 終了済みの履歴がある状態で開始と再取得を失敗させる()
+    {
+        await 終了済みの履歴を読み込む();
+        await 開始失敗後の再取得にも失敗させる();
+    }
+
     async Task 終了済みの履歴を読み込む()
     {
-        service.Records = [new(別の記録ID, 開始時刻, 終了時刻)];
+        service.Records = [過去の記録];
         await tested.LoadAsync();
     }
 

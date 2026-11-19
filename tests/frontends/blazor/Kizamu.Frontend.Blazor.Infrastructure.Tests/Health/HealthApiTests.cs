@@ -15,13 +15,12 @@ public sealed class HealthApiTests : IDisposable
     {
         client = new(handler) { BaseAddress = new("http://localhost/") };
         tested = new(client);
+        handler.RespondWithJson(new { status = "ok" });
     }
 
     [Fact]
     public async Task 正常性確認APIへGETします()
     {
-        handler.RespondWithJson(new { status = "ok" });
-
         await tested.CheckHealthAsync();
 
         handler.Requests.Should().Equal((HttpMethod.Get, "/api/health"));
@@ -30,8 +29,6 @@ public sealed class HealthApiTests : IDisposable
     [Fact]
     public async Task 正常な応答ではtrueを返します()
     {
-        handler.RespondWithJson(new { status = "ok" });
-
         (await tested.CheckHealthAsync()).Should().BeTrue();
     }
 

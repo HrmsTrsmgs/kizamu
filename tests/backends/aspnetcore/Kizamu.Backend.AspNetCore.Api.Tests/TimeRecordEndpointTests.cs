@@ -83,8 +83,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     [Fact]
     public async Task 未認証で記録を終了すると401が返されます()
     {
-        var startedRecord = await 開始済みの記録を用意する(早い時刻);
-        timeProvider.SetUtcNow(遅い時刻);
+        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
         using var request = 同一オリジンの未認証POST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
 
         using var response = await client.SendAsync(request, CancellationToken);
@@ -95,8 +94,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     [Fact]
     public async Task 未認証で記録を終了すると記録は変更されません()
     {
-        var startedRecord = await 開始済みの記録を用意する(早い時刻);
-        timeProvider.SetUtcNow(遅い時刻);
+        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
         using var request = 同一オリジンの未認証POST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
 
         using var response = await client.SendAsync(request, CancellationToken);
@@ -107,8 +105,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     [Fact]
     public async Task 他の利用者の記録を終了すると404が返されます()
     {
-        var startedRecord = await 開始済みの記録を用意する(早い時刻, "first-user");
-        timeProvider.SetUtcNow(遅い時刻);
+        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻, "first-user");
         using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end", "second-user");
 
         using var response = await client.SendAsync(request, CancellationToken);
@@ -119,8 +116,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     [Fact]
     public async Task 他の利用者の記録を終了すると所有者の記録は変更されません()
     {
-        var startedRecord = await 開始済みの記録を用意する(早い時刻, "first-user");
-        timeProvider.SetUtcNow(遅い時刻);
+        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻, "first-user");
         using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end", "second-user");
 
         using var response = await client.SendAsync(request, CancellationToken);
@@ -156,8 +152,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     [Fact]
     public async Task 記録を終了すると200と終了した作業記録のJSONが返されます()
     {
-        var startedRecord = await 開始済みの記録を用意する(早い時刻);
-        timeProvider.SetUtcNow(遅い時刻);
+        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
 
         using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
         using var response = await client.SendAsync(request, CancellationToken);
@@ -209,8 +204,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     [MemberData(nameof(同一オリジンを示さないヘッダー値))]
     public async Task SecFetchSiteが同一オリジンを示さない終了要求では403が返されます(string? secFetchSite)
     {
-        var startedRecord = await 開始済みの記録を用意する(早い時刻);
-        timeProvider.SetUtcNow(遅い時刻);
+        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
         using var request = 認証済みのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end", secFetchSite);
 
         using var response = await client.SendAsync(request, CancellationToken);
@@ -222,8 +216,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     [MemberData(nameof(同一オリジンを示さないヘッダー値))]
     public async Task SecFetchSiteが同一オリジンを示さない終了要求では記録が終了されません(string? secFetchSite)
     {
-        var startedRecord = await 開始済みの記録を用意する(早い時刻);
-        timeProvider.SetUtcNow(遅い時刻);
+        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
         using var request = 認証済みのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end", secFetchSite);
 
         using var response = await client.SendAsync(request, CancellationToken);
@@ -310,10 +303,17 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         return body;
     }
 
+    async Task<TimeRecordResponse> 記録を開始して終了要求の時刻まで進める(
+        DateTimeOffset startedAt, DateTimeOffset endRequestedAt, string user = "google-user")
+    {
+        var startedRecord = await 開始済みの記録を用意する(startedAt, user);
+        timeProvider.SetUtcNow(endRequestedAt);
+        return startedRecord;
+    }
+
     async Task<Guid> 終了済みの記録を用意する(DateTimeOffset startedAt, DateTimeOffset endedAt)
     {
-        var startedRecord = await 開始済みの記録を用意する(startedAt);
-        timeProvider.SetUtcNow(endedAt);
+        var startedRecord = await 記録を開始して終了要求の時刻まで進める(startedAt, endedAt);
         using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
         using var response = await client.SendAsync(request, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);

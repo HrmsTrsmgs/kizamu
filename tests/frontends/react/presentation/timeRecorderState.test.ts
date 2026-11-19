@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { Project } from 'kizamu-domain-typescript'
-import { describe, it } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 import {
   initialTimeRecorderState,
   timeRecorderReducer,
@@ -15,83 +15,93 @@ const 記録 = presentedRecord(記録ID, 開始時刻)
 const 終了済み記録 = presentedRecord(記録ID, 開始時刻, 終了時刻)
 
 describe('timeRecorderReducer', () => {
-  it('プロジェクトを切り替えて戻ると元の記録中状態を保持します', () => {
-    const プロジェクトA = new Project('プロジェクトA')
-    const プロジェクトB = new Project('プロジェクトB')
-    let tested = timeRecorderReducer(initialTimeRecorderState, {
-      type: 'projectSelected',
-      project: プロジェクトA,
-    })
-    tested = timeRecorderReducer(tested, {
-      type: 'recordStarted',
-      record: 記録,
+  describe('プロジェクトの切り替え', () => {
+    let プロジェクトA: Project
+
+    beforeEach(() => {
+      プロジェクトA = new Project('プロジェクトA')
     })
 
-    tested = timeRecorderReducer(tested, {
-      type: 'projectSelected',
-      project: プロジェクトB,
+    it('プロジェクトを切り替えて戻ると元の記録中状態を保持します', () => {
+      const プロジェクトB = new Project('プロジェクトB')
+      let tested = timeRecorderReducer(initialTimeRecorderState, {
+        type: 'projectSelected',
+        project: プロジェクトA,
+      })
+      tested = timeRecorderReducer(tested, {
+        type: 'recordStarted',
+        record: 記録,
+      })
+
+      tested = timeRecorderReducer(tested, {
+        type: 'projectSelected',
+        project: プロジェクトB,
+      })
+
+      tested.should.have.property('timeRecordId', null)
+
+      tested = timeRecorderReducer(tested, {
+        type: 'projectSelected',
+        project: プロジェクトA,
+      })
+
+      tested.should.have.property('timeRecordId', 記録ID)
+      tested.records.should.deep.equal([記録])
     })
 
-    tested.should.have.property('timeRecordId', null)
+    it('未指定とプロジェクトを切り替えて戻ると元の記録中状態を保持します', () => {
+      let tested = timeRecorderReducer(initialTimeRecorderState, {
+        type: 'recordStarted',
+        record: 記録,
+      })
 
-    tested = timeRecorderReducer(tested, {
-      type: 'projectSelected',
-      project: プロジェクトA,
+      tested = timeRecorderReducer(tested, {
+        type: 'projectSelected',
+        project: プロジェクトA,
+      })
+
+      tested.should.have.property('timeRecordId', null)
+
+      tested = timeRecorderReducer(tested, {
+        type: 'projectSelected',
+        project: undefined,
+      })
+
+      tested.should.have.property('timeRecordId', 記録ID)
+      tested.records.should.deep.equal([記録])
     })
 
-    tested.should.have.property('timeRecordId', 記録ID)
-    tested.records.should.deep.equal([記録])
-  })
+    describe('未指定とプロジェクトAの両方で記録中のとき', () => {
+      const プロジェクトの記録ID = '019cdeac-b600-7000-8000-000000000002'
+      let プロジェクトの記録: typeof 記録
+      let tested: TimeRecorderState
 
-  it('未指定とプロジェクトを切り替えて戻ると元の記録中状態を保持します', () => {
-    const プロジェクトA = new Project('プロジェクトA')
-    let tested = timeRecorderReducer(initialTimeRecorderState, {
-      type: 'recordStarted',
-      record: 記録,
+      beforeEach(() => {
+        プロジェクトの記録 = presentedRecord(プロジェクトの記録ID, 開始時刻)
+        tested = timeRecorderReducer(initialTimeRecorderState, { type: 'recordStarted', record: 記録 })
+        tested = timeRecorderReducer(tested, { type: 'projectSelected', project: プロジェクトA })
+        tested = timeRecorderReducer(tested, { type: 'recordStarted', record: プロジェクトの記録 })
+      })
+
+      it('プロジェクトの記録を終了しても未指定の記録は記録中のままです', () => {
+        const 終了済みのプロジェクトの記録 = presentedRecord(プロジェクトの記録ID, 開始時刻, 終了時刻)
+
+        tested = timeRecorderReducer(tested, { type: 'recordEnded', record: 終了済みのプロジェクトの記録 })
+        tested = timeRecorderReducer(tested, { type: 'projectSelected', project: undefined })
+
+        tested.should.have.property('timeRecordId', 記録ID)
+        tested.records.should.deep.equal([記録, 終了済みのプロジェクトの記録])
+      })
+
+      it('未指定の記録を終了してもプロジェクトの記録は記録中のままです', () => {
+        tested = timeRecorderReducer(tested, { type: 'projectSelected', project: undefined })
+        tested = timeRecorderReducer(tested, { type: 'recordEnded', record: 終了済み記録 })
+        tested = timeRecorderReducer(tested, { type: 'projectSelected', project: プロジェクトA })
+
+        tested.should.have.property('timeRecordId', プロジェクトの記録ID)
+        tested.records.should.deep.equal([終了済み記録, プロジェクトの記録])
+      })
     })
-
-    tested = timeRecorderReducer(tested, {
-      type: 'projectSelected',
-      project: プロジェクトA,
-    })
-
-    tested.should.have.property('timeRecordId', null)
-
-    tested = timeRecorderReducer(tested, {
-      type: 'projectSelected',
-      project: undefined,
-    })
-
-    tested.should.have.property('timeRecordId', 記録ID)
-    tested.records.should.deep.equal([記録])
-  })
-
-  it('プロジェクトの記録を終了しても未指定の記録は記録中のままです', () => {
-    const プロジェクトA = new Project('プロジェクトA')
-    const プロジェクトの記録ID = '019cdeac-b600-7000-8000-000000000002'
-    const プロジェクトの記録 = presentedRecord(プロジェクトの記録ID, 開始時刻)
-    const 終了済みのプロジェクトの記録 = presentedRecord(プロジェクトの記録ID, 開始時刻, 終了時刻)
-    let tested = 未指定とプロジェクトの記録を開始する(プロジェクトA, プロジェクトの記録)
-
-    tested = timeRecorderReducer(tested, { type: 'recordEnded', record: 終了済みのプロジェクトの記録 })
-    tested = timeRecorderReducer(tested, { type: 'projectSelected', project: undefined })
-
-    tested.should.have.property('timeRecordId', 記録ID)
-    tested.records.should.deep.equal([記録, 終了済みのプロジェクトの記録])
-  })
-
-  it('未指定の記録を終了してもプロジェクトの記録は記録中のままです', () => {
-    const プロジェクトA = new Project('プロジェクトA')
-    const プロジェクトの記録ID = '019cdeac-b600-7000-8000-000000000002'
-    const プロジェクトの記録 = presentedRecord(プロジェクトの記録ID, 開始時刻)
-    let tested = 未指定とプロジェクトの記録を開始する(プロジェクトA, プロジェクトの記録)
-
-    tested = timeRecorderReducer(tested, { type: 'projectSelected', project: undefined })
-    tested = timeRecorderReducer(tested, { type: 'recordEnded', record: 終了済み記録 })
-    tested = timeRecorderReducer(tested, { type: 'projectSelected', project: プロジェクトA })
-
-    tested.should.have.property('timeRecordId', プロジェクトの記録ID)
-    tested.records.should.deep.equal([終了済み記録, プロジェクトの記録])
   })
 
   it('記録中の作業記録一覧を取得すると一覧と現在記録を保持します', () => {
@@ -107,18 +117,47 @@ describe('timeRecorderReducer', () => {
     })
   })
 
-  it('終了済みの作業記録一覧を取得すると現在記録を解除します', () => {
-    const state: TimeRecorderState = {
-      ...initialTimeRecorderState,
-      timeRecordId: 記録ID,
-    }
+  describe('一覧取得前に終了対象があるとき', () => {
+    let 取得前の状態: TimeRecorderState
 
-    const result = timeRecorderReducer(state, {
-      type: 'recordsLoaded',
-      records: [終了済み記録],
+    beforeEach(() => {
+      取得前の状態 = { ...initialTimeRecorderState, timeRecordId: 記録ID }
     })
 
-    result.should.have.property('timeRecordId', null)
+    it('終了済みの作業記録一覧を取得すると現在記録を解除します', () => {
+      const result = timeRecorderReducer(取得前の状態, {
+        type: 'recordsLoaded',
+        records: [終了済み記録],
+      })
+
+      result.should.have.property('timeRecordId', null)
+    })
+
+    it('直前の終了対象が取得中に記録中だった場合、一覧には最後の更新を使い終了対象にはそのIDを保持します', () => {
+      const 別の記録中の記録 = presentedRecord('別の記録', 開始時刻)
+
+      const state = timeRecorderReducer(取得前の状態, {
+        type: 'recordsLoaded',
+        records: [別の記録中の記録, 記録],
+        updatedRecords: [記録, 終了済み記録],
+      })
+
+      state.records.should.toStrictEqual([別の記録中の記録, 終了済み記録])
+      state.should.have.property('timeRecordId', 記録ID)
+    })
+
+    it('直前の終了対象に記録中の更新がなければ、合成した一覧で最初の記録中のIDを使います', () => {
+      const 先の記録 = presentedRecord('先の記録', 開始時刻)
+      const 次の記録 = presentedRecord('次の記録', 開始時刻)
+
+      const state = timeRecorderReducer(取得前の状態, {
+        type: 'recordsLoaded',
+        records: [記録, 先の記録, 次の記録],
+        updatedRecords: [終了済み記録],
+      })
+
+      state.should.have.property('timeRecordId', 先の記録.record.id)
+    })
   })
 
   describe('取得した一覧に同じIDの記録が複数あるとき', () => {
@@ -163,32 +202,6 @@ describe('timeRecorderReducer', () => {
 
     state.records.should.toStrictEqual([過去の記録, 別の記録, 次の記録, 終了済み記録])
     state.records[3].should.equal(終了済み記録)
-  })
-
-  it('直前の終了対象が取得中に記録中だった場合、一覧には最後の更新を使い終了対象にはそのIDを保持します', () => {
-    const 別の記録中の記録 = presentedRecord('別の記録', 開始時刻)
-
-    const state = timeRecorderReducer({ ...initialTimeRecorderState, timeRecordId: 記録ID }, {
-      type: 'recordsLoaded',
-      records: [別の記録中の記録, 記録],
-      updatedRecords: [記録, 終了済み記録],
-    })
-
-    state.records.should.toStrictEqual([別の記録中の記録, 終了済み記録])
-    state.should.have.property('timeRecordId', 記録ID)
-  })
-
-  it('直前の終了対象に記録中の更新がなければ、合成した一覧で最初の記録中のIDを使います', () => {
-    const 先の記録 = presentedRecord('先の記録', 開始時刻)
-    const 次の記録 = presentedRecord('次の記録', 開始時刻)
-
-    const state = timeRecorderReducer({ ...initialTimeRecorderState, timeRecordId: 記録ID }, {
-      type: 'recordsLoaded',
-      records: [記録, 先の記録, 次の記録],
-      updatedRecords: [終了済み記録],
-    })
-
-    state.should.have.property('timeRecordId', 先の記録.record.id)
   })
 
   it('記録を開始すると一覧と現在の記録を更新して終了時刻を消去します', () => {
@@ -281,9 +294,3 @@ describe('timeRecorderReducer', () => {
     })
   })
 })
-
-function 未指定とプロジェクトの記録を開始する(project: Project, projectRecord: typeof 記録) {
-  let state = timeRecorderReducer(initialTimeRecorderState, { type: 'recordStarted', record: 記録 })
-  state = timeRecorderReducer(state, { type: 'projectSelected', project })
-  return timeRecorderReducer(state, { type: 'recordStarted', record: projectRecord })
-}

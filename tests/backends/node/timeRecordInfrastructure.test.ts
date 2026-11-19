@@ -8,28 +8,25 @@ describe('メモリ上の記録', () => {
   const 開始時刻 = Temporal.Instant.from('2026-08-01T09:00:00Z')
   const 終了時刻 = Temporal.Instant.from('2026-08-01T10:30:00Z')
   let tested: InMemoryTimeRecordState
-  let first: TimeRecord
   let second: TimeRecord
+  let ended: TimeRecord
 
   beforeEach(() => {
     tested = new InMemoryTimeRecordState()
-    first = TimeRecord.start('first', 開始時刻)
+    const first = TimeRecord.start('first', 開始時刻)
     second = TimeRecord.start('second', 開始時刻)
     tested.add(first)
     tested.add(second)
+    ended = first.end(終了時刻)
   })
 
   test('置換した記録を識別子で取得できます', () => {
-    const ended = first.end(終了時刻)
-
     tested.replace(ended)
 
     ;({ record: tested.find('first') }).should.toStrictEqual({ record: ended })
   })
 
   test('置換後も一覧では記録の追加順を保ちます', () => {
-    const ended = first.end(終了時刻)
-
     tested.replace(ended)
 
     tested.all().should.toStrictEqual([ended, second])

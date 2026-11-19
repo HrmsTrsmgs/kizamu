@@ -10,12 +10,15 @@ public sealed class TimeRecordRefreshTimerTests : IDisposable
     readonly TimeRecordRefreshTimer tested;
     int 更新回数;
 
-    public TimeRecordRefreshTimerTests() => tested = new(clock, () => 更新回数++);
+    public TimeRecordRefreshTimerTests()
+    {
+        tested = new(clock, () => 更新回数++);
+        tested.ScheduleRefresh(null);
+    }
 
     [Fact]
     public void 記録中に設定し直すとその一秒後から一秒ごとに一度だけ更新する()
     {
-        tested.ScheduleRefresh(null);
         clock.Advance(TimeSpan.FromMilliseconds(500));
 
         tested.ScheduleRefresh(null);
@@ -31,8 +34,6 @@ public sealed class TimeRecordRefreshTimerTests : IDisposable
     [Fact]
     public void 記録を終了すると定期更新が止まる()
     {
-        tested.ScheduleRefresh(null);
-
         tested.ScheduleRefresh(clock.GetUtcNow());
         clock.Advance(TimeSpan.FromSeconds(1));
 
@@ -42,8 +43,6 @@ public sealed class TimeRecordRefreshTimerTests : IDisposable
     [Fact]
     public void 記録中に破棄すると定期更新が止まる()
     {
-        tested.ScheduleRefresh(null);
-
         tested.Dispose();
         clock.Advance(TimeSpan.FromSeconds(1));
 

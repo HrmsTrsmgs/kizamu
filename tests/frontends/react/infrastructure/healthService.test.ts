@@ -7,7 +7,7 @@ describe('healthService', () => {
   let fetchMock: Mock<typeof fetch>
 
   beforeEach(() => {
-    fetchMock = vi.fn<typeof fetch>()
+    fetchMock = vi.fn<typeof fetch>(async () => Response.json({ status: 'ok' }))
     vi.stubGlobal('fetch', fetchMock)
   })
 
@@ -16,16 +16,12 @@ describe('healthService', () => {
   })
 
   it('正常性確認APIへ要求します', async () => {
-    fetchMock.mockImplementation(async () => Response.json({ status: 'ok' }))
-
     await tested.checkHealth()
 
     fetchMock.should.have.been.calledOnceWith('/api/health')
   })
 
   it('正常なレスポンスを受け取るとtrueを返します', async () => {
-    fetchMock.mockImplementation(async () => Response.json({ status: 'ok' }))
-
     const isHealthy = await tested.checkHealth()
     isHealthy.should.equal(true)
   })

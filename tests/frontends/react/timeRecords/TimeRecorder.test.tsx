@@ -180,80 +180,76 @@ describe('TimeRecorder', () => {
     screen.getByRole('listitem').should.toHaveTextContent('2026/08/01 18:00')
   })
 
-  it('終了ボタンで記録を終了したら待機中に戻り確定した終了時刻と作業時間を表示します', async () => {
-    render(<TimeRecorder timeRecords={timeRecords} />)
-    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
-    const endButton = await screen.findByRole('button', { name: '記録を終了' })
+  describe('記録を開始した画面', () => {
+    let endButton: HTMLElement
 
-    fireEvent.click(endButton)
+    beforeEach(async () => {
+      render(<TimeRecorder timeRecords={timeRecords} />)
+      fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+      endButton = await screen.findByRole('button', { name: '記録を終了' })
+    })
 
-    const startButton = await screen.findByRole('button', { name: '記録を開始' })
-    startButton.should.toBeInTheDocument()
-    endTimeRecord.should.have.been.calledOnceWith(記録ID)
-    should.not.exist(screen.queryByRole('button', { name: '記録を終了' }))
-    screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
-    screen.getByLabelText('終了時刻').should.toHaveTextContent('2026/08/01 19:30')
-    screen.getByText('待機中').should.toBeInTheDocument()
-    screen.getAllByText('1時間30分').should.have.lengthOf(2)
+    it('終了ボタンで記録を終了したら待機中に戻り確定した終了時刻と作業時間を表示します', async () => {
+      fireEvent.click(endButton)
+
+      const startButton = await screen.findByRole('button', { name: '記録を開始' })
+      startButton.should.toBeInTheDocument()
+      endTimeRecord.should.have.been.calledOnceWith(記録ID)
+      should.not.exist(screen.queryByRole('button', { name: '記録を終了' }))
+      screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
+      screen.getByLabelText('終了時刻').should.toHaveTextContent('2026/08/01 19:30')
+      screen.getByText('待機中').should.toBeInTheDocument()
+      screen.getAllByText('1時間30分').should.have.lengthOf(2)
+    })
+
+    it('再開始すると直前の終了時刻を消します', async () => {
+      fireEvent.click(endButton)
+      await screen.findByLabelText('終了時刻')
+      startTimeRecord.mockResolvedValueOnce(presentedRecord(次の記録ID, 終了時刻))
+
+      fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+      await screen.findByRole('button', { name: '記録を終了' })
+
+      should.not.exist(screen.queryByLabelText('終了時刻'))
+    })
   })
 
-  it('再開始すると直前の終了時刻を消します', async () => {
-    await 開始と終了を操作した画面を用意する()
-    startTimeRecord.mockResolvedValueOnce(presentedRecord(次の記録ID, 終了時刻))
+  describe('一覧を確認できず再取得を待つ画面', () => {
+    let retry: HTMLElement
 
-    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
-    await screen.findByRole('button', { name: '記録を終了' })
+    beforeEach(async () => {
+      getTimeRecords.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('一覧取得失敗'))
+      startTimeRecord.mockRejectedValueOnce(new Error('開始失敗'))
+      render(<TimeRecorder timeRecords={timeRecords} />)
+      fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
 
-    should.not.exist(screen.queryByLabelText('終了時刻'))
+      retry = await screen.findByRole('button', { name: '再取得' })
+      await waitFor(() => retry.should.toBeEnabled())
+    })
+
+    it('再取得に成功すると未確認の案内から記録操作の失敗表示に戻ります', async () => {
+      screen.getByRole('alert').should.toHaveTextContent('最新状態を確認できません')
+
+      fireEvent.click(retry)
+
+      await screen.findByText('記録操作に失敗しました。')
+      should.not.exist(screen.queryByRole('button', { name: '再取得' }))
+    })
+
+    it('再取得で空の一覧を確認すると記録を開始できるようになります', async () => {
+      fireEvent.click(retry)
+
+      await waitFor(() => screen.getByRole('button', { name: '記録を開始' }).should.toBeEnabled())
+    })
+
+    it('再取得に失敗しても未確認の案内と再取得操作を表示します', async () => {
+      getTimeRecords.mockRejectedValueOnce(new Error('再取得失敗'))
+
+      fireEvent.click(retry)
+
+      await waitFor(() => retry.should.toBeEnabled())
+      screen.getByRole('alert').should.toHaveTextContent('最新状態を確認できません')
+      getTimeRecords.should.have.callCount(3)
+    })
   })
-
-  it('再取得に成功すると未確認の案内から記録操作の失敗表示に戻ります', async () => {
-    const retry = await 一覧を確認できず再取得を待つ画面を用意する()
-    getTimeRecords.mockResolvedValueOnce([])
-    screen.getByRole('alert').should.toHaveTextContent('最新状態を確認できません')
-
-    fireEvent.click(retry)
-
-    await screen.findByText('記録操作に失敗しました。')
-    should.not.exist(screen.queryByRole('button', { name: '再取得' }))
-  })
-
-  it('再取得で空の一覧を確認すると記録を開始できるようになります', async () => {
-    const retry = await 一覧を確認できず再取得を待つ画面を用意する()
-    getTimeRecords.mockResolvedValueOnce([])
-
-    fireEvent.click(retry)
-
-    await waitFor(() => screen.getByRole('button', { name: '記録を開始' }).should.toBeEnabled())
-  })
-
-  it('再取得に失敗しても未確認の案内と再取得操作を表示します', async () => {
-    const retry = await 一覧を確認できず再取得を待つ画面を用意する()
-    getTimeRecords.mockRejectedValueOnce(new Error('再取得失敗'))
-
-    fireEvent.click(retry)
-
-    await waitFor(() => retry.should.toBeEnabled())
-    screen.getByRole('alert').should.toHaveTextContent('最新状態を確認できません')
-    getTimeRecords.should.have.callCount(3)
-  })
-
-  async function 開始と終了を操作した画面を用意する() {
-    render(<TimeRecorder timeRecords={timeRecords} />)
-
-    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
-    fireEvent.click(await screen.findByRole('button', { name: '記録を終了' }))
-    await screen.findByLabelText('終了時刻')
-  }
-
-  async function 一覧を確認できず再取得を待つ画面を用意する() {
-    getTimeRecords.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('一覧取得失敗'))
-    startTimeRecord.mockRejectedValueOnce(new Error('開始失敗'))
-    render(<TimeRecorder timeRecords={timeRecords} />)
-    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
-
-    const retry = await screen.findByRole('button', { name: '再取得' })
-    await waitFor(() => retry.should.toBeEnabled())
-    return retry
-  }
 })

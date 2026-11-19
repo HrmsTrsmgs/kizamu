@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { Project } from 'kizamu-domain-typescript'
-import { describe, it } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 import { initialProjectTabsState, projectTabsReducer } from '../../../../src/frontends/react/src/presentation/projectTabsState'
 
 describe('projectTabsReducer', () => {
@@ -20,20 +20,33 @@ describe('projectTabsReducer', () => {
     state.showProjectDialog.should.equal(true)
   })
 
-  it('追加をキャンセルするとダイアログを閉じます', () => {
-    const opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
+  describe('追加ダイアログを開いたとき', () => {
+    let opened: typeof initialProjectTabsState
 
-    const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
+    beforeEach(() => {
+      opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
+    })
 
-    state.showProjectDialog.should.equal(false)
-  })
+    it('追加をキャンセルするとダイアログを閉じます', () => {
+      const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
 
-  it('追加をキャンセルすると一覧にプロジェクトを登録しません', () => {
-    const opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
+      state.showProjectDialog.should.equal(false)
+    })
 
-    const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
+    it('追加をキャンセルすると一覧にプロジェクトを登録しません', () => {
+      const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
 
-    state.projects.should.toStrictEqual([])
+      state.projects.should.toStrictEqual([])
+    })
+
+    it('登録後に追加を開くとプロジェクト名は空です', () => {
+      const named = projectTabsReducer(opened, { type: 'projectNameChanged', name: 'プロジェクトA' })
+
+      const registered = projectTabsReducer(named, { type: 'projectRegistered' })
+      const reopened = projectTabsReducer(registered, { type: 'dialogOpened' })
+
+      reopened.projectName.should.equal('')
+    })
   })
 
   it('追加画面から登録するとダイアログを閉じます', () => {
@@ -44,33 +57,28 @@ describe('projectTabsReducer', () => {
     state.showProjectDialog.should.equal(false)
   })
 
-  it('登録後に追加を開くとプロジェクト名は空です', () => {
-    const opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
-    const named = projectTabsReducer(opened, { type: 'projectNameChanged', name: 'プロジェクトA' })
+  describe('プロジェクトAを登録したとき', () => {
+    let registered: typeof initialProjectTabsState
 
-    const registered = projectTabsReducer(named, { type: 'projectRegistered' })
-    const reopened = projectTabsReducer(registered, { type: 'dialogOpened' })
+    beforeEach(() => {
+      const named = { ...initialProjectTabsState, projectName: 'プロジェクトA' }
+      registered = projectTabsReducer(named, { type: 'projectRegistered' })
+    })
 
-    reopened.projectName.should.equal('')
-  })
+    it('登録したプロジェクトを選択すると選択した対象を保持します', () => {
+      const project = registered.projects[0]
 
-  it('登録したプロジェクトを選択すると選択した対象を保持します', () => {
-    const named = { ...initialProjectTabsState, projectName: 'プロジェクトA' }
-    const registered = projectTabsReducer(named, { type: 'projectRegistered' })
-    const project = registered.projects[0]
+      const state = projectTabsReducer(registered, { type: 'projectSelected', project })
 
-    const state = projectTabsReducer(registered, { type: 'projectSelected', project })
+      state.should.have.property('selectedProject', project)
+    })
 
-    state.should.have.property('selectedProject', project)
-  })
+    it('登録したプロジェクトを一覧に保持します', () => {
+      const next = projectTabsReducer(registered, { type: 'projectNameChanged', name: 'プロジェクトB' })
 
-  it('登録したプロジェクトを一覧に保持します', () => {
-    const named = { ...initialProjectTabsState, projectName: 'プロジェクトA' }
-    const first = projectTabsReducer(named, { type: 'projectRegistered' })
-    const next = projectTabsReducer(first, { type: 'projectNameChanged', name: 'プロジェクトB' })
+      const state = projectTabsReducer(next, { type: 'projectRegistered' })
 
-    const state = projectTabsReducer(next, { type: 'projectRegistered' })
-
-    state.projects.should.toStrictEqual([new Project('プロジェクトA'), new Project('プロジェクトB')])
+      state.projects.should.toStrictEqual([new Project('プロジェクトA'), new Project('プロジェクトB')])
+    })
   })
 })

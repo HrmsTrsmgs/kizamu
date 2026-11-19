@@ -1,4 +1,4 @@
-import { beforeEach, test } from 'vitest'
+import { beforeEach, describe, test } from 'vitest'
 import { Temporal } from 'temporal-polyfill'
 import { TimeRecord } from 'kizamu-domain-typescript'
 import { TimeRecords } from '../../../src/backends/node/application/timeRecords.js'
@@ -42,54 +42,55 @@ test('開始するたびに生成された識別子と現在時刻で開始し�
   second.should.toStrictEqual(new TimeRecord('2', 開始時刻, null))
 })
 
-test('一覧には開始した記録が保存順に返されます', () => {
-  const first = tested.start()
-  const second = tested.start()
+describe('二件の記録を開始したとき', () => {
+  let first: TimeRecord
+  let second: TimeRecord
 
-  tested.list().should.toStrictEqual([first, second])
+  beforeEach(() => {
+    first = tested.start()
+    second = tested.start()
+  })
+
+  test('一覧には開始した記録が保存順に返されます', () => {
+    tested.list().should.toStrictEqual([first, second])
+  })
+
+  test('複数の記録があるときは指定した記録の終了結果を返します', () => {
+    now = 終了時刻
+
+    const ended = tested.end(first.id)
+
+    ;({ ended }).should.toStrictEqual({ ended: first.end(終了時刻) })
+  })
+
+  test('一件目を指定して終了すると一覧ではその記録だけが終了しています', () => {
+    now = 終了時刻
+
+    tested.end(first.id)
+
+    tested.list().should.toStrictEqual([first.end(終了時刻), second])
+  })
 })
 
-test('複数の記録があるときは指定した記録の終了結果を返します', () => {
-  const first = tested.start()
-  tested.start()
-  now = 終了時刻
+describe('一件目が終了済みで二件目は記録中のとき', () => {
+  let 二件目: TimeRecord
 
-  const ended = tested.end(first.id)
+  beforeEach(() => {
+    二件目 = new TimeRecord('2', 開始時刻, null)
+    state.add(new TimeRecord('1', 開始時刻, 終了時刻))
+    state.add(二件目)
+    now = 再終了時刻
+  })
 
-  ;({ ended }).should.toStrictEqual({ ended: first.end(終了時刻) })
+  test('終了済みの記録を再度指定すると終了時刻を更新した記録を返します', () => {
+    const ended = tested.end('1')
+
+    ;({ ended }).should.toStrictEqual({ ended: new TimeRecord('1', 開始時刻, 再終了時刻) })
+  })
+
+  test('終了済みの記録を再度指定すると一覧ではその記録だけの終了時刻が更新されます', () => {
+    tested.end('1')
+
+    tested.list().should.toStrictEqual([new TimeRecord('1', 開始時刻, 再終了時刻), 二件目])
+  })
 })
-
-test('一件目を指定して終了すると一覧ではその記録だけが終了しています', () => {
-  const first = tested.start()
-  const second = tested.start()
-  now = 終了時刻
-
-  tested.end(first.id)
-
-  tested.list().should.toStrictEqual([first.end(終了時刻), second])
-})
-
-test('終了済みの記録を再度指定すると終了時刻を更新した記録を返します', () => {
-  終了済みと記録中の二件を保存する()
-  now = 再終了時刻
-
-  const ended = tested.end('1')
-
-  ;({ ended }).should.toStrictEqual({ ended: new TimeRecord('1', 開始時刻, 再終了時刻) })
-})
-
-test('終了済みの記録を再度指定すると一覧ではその記録だけの終了時刻が更新されます', () => {
-  const 二件目 = 終了済みと記録中の二件を保存する()
-  now = 再終了時刻
-
-  tested.end('1')
-
-  tested.list().should.toStrictEqual([new TimeRecord('1', 開始時刻, 再終了時刻), 二件目])
-})
-
-function 終了済みと記録中の二件を保存する() {
-  const 二件目 = new TimeRecord('2', 開始時刻, null)
-  state.add(new TimeRecord('1', 開始時刻, 終了時刻))
-  state.add(二件目)
-  return 二件目
-}

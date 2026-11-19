@@ -36,28 +36,59 @@ describe('useTimeRecordTimes', () => {
     { currentTime: 終了時刻.isoText, expectedDuration: '1時間30分' },
     { currentTime: 開始から2時間15分後の終了時刻, expectedDuration: '2時間15分' },
   ])('現在時刻が $currentTime の記録中の表示', ({ currentTime, expectedDuration }) => {
-    beforeEach(() => vi.setSystemTime(currentTime))
+    let view: ReturnType<typeof 記録中の時刻を表示する>
+
+    beforeEach(() => {
+      vi.setSystemTime(currentTime)
+      view = 記録中の時刻を表示する()
+    })
 
     it('現在時刻までを作業時間とします', () => {
-      const { result } = renderHook(() => useTimeRecordTimes(開始時刻, null))
-
-      result.current.durationText.should.equal(expectedDuration)
+      view.result.current.durationText.should.equal(expectedDuration)
     })
 
     it('終了時刻の表示は未設定です', () => {
-      const { result } = renderHook(() => useTimeRecordTimes(開始時刻, null))
-
-      result.current.should.have.property('endedAtText', null)
+      view.result.current.should.have.property('endedAtText', null)
     })
   })
 
-  it('記録中に時間が経過すると作業時間を更新します', async () => {
-    const { result } = renderHook(() => useTimeRecordTimes(開始時刻, null))
-    result.current.durationText.should.equal('1時間30分')
+  describe('記録中の時刻を表示したとき', () => {
+    let view: ReturnType<typeof 記録中の時刻を表示する>
 
-    await act(() => vi.advanceTimersByTimeAsync(60_000))
+    beforeEach(() => {
+      view = 記録中の時刻を表示する()
+    })
 
-    result.current.durationText.should.equal('1時間31分')
+    it('記録中に時間が経過すると作業時間を更新します', async () => {
+      view.result.current.durationText.should.equal('1時間30分')
+
+      await act(() => vi.advanceTimersByTimeAsync(60_000))
+
+      view.result.current.durationText.should.equal('1時間31分')
+    })
+
+    it('終了した記録の時間は時刻が進んでも変わりません', async () => {
+      view.rerender({ endedAt: 終了時刻 })
+
+      await act(() => vi.advanceTimersByTimeAsync(60_000))
+
+      view.result.current.durationText.should.equal('1時間30分')
+    })
+
+    it('記録が終了したら時刻の更新タイマーを解除します', async () => {
+      view.rerender({ endedAt: 終了時刻 })
+      await act(() => vi.advanceTimersByTimeAsync(60_000))
+
+      vi.getTimerCount().should.equal(0)
+    })
+
+    it('画面から離れると時刻の更新を解除します', () => {
+      vi.getTimerCount().should.equal(1)
+
+      view.unmount()
+
+      vi.getTimerCount().should.equal(0)
+    })
   })
 
   it('作業時間が次の整数分になると表示用の時間を更新します', async () => {
@@ -68,33 +99,6 @@ describe('useTimeRecordTimes', () => {
     await act(() => vi.advanceTimersByTimeAsync(1_000))
 
     result.current.durationText.should.equal('1時間31分')
-  })
-
-  it('終了した記録の時間は時刻が進んでも変わりません', async () => {
-    const { result, rerender } = 記録中の時刻を表示する()
-    rerender({ endedAt: 終了時刻 })
-
-    await act(() => vi.advanceTimersByTimeAsync(60_000))
-
-    result.current.durationText.should.equal('1時間30分')
-  })
-
-  it('記録が終了したら時刻の更新タイマーを解除します', async () => {
-    const { rerender } = 記録中の時刻を表示する()
-
-    rerender({ endedAt: 終了時刻 })
-    await act(() => vi.advanceTimersByTimeAsync(60_000))
-
-    vi.getTimerCount().should.equal(0)
-  })
-
-  it('画面から離れると時刻の更新を解除します', () => {
-    const { unmount } = renderHook(() => useTimeRecordTimes(開始時刻, null))
-    vi.getTimerCount().should.equal(1)
-
-    unmount()
-
-    vi.getTimerCount().should.equal(0)
   })
 })
 

@@ -14,6 +14,8 @@ public sealed class TimeRecordApiTests : IDisposable
     static readonly Guid 別の記録ID = Guid.Parse("019cdeac-b600-7000-8000-000000000002");
     static readonly DateTimeOffset 開始時刻 = DateTimeOffset.Parse("2026-08-01T09:00:00Z");
     static readonly DateTimeOffset 終了時刻 = DateTimeOffset.Parse("2026-08-01T10:30:00Z");
+    readonly TimeRecordResponse 開始した記録 = new(記録ID, 開始時刻, null);
+    readonly TimeRecordResponse 終了した記録 = new(記録ID, 開始時刻, 終了時刻);
     readonly TestHttpMessageHandler handler = new();
     readonly HttpClient client;
     readonly TimeRecordApi tested;
@@ -35,7 +37,7 @@ public sealed class TimeRecordApiTests : IDisposable
     [Fact]
     public async Task 作業記録一覧APIの応答を作業記録へ変換します()
     {
-        TimeRecordResponse[] 記録 = [new(記録ID, 開始時刻, null), new(別の記録ID, 開始時刻, 終了時刻)];
+        TimeRecordResponse[] 記録 = [開始した記録, new(別の記録ID, 開始時刻, 終了時刻)];
         handler.RespondWithJson(記録);
 
         ImmutableArray<TimeRecord> 受信した記録 = await tested.GetTimeRecordsAsync();
@@ -46,7 +48,7 @@ public sealed class TimeRecordApiTests : IDisposable
     [Fact]
     public async Task 記録開始APIへPOSTします()
     {
-        handler.RespondWithJson(new TimeRecordResponse(記録ID, 開始時刻, null));
+        handler.RespondWithJson(開始した記録);
 
         await tested.StartTimeRecordAsync();
 
@@ -56,12 +58,11 @@ public sealed class TimeRecordApiTests : IDisposable
     [Fact]
     public async Task 記録開始APIの応答を作業記録へ変換します()
     {
-        TimeRecordResponse 記録 = new(記録ID, 開始時刻, null);
-        handler.RespondWithJson(記録);
+        handler.RespondWithJson(開始した記録);
 
         TimeRecord 受信した記録 = await tested.StartTimeRecordAsync();
 
-        受信した記録.Should().BeEquivalentTo(記録);
+        受信した記録.Should().BeEquivalentTo(開始した記録);
     }
 
     [Fact]
@@ -77,7 +78,7 @@ public sealed class TimeRecordApiTests : IDisposable
     [Fact]
     public async Task 指定した記録の終了APIへPOSTします()
     {
-        handler.RespondWithJson(new TimeRecordResponse(記録ID, 開始時刻, 終了時刻));
+        handler.RespondWithJson(終了した記録);
 
         await tested.EndTimeRecordAsync(記録ID);
 
@@ -87,18 +88,17 @@ public sealed class TimeRecordApiTests : IDisposable
     [Fact]
     public async Task 記録終了APIの応答を作業記録へ変換します()
     {
-        TimeRecordResponse 記録 = new(記録ID, 開始時刻, 終了時刻);
-        handler.RespondWithJson(記録);
+        handler.RespondWithJson(終了した記録);
 
         TimeRecord 受信した記録 = await tested.EndTimeRecordAsync(記録ID);
 
-        受信した記録.Should().BeEquivalentTo(記録);
+        受信した記録.Should().BeEquivalentTo(終了した記録);
     }
 
     [Fact]
     public async Task 作業記録一覧APIがHTTPエラーを返したら本文が正常でも失敗を通知します()
     {
-        handler.RespondWithJson<TimeRecordResponse[]>([new(記録ID, 開始時刻, null)], HttpStatusCode.InternalServerError);
+        handler.RespondWithJson<TimeRecordResponse[]>([開始した記録], HttpStatusCode.InternalServerError);
 
         var 操作 = () => tested.GetTimeRecordsAsync();
 
@@ -109,7 +109,7 @@ public sealed class TimeRecordApiTests : IDisposable
     [Fact]
     public async Task 記録開始APIがHTTPエラーを返したら本文が正常でも失敗を通知します()
     {
-        handler.RespondWithJson(new TimeRecordResponse(記録ID, 開始時刻, null), HttpStatusCode.InternalServerError);
+        handler.RespondWithJson(開始した記録, HttpStatusCode.InternalServerError);
 
         var 操作 = () => tested.StartTimeRecordAsync();
 
@@ -120,7 +120,7 @@ public sealed class TimeRecordApiTests : IDisposable
     [Fact]
     public async Task 指定した記録の終了APIがHTTPエラーを返したら本文が正常でも失敗を通知します()
     {
-        handler.RespondWithJson(new TimeRecordResponse(記録ID, 開始時刻, 終了時刻), HttpStatusCode.InternalServerError);
+        handler.RespondWithJson(終了した記録, HttpStatusCode.InternalServerError);
 
         var 操作 = () => tested.EndTimeRecordAsync(記録ID);
 
