@@ -36,10 +36,10 @@ public sealed class TimeRecordTests
         tested.StartedAt.Should().Be(開始時刻);
     }
 
-    [Fact(Skip = "現在のEndは元の記録を更新するため。元の記録を開始状態に保ち、終了済みのTimeRecordを返すようになったら解除する。")]
+    [Fact]
     public void 記録を終了すると元の記録は開始状態のまま終了済みの記録が返ります()
     {
-        TimeRecord 終了した記録 = ((dynamic)tested).End(終了時刻);
+        var 終了した記録 = tested.End(終了時刻);
 
         終了した記録.Id.Should().Be(tested.Id);
         終了した記録.StartedAt.Should().Be(開始時刻);

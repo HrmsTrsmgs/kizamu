@@ -47,11 +47,10 @@ public sealed class TimeRecord
         new(Guid.NewGuid(), startedAt);
 
     /// <summary>
-    /// 指定した時刻に作業記録を終了します。
+    /// 元の作業記録を保持し、指定した時刻で終了した記録を生成します。
     /// </summary>
     /// <param name="endedAt">作業記録を終了した時刻。</param>
-    public void End(DateTimeOffset endedAt)
-    {
-        EndedAt = endedAt;
-    }
+    /// <returns>同じ識別子と開始時刻を持つ終了済みの作業記録。</returns>
+    public TimeRecord End(DateTimeOffset endedAt) =>
+        new(Id, StartedAt, endedAt);
 }
