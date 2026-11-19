@@ -27,7 +27,7 @@ public sealed class TimeRecordReaderTests
         tested.Execute().Should().BeEmpty();
     }
 
-    [Fact(Skip = "記録終了 1：準備でEndの戻り値を破棄している。終了済みの記録を保存する準備に直す際に解除する。")]
+    [Fact]
     public void 保存された順に記録中と終了済みの記録の識別子と時刻を返す()
     {
         記録中と終了済みの記録を保存する(次の開始時刻.AddHours(1));
@@ -68,8 +68,7 @@ public sealed class TimeRecordReaderTests
 
     void 記録中と終了済みの記録を保存する(DateTimeOffset 二件目の終了時刻)
     {
-        次の記録.End(二件目の終了時刻);
         state.Add(最初の記録);
-        state.Add(次の記録);
+        state.Add(次の記録.End(二件目の終了時刻));
     }
 }
