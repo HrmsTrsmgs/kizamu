@@ -34,15 +34,57 @@ public sealed class TimeRecordTests
     }
 
     [Fact]
+    public void 識別子だけが異なる記録は等しくなりません()
+    {
+        var 別の記録ID = Guid.Parse("019cde5b-4c00-7000-8000-000000000002");
+        var 記録 = new TimeRecord(記録ID, 開始時刻, 終了時刻);
+        var 比較する記録 = new TimeRecord(別の記録ID, 開始時刻, 終了時刻);
+
+        (記録 == 比較する記録).Should().BeFalse();
+    }
+
+    [Fact]
+    public void 開始時刻だけが異なる記録は等しくなりません()
+    {
+        var 記録 = new TimeRecord(記録ID, 開始時刻, 終了時刻);
+        var 比較する記録 = new TimeRecord(記録ID, 開始時刻.AddMinutes(1), 終了時刻);
+
+        (記録 == 比較する記録).Should().BeFalse();
+    }
+
+    [Fact]
+    public void 終了時刻だけが異なる記録は等しくなりません()
+    {
+        var 記録 = new TimeRecord(記録ID, 開始時刻, 終了時刻);
+        var 比較する記録 = new TimeRecord(記録ID, 開始時刻, 終了時刻.AddMinutes(1));
+
+        (記録 == 比較する記録).Should().BeFalse();
+    }
+
+    [Fact]
     public void 記録を開始すると空でない識別子が割り当てられます()
     {
         tested.Id.Should().NotBeEmpty();
     }
 
     [Fact]
+    public void 同じ時刻に開始した二つの記録には異なる識別子が割り当てられます()
+    {
+        var 二つ目の記録 = TimeRecord.Start(開始時刻);
+
+        二つ目の記録.Id.Should().NotBe(tested.Id);
+    }
+
+    [Fact]
     public void 記録を開始すると指定した時刻が開始時刻になります()
     {
         tested.StartedAt.Should().Be(開始時刻);
+    }
+
+    [Fact]
+    public void 記録の開始直後は終了時刻が未設定です()
+    {
+        tested.EndedAt.Should().BeNull();
     }
 
     [Fact]
