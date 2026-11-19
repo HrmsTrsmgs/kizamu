@@ -3,7 +3,7 @@ import type { Readable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 import { test } from 'vitest'
 
-test('Nodeの起動入口を空きポートで実行すると出力されたURLで業務APIが応答します', async () => {
+test('Node版の業務APIを空きポートで起動すると、出力されたURLで正常性を確認できます', async () => {
   await withListeningServer(async (listeningUrl) => {
     const response = await fetch(`${listeningUrl}/api/health`, { signal: AbortSignal.timeout(3000) })
 

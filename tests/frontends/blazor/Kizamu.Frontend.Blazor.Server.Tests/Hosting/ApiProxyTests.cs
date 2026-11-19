@@ -33,7 +33,7 @@ public sealed class ApiProxyTests : IDisposable
 
     [Theory]
     [MemberData(nameof(中継する要求と応答))]
-    public async Task 設定された業務APIへ元のパスとクエリを送ります(
+    public async Task 画面配信サーバーは要求のパスとクエリを保って設定先の業務APIへ中継します(
         string method, string path, string? body, HttpStatusCode statusCode)
     {
         using var response = await 要求を送る(method, path, body, statusCode);
@@ -43,7 +43,7 @@ public sealed class ApiProxyTests : IDisposable
 
     [Theory]
     [MemberData(nameof(中継する要求と応答))]
-    public async Task 元のHTTPメソッドを業務APIへ送ります(
+    public async Task 画面配信サーバーは元のHTTPメソッドで業務APIへ要求を中継します(
         string method, string path, string? body, HttpStatusCode statusCode)
     {
         using var response = await 要求を送る(method, path, body, statusCode);
@@ -53,7 +53,7 @@ public sealed class ApiProxyTests : IDisposable
 
     [Theory]
     [MemberData(nameof(中継する要求と応答))]
-    public async Task 元の要求本文とそのメディアタイプを業務APIへ送ります(
+    public async Task 画面配信サーバーは元の要求本文とメディアタイプを保って業務APIへ中継します(
         string method, string path, string? body, HttpStatusCode statusCode)
     {
         using var response = await 要求を送る(method, path, body, statusCode);
@@ -67,7 +67,7 @@ public sealed class ApiProxyTests : IDisposable
 
     [Theory]
     [MemberData(nameof(中継する要求と応答))]
-    public async Task 業務APIのステータスコードを返します(
+    public async Task 画面配信サーバーは業務APIの応答と同じステータスコードを返します(
         string method, string path, string? body, HttpStatusCode statusCode)
     {
         using var response = await 要求を送る(method, path, body, statusCode);
@@ -77,7 +77,7 @@ public sealed class ApiProxyTests : IDisposable
 
     [Theory]
     [MemberData(nameof(中継する要求と応答))]
-    public async Task 業務APIのJSON本文を同じメディアタイプで返します(
+    public async Task 画面配信サーバーは業務APIのJSON応答本文を同じメディアタイプで返します(
         string method, string path, string? body, HttpStatusCode statusCode)
     {
         using var response = await 要求を送る(method, path, body, statusCode);

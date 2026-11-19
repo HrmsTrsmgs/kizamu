@@ -12,20 +12,20 @@ public sealed class ApplicationDependenciesTests
         select name!;
 
     [Fact]
-    public void ユースケースが参照するKizamuの層はDomainのみ()
+    public void Applicationが参照するKizamuの層はDomainだけです()
     {
         参照先.Where(it => it.StartsWith("Kizamu.", StringComparison.Ordinal)).Should().Equal("Kizamu.Domain");
     }
 
     [Fact]
-    public void ユースケースはHTTPを参照しない()
+    public void ApplicationはHTTP関連のアセンブリを参照しません()
     {
         参照先.Should().NotContain(it => it == "System.Net.Http" || it == "System.Net.Http.Json"
             || it.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void ユースケースはJSONを参照しない()
+    public void ApplicationはJSON関連のアセンブリを参照しません()
     {
         参照先.Should().NotContain(it => it == "System.Text.Json" || it == "System.Net.Http.Json");
     }

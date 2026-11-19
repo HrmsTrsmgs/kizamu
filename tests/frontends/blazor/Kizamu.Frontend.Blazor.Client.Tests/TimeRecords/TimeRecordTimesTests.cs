@@ -49,7 +49,7 @@ public sealed class TimeRecordTimesTests : IDisposable
     }
 
     [Fact]
-    public void 小数秒が3桁を超える日時は秒や日付を繰り上げずに切り捨てます()
+    public void 開始時刻と終了時刻のdatetime属性は小数秒の4桁目以降を切り捨てます()
     {
         var 開始時刻 = DateTimeOffset.Parse("2026-08-01T23:59:59.9999999+09:00");
         var 終了時刻 = DateTimeOffset.Parse("2026-08-02T00:00:59.9999999+09:00");
@@ -61,7 +61,7 @@ public sealed class TimeRecordTimesTests : IDisposable
     }
 
     [Fact]
-    public async Task 記録中の作業時間が次の整数分になると表示を更新します()
+    public async Task 記録中の作業時間は次の分に達すると表示が一分進みます()
     {
         clock.SetUtcNow(開始時刻.AddMinutes(90).AddSeconds(59));
 
@@ -71,7 +71,7 @@ public sealed class TimeRecordTimesTests : IDisposable
     }
 
     [Fact]
-    public void 終了済みの記録を表示するときは時計を読みません()
+    public void 終了済みの記録は現在時刻を取得せずに作業時間を表示します()
     {
         context.Services.AddSingleton<TimeProvider>(new 読み取り禁止の時計());
 

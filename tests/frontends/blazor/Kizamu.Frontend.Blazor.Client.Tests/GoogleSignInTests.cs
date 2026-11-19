@@ -42,7 +42,7 @@ public sealed class GoogleSignInTests : IDisposable
     }
 
     [Fact]
-    public async Task Googleのログイン結果を記録通信へ渡します()
+    public async Task Googleから受け取ったIDトークンを記録の通信サービスに渡します()
     {
         await tested.InvokeAsync(() => google.OnCredential?.Invoke("google-id-token"));
 

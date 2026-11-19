@@ -35,7 +35,7 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 初期表示では開始操作を表示します()
+    public void 記録画面の初期表示では記録の開始ボタンを表示します()
     {
         画面.Find("button").TextContent.Should().Be("記録を開始");
     }
@@ -47,7 +47,7 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 読み込んだ記録の時刻を一覧の順に表示します()
+    public void 記録一覧には読み込んだ順に各記録の時刻を表示します()
     {
         記録中と終了済みの一覧を用意する();
 
@@ -57,7 +57,7 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 読み込んだ記録が記録中なら終了操作を表示します()
+    public void 読み込んだ一覧に未終了の記録があると記録の終了ボタンを表示します()
     {
         記録中と終了済みの一覧を用意する();
 
@@ -65,7 +65,7 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 開始ボタンを押すと開始操作を呼びます()
+    public void 開始ボタンを押すと記録の開始だけを一度要求します()
     {
         画面.Find("button").Click();
         開始操作の呼び出しを確認する(Times.Once());
@@ -73,7 +73,7 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public async Task 開始操作に失敗すると利用者に知らせます()
+    public async Task 記録の開始ボタンを押して開始に失敗すると画面に失敗を表示します()
     {
         開始に失敗する記録処理を用意する();
 
@@ -96,19 +96,19 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 開始後は終了ボタンだけを表示します()
+    public void 記録を開始すると操作欄には終了ボタンだけを表示します()
     {
         開始後の画面.FindAll("button").Should().ContainSingle().Which.TextContent.Should().Be("記録を終了");
     }
 
     [Fact]
-    public void 開始後の記録を一覧に表示します()
+    public void 開始した作業記録を記録一覧に表示します()
     {
         開始後の画面.FindAll("ul li").Should().ContainSingle();
     }
 
     [Fact]
-    public void 終了ボタンを押すと終了操作を呼びます()
+    public void 終了ボタンを押すと記録の終了だけを一度要求します()
     {
         記録中の状態を用意する(true);
 
@@ -144,13 +144,13 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 終了後は開始ボタンだけを表示します()
+    public void 記録を終了すると操作欄には開始ボタンだけを表示します()
     {
         終了後の画面.FindAll("button").Should().ContainSingle().Which.TextContent.Should().Be("記録を開始");
     }
 
     [Fact]
-    public void 再開始済みの状態には終了時刻を表示しません()
+    public void 記録を終了して新しく開始すると操作欄には終了時刻を表示しません()
     {
         再開始後の状態を用意する(終了時刻);
 
@@ -158,7 +158,7 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 再開始済みの状態には新しい開始時刻を表示します()
+    public void 記録を終了して新しく開始すると操作欄には新しい開始時刻を表示します()
     {
         再開始後の状態を用意する(終了時刻);
 
@@ -166,7 +166,7 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public void 記録操作の可否をボタンの無効状態に反映します()
+    public void 記録を操作できない間は開始ボタンが無効になり操作できるようになると有効に戻ります()
     {
         記録操作の可否を用意する(false);
         画面.Find("button").HasAttribute("disabled").Should().BeTrue();
@@ -178,7 +178,7 @@ public sealed class TimeRecorderTests : IDisposable
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void 最新状態を確認できないときは警告を表示します(bool 記録中)
+    public void 記録の最新状態を確認できないときはその旨の警告を表示します(bool 記録中)
     {
         最新状態を未確認にする(記録中);
 
@@ -188,7 +188,7 @@ public sealed class TimeRecorderTests : IDisposable
     [Theory]
     [InlineData(false, "記録を開始")]
     [InlineData(true, "記録を終了")]
-    public void 最新状態を確認できないときは記録操作を無効にします(bool 記録中, string 操作名)
+    public void 記録の最新状態を確認できないときは記録欄の開始または終了ボタンが無効になります(bool 記録中, string 操作名)
     {
         最新状態を未確認にする(記録中);
 
@@ -198,7 +198,7 @@ public sealed class TimeRecorderTests : IDisposable
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void 最新状態を確認できないときは再取得を選べます(bool 記録中)
+    public void 記録の最新状態を確認できないときは一覧の再取得ボタンを押せます(bool 記録中)
     {
         最新状態を未確認にする(記録中);
 
@@ -206,7 +206,7 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public async Task 再取得ボタンを押すと一覧読み込みを呼びます()
+    public async Task 再取得ボタンを押すと記録の開始や終了をせずに一覧を再読み込みします()
     {
         再取得の案内を用意する();
 
@@ -218,7 +218,7 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public async Task 再取得ボタンを押すと利用者の操作として実行します()
+    public async Task 再取得ボタンを押すと一覧の再取得を利用者の操作として扱います()
     {
         再取得の案内を用意する();
 

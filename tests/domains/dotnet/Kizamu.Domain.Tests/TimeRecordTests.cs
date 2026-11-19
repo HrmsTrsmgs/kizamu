@@ -15,7 +15,7 @@ public sealed class TimeRecordTests
 
     [Theory]
     [MemberData(nameof(復元する終了時刻))]
-    public void 既存の記録の識別子と時刻から状態を復元できます(DateTimeOffset? endedAt)
+    public void 記録を復元すると識別子と開始時刻と終了時刻が指定した値のまま保たれます(DateTimeOffset? endedAt)
     {
         var 復元した記録 = new TimeRecord(記録ID, 開始時刻, endedAt);
 
@@ -94,13 +94,13 @@ public sealed class TimeRecordTests
     }
 
     [Fact]
-    public void 終了済みの経過時間は指定した時刻にかかわらず開始から終了までです()
+    public void 終了済みの記録の経過時間は指定した時刻にかかわらず開始から終了までです()
     {
         tested.End(終了時刻).DurationAt(終了時刻.AddDays(1)).Should().Be(TimeSpan.FromMinutes(90));
     }
 
     [Fact]
-    public void 記録を終了すると元の記録は開始状態のまま終了済みの記録が返ります()
+    public void 記録を終了すると指定した時刻で終了した記録が返り元の記録の終了時刻は未設定のままです()
     {
         var 終了した記録 = tested.End(終了時刻);
 

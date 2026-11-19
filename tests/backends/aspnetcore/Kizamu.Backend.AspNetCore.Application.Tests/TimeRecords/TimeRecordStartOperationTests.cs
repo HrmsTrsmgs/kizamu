@@ -20,7 +20,7 @@ public sealed class TimeRecordStartOperationTests
 
     [Theory]
     [MemberData(nameof(開始時刻の例))]
-    public void 記録を開始すると空でない識別子と現在の開始時刻を返す(DateTimeOffset startedAt)
+    public void 記録を開始すると空でない識別子と開始時点の現在時刻が返ります(DateTimeOffset startedAt)
     {
         timeProvider.SetUtcNow(startedAt);
 
@@ -32,7 +32,7 @@ public sealed class TimeRecordStartOperationTests
 
     [Theory]
     [MemberData(nameof(開始時刻の例))]
-    public void 記録を開始すると返した識別子と現在の開始時刻で終了時刻のない記録を保存する(DateTimeOffset startedAt)
+    public void 記録を開始すると開始結果の識別子と現在時刻を持つ終了時刻未設定の記録が保存されます(DateTimeOffset startedAt)
     {
         timeProvider.SetUtcNow(startedAt);
 

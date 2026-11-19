@@ -22,7 +22,7 @@ describe('timeRecordService', () => {
     vi.unstubAllGlobals()
   })
 
-  it('作業記録一覧APIへGETします', async () => {
+  it('記録一覧の取得では /api/time-records にGET要求を送ります', async () => {
     fetchMock.mockImplementation(async () => Response.json([]))
 
     await tested.getTimeRecords()
@@ -30,7 +30,7 @@ describe('timeRecordService', () => {
     fetchMock.should.have.been.calledOnceWith('/api/time-records')
   })
 
-  it('作業記録一覧APIのDTOを内部の日時点に変換します', async () => {
+  it('一覧の応答から記録中と終了済みの記録を復元し、それぞれの識別子と時刻を返します', async () => {
     fetchMock.mockImplementation(async () => Response.json([
       記録中の応答,
       { ...終了済みの応答, id: 次の記録ID },
@@ -48,19 +48,19 @@ describe('timeRecordService', () => {
       fetchMock.mockImplementation(async () => Response.json(記録中の応答))
     })
 
-    it('記録開始APIへPOSTします', async () => {
+    it('記録の開始では /api/time-records/start にPOST要求を送ります', async () => {
       await tested.startTimeRecord()
 
       fetchMock.should.have.been.calledOnceWith('/api/time-records/start', { method: 'POST' })
     })
 
-    it('記録開始APIのDTOを内部の日時点に変換します', async () => {
+    it('開始応答の識別子と開始時刻から記録中の記録を復元します', async () => {
       const startedRecord = await tested.startTimeRecord()
       startedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻)))
     })
   })
 
-  it('記録開始APIの成功応答に記録IDがなければ失敗を通知します', async () => {
+  it('開始要求が成功しても応答に記録IDがなければ、呼び出し元にエラーを返します', async () => {
     fetchMock.mockImplementation(async () => Response.json({ startedAt: 開始時刻, endedAt: null }, { status: 201 }))
 
     await tested.startTimeRecord().should.rejects.toThrow()
@@ -71,37 +71,37 @@ describe('timeRecordService', () => {
       fetchMock.mockImplementation(async () => Response.json(終了済みの応答))
     })
 
-    it('指定した記録の終了APIへPOSTします', async () => {
+    it('記録の終了では、指定した記録IDの終了URLにPOST要求を送ります', async () => {
       await tested.endTimeRecord(記録ID)
 
       fetchMock.should.have.been.calledOnceWith(`/api/time-records/${記録ID}/end`, { method: 'POST' })
     })
 
-    it('記録終了APIのDTOを内部の日時点に変換します', async () => {
+    it('終了応答の識別子と開始・終了時刻から終了済みの記録を復元します', async () => {
       const endedRecord = await tested.endTimeRecord(記録ID)
       endedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻), timestamp(終了時刻)))
     })
   })
 
-  it('作業記録一覧APIがHTTPエラーを返したら本文が正常でも失敗を通知します', async () => {
+  it('一覧取得の応答がHTTPエラーなら、本文に記録の一覧があっても呼び出し元にエラーを返します', async () => {
     fetchMock.mockImplementation(async () => Response.json([記録中の応答], { status: 500 }))
 
     await tested.getTimeRecords().should.rejects.toThrow()
   })
 
-  it('記録開始APIがHTTPエラーを返したら本文が正常でも失敗を通知します', async () => {
+  it('開始応答がHTTPエラーなら、本文に記録中の記録があっても呼び出し元にエラーを返します', async () => {
     fetchMock.mockImplementation(async () => Response.json(記録中の応答, { status: 500 }))
 
     await tested.startTimeRecord().should.rejects.toThrow()
   })
 
-  it('指定した記録の終了APIがHTTPエラーを返したら本文が正常でも失敗を通知します', async () => {
+  it('終了応答がHTTPエラーなら、本文に終了済みの記録があっても呼び出し元にエラーを返します', async () => {
     fetchMock.mockImplementation(async () => Response.json(終了済みの応答, { status: 500 }))
 
     await tested.endTimeRecord(記録ID).should.rejects.toThrow()
   })
 
-  it('一覧のDTOから復元した記録は元を変更せず終了操作を利用できます', async () => {
+  it('一覧から復元した記録を終了すると、元の記録は記録中のまま、指定時刻で終了した新しい記録が得られます', async () => {
     fetchMock.mockImplementation(async () => Response.json([記録中の応答]))
     const [{ record }] = await tested.getTimeRecords()
 
@@ -121,13 +121,13 @@ describe('timeRecordService', () => {
       fetchMock.mockImplementation(async () => Response.json({ ...記録中の応答, startedAt: 開始時刻の別表記 }))
     })
 
-    it('開始時刻の元のISO表記を保持します', async () => {
+    it('開始応答に含まれる時差と小数秒を元のISO表記のまま保持します', async () => {
       const record = await tested.startTimeRecord()
 
       record.isoText.startedAt.should.equal(開始時刻の別表記)
     })
 
-    it('時差を考慮して開始時刻を同じ日時点に変換します', async () => {
+    it('時差付きの開始時刻をUTC表記と同じ日時点として復元します', async () => {
       const record = await tested.startTimeRecord()
 
       record.record.startedAt.should.deep.equal(timestamp(開始時刻).instant)

@@ -36,7 +36,7 @@ describe('TimeRecorderView', () => {
     }
   })
 
-  it('通信中はボタンを無効にし完了後に有効にします', () => {
+  it('記録操作が許可されていない間は開始ボタンが無効になり、許可されると有効になります', () => {
     const { rerender } = render(<TimeRecorderView {...view} controls={{ ...view.controls, canChangeRecord: false }} />)
     screen.getByRole('button', { name: '記録を開始' }).should.toBeDisabled()
 
@@ -45,7 +45,7 @@ describe('TimeRecorderView', () => {
     screen.getByRole('button', { name: '記録を開始' }).should.toBeEnabled()
   })
 
-  it('開始ボタンを押すと開始操作を呼びます', () => {
+  it('開始ボタンを一度押すと、記録の開始だけを一度要求します', () => {
     render(<TimeRecorderView {...view} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -54,7 +54,7 @@ describe('TimeRecorderView', () => {
     endTimeRecord.should.have.callCount(0)
   })
 
-  it('終了ボタンを押すと終了操作を呼びます', () => {
+  it('終了ボタンを一度押すと、記録の終了だけを一度要求します', () => {
     render(<TimeRecorderView {...view} state={{ ...view.state, timeRecordId: 記録ID }} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を終了' }))
@@ -68,25 +68,25 @@ describe('TimeRecorderView', () => {
       render(<TimeRecorderView {...view} state={{ ...view.state, records: [終了済み記録] }} />)
     })
 
-    it('一覧の件数を表示します', () => {
+    it('終了済みの記録が一件あると、画面に「1件」と表示されます', () => {
       screen.getByText('1件').should.toBeInTheDocument()
     })
 
-    it('一覧に開始・終了の日時点を日本時間で表示します', () => {
+    it('作業記録一覧には、終了済みの記録の開始・終了時刻が日本時間で表示されます', () => {
       const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
 
       list.getByText('2026/08/01 18:00').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
       list.getByText('2026/08/01 19:30').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
     })
 
-    it('一覧に作業時間を表示します', () => {
+    it('作業記録一覧には、終了済みの記録の開始から終了までが「作業時間」として表示されます', () => {
       const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
 
       list.getByText('作業時間').should.toBeInTheDocument()
       list.getByText('1時間30分').should.toBeInTheDocument()
     })
 
-    it('操作パネルに開始ボタンを表示します', () => {
+    it('一覧の記録が終了済みで終了対象がなければ、操作パネルに開始ボタンが表示されます', () => {
       screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
     })
   })
@@ -96,13 +96,13 @@ describe('TimeRecorderView', () => {
       render(<TimeRecorderView {...view} state={{ ...view.state, records: [記録], timeRecordId: 記録ID }} />)
     })
 
-    it('操作パネルに記録中の表示と終了ボタンを出します', () => {
+    it('記録中の操作パネルには「記録中」と終了ボタンが表示され、開始ボタンは表示されません', () => {
       screen.getByRole('button', { name: '記録を終了' }).should.toBeInTheDocument()
       should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
       screen.getByText('記録中', { selector: '.status-badge' }).should.toBeInTheDocument()
     })
 
-    it('一覧に開始時刻と記録中の表示を出します', () => {
+    it('作業記録一覧には、進行中の記録の開始時刻と「記録中」が表示されます', () => {
       const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
       list.getByText('2026/08/01 18:00').should.toBeInTheDocument()
       list.getByText('記録中').should.toBeInTheDocument()
@@ -117,17 +117,17 @@ describe('TimeRecorderView', () => {
       render(<TimeRecorderView {...view} state={{ ...view.state, timeRecordId }} controls={未確認時の操作} />)
     })
 
-    it('記録操作を無効にします', () => {
+    it('記録一覧の最新状態が未確認の間は、表示中の記録操作ボタンを押せません', () => {
       screen.getByRole('button', { name: operationName }).should.toBeDisabled()
     })
 
-    it('未確認の案内と操作できる再取得ボタンを表示します', () => {
+    it('記録一覧の最新状態が未確認のときは、その案内が表示され、再取得ボタンを押せます', () => {
       screen.getByRole('alert').should.toHaveTextContent('最新状態を確認できません')
       screen.getByRole('button', { name: '再取得' }).should.toBeEnabled()
     })
   })
 
-  it('再取得ボタンを押すと一覧再取得を呼びます', () => {
+  it('未確認の案内で再取得ボタンを押すと、記録一覧の再取得だけを要求します', () => {
     render(<TimeRecorderView {...view} controls={未確認時の操作} />)
 
     fireEvent.click(screen.getByRole('button', { name: '再取得' }))
@@ -157,7 +157,7 @@ describe('TimeRecorder', () => {
     timeRecords = createTimeRecordServiceStub({ getTimeRecords, startTimeRecord, endTimeRecord })
   })
 
-  it('開始操作に失敗すると利用者に知らせます', async () => {
+  it('記録の開始に失敗すると、記録画面に失敗を知らせるメッセージが表示されます', async () => {
     startTimeRecord.mockRejectedValueOnce(new Error('開始失敗'))
     render(<TimeRecorder timeRecords={timeRecords} />)
 
@@ -167,7 +167,7 @@ describe('TimeRecorder', () => {
     alert.should.toHaveTextContent('失敗')
   })
 
-  it('開始ボタンで記録を開始したら終了操作と確定した開始時刻を表示します', async () => {
+  it('開始ボタンで記録を開始すると、終了ボタンとサーバーが返した開始時刻が表示されます', async () => {
     render(<TimeRecorder timeRecords={timeRecords} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
@@ -202,7 +202,7 @@ describe('TimeRecorder', () => {
       screen.getAllByText('1時間30分').should.have.lengthOf(2)
     })
 
-    it('再開始すると直前の終了時刻を消します', async () => {
+    it('記録を終了してから新しい記録を開始すると、操作欄から前回の終了時刻が消えます', async () => {
       fireEvent.click(endButton)
       await screen.findByLabelText('終了時刻')
       startTimeRecord.mockResolvedValueOnce(presentedRecord(次の記録ID, 終了時刻))
@@ -242,7 +242,7 @@ describe('TimeRecorder', () => {
       await waitFor(() => screen.getByRole('button', { name: '記録を開始' }).should.toBeEnabled())
     })
 
-    it('再取得に失敗しても未確認の案内と再取得操作を表示します', async () => {
+    it('一覧の再取得に失敗しても、未確認の案内が残り、再取得ボタンをもう一度押せます', async () => {
       getTimeRecords.mockRejectedValueOnce(new Error('再取得失敗'))
 
       fireEvent.click(retry)

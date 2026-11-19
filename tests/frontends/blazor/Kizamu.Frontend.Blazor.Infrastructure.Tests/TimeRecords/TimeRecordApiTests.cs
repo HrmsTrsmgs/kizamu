@@ -27,7 +27,7 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 作業記録一覧APIへGETします()
+    public async Task 作業記録一覧の取得には一覧APIへGET要求を送ります()
     {
         await tested.GetTimeRecordsAsync();
 
@@ -35,7 +35,7 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 作業記録一覧APIの応答を作業記録へ変換します()
+    public async Task 記録一覧を取得するとAPIの応答に並んだ順に作業記録が返ります()
     {
         TimeRecordResponse[] 記録 = [開始した記録, new(別の記録ID, 開始時刻, 終了時刻)];
         handler.RespondWithJson(記録);
@@ -46,7 +46,7 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 記録開始APIへPOSTします()
+    public async Task 作業記録の開始には記録開始APIへPOST要求を送ります()
     {
         handler.RespondWithJson(開始した記録);
 
@@ -66,7 +66,7 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 記録開始APIの成功応答に記録IDがなければ失敗を通知します()
+    public async Task 記録開始APIの成功応答に記録IDがないとJsonExceptionが発生します()
     {
         handler.RespondWithJson(new { startedAt = 開始時刻, endedAt = (DateTimeOffset?)null }, HttpStatusCode.Created);
 
@@ -76,7 +76,7 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 指定した記録の終了APIへPOSTします()
+    public async Task 作業記録の終了には指定した記録IDの終了APIへPOST要求を送ります()
     {
         handler.RespondWithJson(終了した記録);
 
@@ -96,7 +96,7 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 作業記録一覧APIがHTTPエラーを返したら本文が正常でも失敗を通知します()
+    public async Task 作業記録一覧APIの応答がHTTPエラーなら本文が正常でもステータスコード付きの例外が発生します()
     {
         handler.RespondWithJson<TimeRecordResponse[]>([開始した記録], HttpStatusCode.InternalServerError);
 
@@ -107,7 +107,7 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 記録開始APIがHTTPエラーを返したら本文が正常でも失敗を通知します()
+    public async Task 記録開始APIの応答がHTTPエラーなら本文が正常でもステータスコード付きの例外が発生します()
     {
         handler.RespondWithJson(開始した記録, HttpStatusCode.InternalServerError);
 
@@ -118,7 +118,7 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 指定した記録の終了APIがHTTPエラーを返したら本文が正常でも失敗を通知します()
+    public async Task 記録終了APIの応答がHTTPエラーなら本文が正常でもステータスコード付きの例外が発生します()
     {
         handler.RespondWithJson(終了した記録, HttpStatusCode.InternalServerError);
 

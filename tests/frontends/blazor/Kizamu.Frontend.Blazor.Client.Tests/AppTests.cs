@@ -30,7 +30,7 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void 未ログイン時はGoogleログインを表示します()
+    public void 未ログイン時はGoogleのログインボタンを表示します()
     {
         未ログインの画面.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
     }
@@ -58,7 +58,7 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void Googleログインで取得したトークンを記録通信へ渡します()
+    public void Googleログインで取得したIDトークンを記録の通信サービスに渡します()
     {
         string? 記録通信に渡されたトークン = null;
         var tested = ログイン可能な画面を表示する(token => 記録通信に渡されたトークン = token);
@@ -80,7 +80,7 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void ログアウトするとGoogleログインを表示します()
+    public void ログアウトするとGoogleのログインボタンを表示します()
     {
         ログインする(ログイン操作用の画面);
 
@@ -100,7 +100,7 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void 再ログインすると開始操作に戻ります()
+    public void 記録中にログアウトして再ログインすると記録欄のボタンが終了から開始に戻ります()
     {
         記録中にログアウトしておく();
 
@@ -126,13 +126,13 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void ログイン済みの画面に記録操作を表示します()
+    public void ログイン直後の記録欄に記録の開始ボタンを表示します()
     {
         ログイン済みの画面.Find(".recorder-panel button").TextContent.Should().Be("記録を開始");
     }
 
     [Fact]
-    public void 画面のフッターに接続状態を表示します()
+    public void 画面のフッターにサーバーの接続状態を表示します()
     {
         ログイン済みの画面.Find("footer").TextContent.Should().Contain("サーバー接続: 正常");
     }
@@ -176,7 +176,7 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void 入力したプロジェクト名を登録するとタブを表示します()
+    public void 入力したプロジェクト名で登録するとその名前のタブが表示されます()
     {
         追加ダイアログを開いておく("プロジェクトA");
 
@@ -233,7 +233,7 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public async Task タブを切り替えて戻ると記録中の対象には終了操作を表示します()
+    public async Task 記録中のプロジェクトのタブに戻ると記録欄には終了ボタンだけが表示されます()
     {
         var プロジェクトB = await プロジェクトAで記録を開始しておく();
         projectTabs.SelectProject(プロジェクトB);

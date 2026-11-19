@@ -15,25 +15,25 @@ describe('healthService', () => {
     vi.unstubAllGlobals()
   })
 
-  it('正常性確認APIへ要求します', async () => {
+  it('サーバーの接続確認では /api/health に要求を一度送ります', async () => {
     await tested.checkHealth()
 
     fetchMock.should.have.been.calledOnceWith('/api/health')
   })
 
-  it('正常なレスポンスを受け取るとtrueを返します', async () => {
+  it('接続確認の応答でstatusがokならtrueを返します', async () => {
     const isHealthy = await tested.checkHealth()
     isHealthy.should.equal(true)
   })
 
-  it('正常でないHTTPレスポンスを受け取るとfalseを返します', async () => {
+  it('接続確認APIが503を返すと、接続確認の結果はfalseです', async () => {
     fetchMock.mockImplementation(async () => new Response(null, { status: 503 }))
 
     const isHealthy = await tested.checkHealth()
     isHealthy.should.equal(false)
   })
 
-  it.each([{}, { status: 1 }])('正常でない内容を受け取るとfalseを返します（%j）', async body => {
+  it.each([{}, { status: 1 }])('接続確認APIの応答本文が %j なら、接続確認の結果はfalseです', async body => {
     fetchMock.mockImplementation(async () => Response.json(body))
 
     const isHealthy = await tested.checkHealth()

@@ -13,7 +13,7 @@ public sealed class InMemoryTimeRecordStateTests
     readonly TimeRecord 次の記録 = TimeRecord.Start(次の開始時刻);
 
     [Fact]
-    public void 作業記録を保存すると同じ記録を取得できます()
+    public void 作業記録を一件保存すると現在の記録として同じインスタンスを取得できます()
     {
         tested.Add(最初の記録);
 
@@ -21,7 +21,7 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void 複数の記録から指定した識別子の記録を取得できる()
+    public void 複数の作業記録から識別子で検索すると該当する記録と同じインスタンスを取得できます()
     {
         tested.Add(最初の記録);
         tested.Add(次の記録);
@@ -36,7 +36,7 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void 作業記録を一件追加すると追加した記録を取得できます()
+    public void 作業記録を一件追加すると一覧にはその記録だけが含まれます()
     {
         tested.Add(最初の記録);
 
@@ -44,7 +44,7 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void 作業記録を二件追加すると追加した順に両方取得できます()
+    public void 作業記録を二件追加すると一覧には両方の記録が追加順に並びます()
     {
         tested.Add(最初の記録);
         tested.Add(次の記録);
@@ -53,7 +53,7 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void 終了した記録で更新すると一覧の元の位置に反映される()
+    public void 作業記録を終了済みに更新すると一覧での位置は変わらず終了時刻が反映されます()
     {
         tested.Add(最初の記録);
         tested.Add(次の記録);
@@ -65,7 +65,7 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void コピー後に追加した記録はコピーした一覧に含まれません()
+    public void 記録一覧をコピーした後に追加した記録はコピーには含まれません()
     {
         tested.Add(最初の記録);
 
@@ -87,7 +87,7 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void コピー後も元の一覧には追加した記録が反映されます()
+    public void 記録一覧をコピーした後に追加した記録は元の一覧に反映されます()
     {
         tested.Add(最初の記録);
         var 一覧 = tested.All;
@@ -112,7 +112,7 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void 取得済みの一覧の件数に後から追加した記録が反映されます()
+    public void 記録一覧を取得した後に記録を追加すると取得済みの一覧の件数が増えます()
     {
         var 一覧 = tested.All;
 
@@ -123,7 +123,7 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void 取得済みの一覧の添字で後から追加した記録を追加順に取得できます()
+    public void 記録一覧を取得した後に追加した記録も元の一覧から添字を指定して追加順に取得できます()
     {
         var 一覧 = tested.All;
 

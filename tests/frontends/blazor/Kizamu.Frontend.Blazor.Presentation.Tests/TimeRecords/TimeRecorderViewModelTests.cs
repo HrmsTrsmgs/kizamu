@@ -22,7 +22,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始中は利用者の操作を止めて失敗後に再開する()
+    public async Task 記録開始の応答待ちでは操作できず開始に失敗しても一覧を確認できれば操作を再開できます()
     {
         var 応答 = service.DelayStartResponse();
 
@@ -35,7 +35,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 利用者の操作失敗は応答が失敗してから表示する()
+    public async Task 記録の開始失敗は応答待ちの間は表示せず失敗が確定してから知らせます()
     {
         var 応答 = service.DelayStartResponse();
 
@@ -48,7 +48,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 利用者の操作が次に成功しても前の失敗表示を保つ()
+    public async Task 記録の開始に失敗した後で開始に成功しても以前の失敗表示は残ります()
     {
         service.StartResponse = Task.FromException<TimeRecord>(new InvalidOperationException());
         await tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
@@ -62,7 +62,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 最新状態が未確認の間は再取得を案内し回復後は以前の操作失敗を知らせる()
+    public async Task 記録の開始に失敗すると最新状態を確認できるまでは再取得を案内し確認後は開始の失敗を知らせます()
     {
         service.StartResponse = Task.FromException<TimeRecord>(new InvalidOperationException());
         一覧取得を失敗させる(new InvalidOperationException());
@@ -77,7 +77,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 利用者による手動再取得の失敗を表示する()
+    public async Task 利用者が記録一覧を再取得して失敗すると操作の失敗として知らせます()
     {
         await 開始失敗後の再取得にも失敗させる();
 
@@ -87,7 +87,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 利用者による手動再取得に失敗しても未確認状態を保つ()
+    public async Task 利用者が記録一覧を再取得して失敗すると記録の最新状態は未確認のままです()
     {
         await 開始失敗後の再取得にも失敗させる();
 
@@ -97,7 +97,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 利用者による手動再取得に失敗した後も記録操作を止める()
+    public async Task 利用者が記録一覧を再取得して失敗すると記録の開始と終了は引き続きできません()
     {
         await 開始失敗後の再取得にも失敗させる();
 
@@ -107,7 +107,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 利用者による手動再取得が失敗すると通信中の状態を解除する()
+    public async Task 利用者が記録一覧を再取得して失敗すると通信中の状態が解除されます()
     {
         await 開始失敗後の再取得にも失敗させる();
 
@@ -117,7 +117,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 初回の一覧取得に失敗すると元の例外を返す()
+    public async Task 記録一覧の初回取得に失敗するとその例外が呼び出し元に伝わります()
     {
         var 取得失敗 = new InvalidOperationException();
         一覧取得を失敗させる(取得失敗);
@@ -126,7 +126,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 初回の一覧取得に失敗しても操作失敗を表示しない()
+    public async Task 記録一覧の初回取得に失敗しても利用者の操作失敗としては表示しません()
     {
         一覧取得を失敗させる(new InvalidOperationException());
 
@@ -136,7 +136,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 異なるプロジェクトで開始した記録を両方とも一覧に残す()
+    public async Task 異なるプロジェクトで順に記録を開始すると両方の記録が開始順に一覧に残ります()
     {
         await プロジェクトAとBで記録を開始する();
 
@@ -144,7 +144,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 異なるプロジェクトで記録を開始すると選択中のプロジェクトが記録中になる()
+    public async Task 記録中に別のプロジェクトを選んで記録を開始するとそのプロジェクトも記録中になります()
     {
         await プロジェクトAとBで記録を開始する();
 
@@ -152,7 +152,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 別のプロジェクトで記録を開始して戻っても元の記録を終了しない()
+    public async Task 別のプロジェクトで記録を開始して元のプロジェクトに戻っても記録の終了は要求しません()
     {
         await プロジェクトAとBで記録を開始する();
 
@@ -162,7 +162,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task プロジェクトを切り替えて戻ると元の記録中状態を保持する()
+    public async Task 別のプロジェクトで記録を開始して元のプロジェクトに戻ると元のプロジェクトは記録中のままです()
     {
         await プロジェクトAとBで記録を開始する();
 
@@ -172,7 +172,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 未指定からプロジェクトへ切り替えて戻ると元の記録中状態を保持する()
+    public async Task プロジェクト未指定で記録を開始して別のプロジェクトでも記録を開始すると未指定に戻っても記録中です()
     {
         tested.SelectProject(null);
         await tested.StartTimeRecordAsync();
@@ -187,7 +187,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task プロジェクトから未指定へ切り替えて戻ると元の記録中状態を保持する()
+    public async Task 記録中のプロジェクトから未指定に切り替えて戻ってもそのプロジェクトは記録中です()
     {
         await 未指定とプロジェクトの記録を開始する(プロジェクトA);
         tested.SelectProject(null);
@@ -198,7 +198,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始の応答前に対象を切り替えても確定した記録を一覧に加える()
+    public async Task 記録の開始応答を待つ間にプロジェクト未指定に切り替えても応答で確定した記録は一覧に加わります()
     {
         var (応答, 開始操作) = プロジェクトAの開始応答を待つ間に未指定へ切り替える();
 
@@ -209,7 +209,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始の応答前に対象を切り替えても開始元だけを記録中にする()
+    public async Task 記録の開始応答を待つ間にプロジェクト未指定に切り替えても開始を要求したプロジェクトだけが記録中になります()
     {
         var (応答, 開始操作) = プロジェクトAの開始応答を待つ間に未指定へ切り替える();
 
@@ -224,7 +224,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 選択した対象の記録IDで終了を依頼する(bool プロジェクトを終了する)
+    public async Task プロジェクト指定と未指定の記録が同時に進んでいるときは選択中の記録IDで終了を要求します(bool プロジェクトを終了する)
     {
         var (終了する記録ID, _, _) = await 未指定とプロジェクトの記録から終了対象を選ぶ(プロジェクトを終了する);
 
@@ -236,7 +236,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 選択した対象の記録を終了すると記録中ではなくなる(bool プロジェクトを終了する)
+    public async Task プロジェクト指定と未指定のうち選択中の記録を終了するとその対象は記録中ではなくなります(bool プロジェクトを終了する)
     {
         await 未指定とプロジェクトの記録から終了対象を選ぶ(プロジェクトを終了する);
 
@@ -248,7 +248,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 一方の記録を終了しても他方へ切り替えると記録中のままである(bool プロジェクトを終了する)
+    public async Task プロジェクト指定と未指定の一方の記録を終了しても他方に切り替えると記録中のままです(bool プロジェクトを終了する)
     {
         var (_, 残るプロジェクト, _) = await 未指定とプロジェクトの記録から終了対象を選ぶ(プロジェクトを終了する);
 
@@ -261,7 +261,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 一方の記録を終了しても一覧の他方の記録に終了時刻を付けない(bool プロジェクトを終了する)
+    public async Task プロジェクト指定と未指定の一方の記録を終了しても一覧にある他方の記録の終了時刻は空のままです(bool プロジェクトを終了する)
     {
         var (_, _, 残る記録ID) = await 未指定とプロジェクトの記録から終了対象を選ぶ(プロジェクトを終了する);
 
@@ -271,7 +271,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始の通信中は追加の開始と終了を要求しない()
+    public async Task 記録の開始応答を待つ間は開始や終了を操作しても追加の要求を送りません()
     {
         var 応答 = service.DelayStartResponse();
         var 開始操作 = tested.StartTimeRecordAsync();
@@ -286,7 +286,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始の通信に成功した後は記録を終了できる()
+    public async Task 記録の開始に成功すると開始した記録の終了を要求できます()
     {
         var 応答 = service.DelayStartResponse();
         var 開始操作 = tested.StartTimeRecordAsync();
@@ -301,7 +301,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始の通信に失敗した後は記録を再開できる()
+    public async Task 記録の開始に失敗しても一覧に記録がなければ再び開始を要求できます()
     {
         var 応答 = service.DelayStartResponse();
         var 開始操作 = tested.StartTimeRecordAsync();
@@ -318,7 +318,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 終了の通信中は追加の開始と終了を要求しない()
+    public async Task 記録の終了応答を待つ間は開始や終了を操作しても追加の要求を送りません()
     {
         await tested.StartTimeRecordAsync();
         var 応答 = service.DelayEndResponse();
@@ -334,7 +334,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 終了の通信に成功した後は新しい記録を開始できる()
+    public async Task 記録の終了に成功すると新しい記録の開始を要求できます()
     {
         await tested.StartTimeRecordAsync();
         var 応答 = service.DelayEndResponse();
@@ -350,7 +350,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 終了の通信に失敗した後は終了を再び要求できる()
+    public async Task 記録の終了に失敗しても一覧で記録中と確認できれば同じ記録の終了を再び要求できます()
     {
         await tested.StartTimeRecordAsync();
         service.Records = [service.StartedRecord];
@@ -371,7 +371,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 記録操作の通信に失敗すると再取得の成功後に元の例外を返す(bool 終了操作)
+    public async Task 記録の開始や終了の通信に失敗しても一覧の再取得に成功すれば元の通信例外が呼び出し元に伝わります(bool 終了操作)
     {
         var 通信失敗 = new HttpRequestException();
         var 操作 = await 再取得で結果を確認できる通信失敗を用意する(終了操作, 通信失敗);
@@ -382,7 +382,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 記録操作の通信に失敗すると一覧を一度再取得する(bool 終了操作)
+    public async Task 記録の開始や終了の通信に失敗すると記録一覧を一度だけ再取得します(bool 終了操作)
     {
         var 操作 = await 再取得で結果を確認できる通信失敗を用意する(終了操作, new HttpRequestException());
 
@@ -394,7 +394,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 記録操作の通信に失敗すると再取得した記録を一覧に反映する(bool 終了操作)
+    public async Task 記録の開始や終了の通信に失敗すると再取得した記録で一覧を更新します(bool 終了操作)
     {
         var 操作 = await 再取得で結果を確認できる通信失敗を用意する(終了操作, new HttpRequestException());
 
@@ -406,7 +406,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 記録操作の通信に失敗すると再取得した記録の状態を操作対象に反映する(bool 終了操作)
+    public async Task 記録の開始や終了の通信に失敗すると再取得した一覧をもとに記録中かどうかを判定します(bool 終了操作)
     {
         var 操作 = await 再取得で結果を確認できる通信失敗を用意する(終了操作, new HttpRequestException());
 
@@ -418,7 +418,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 記録操作とその一覧再取得が失敗すると再取得の例外を返す(bool 終了操作)
+    public async Task 記録の開始や終了に失敗して一覧も再取得できないと再取得の例外が呼び出し元に伝わります(bool 終了操作)
     {
         var 再取得失敗 = new HttpRequestException();
         var 操作 = await 再取得にも失敗する記録操作を用意する(終了操作, 再取得失敗);
@@ -429,7 +429,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 記録操作とその一覧再取得が失敗すると直前の一覧を残す(bool 終了操作)
+    public async Task 記録の開始や終了に失敗して一覧も再取得できないと直前の記録一覧を残します(bool 終了操作)
     {
         var 操作 = await 再取得にも失敗する記録操作を用意する(終了操作, new HttpRequestException());
         IEnumerable<TimeRecord> 直前の記録 = 終了操作 ? [service.StartedRecord] : service.Records;
@@ -442,7 +442,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 記録操作とその一覧再取得が失敗すると最新状態は未確認になる(bool 終了操作)
+    public async Task 記録の開始や終了に失敗して一覧も再取得できないと記録の最新状態は未確認になります(bool 終了操作)
     {
         var 操作 = await 再取得にも失敗する記録操作を用意する(終了操作, new HttpRequestException());
 
@@ -454,7 +454,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 記録操作とその一覧再取得が失敗すると通信中の状態を解除する(bool 終了操作)
+    public async Task 記録の開始や終了に失敗して一覧も再取得できないと通信中の状態が解除されます(bool 終了操作)
     {
         var 操作 = await 再取得にも失敗する記録操作を用意する(終了操作, new HttpRequestException());
 
@@ -464,7 +464,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始失敗後に古い初回一覧が届いても未確認状態を保つ()
+    public async Task 記録の開始と一覧の再取得に失敗した後で古い初回一覧が届いても記録の最新状態は未確認のままです()
     {
         await 開始失敗後に古い初回一覧を受け取る();
 
@@ -475,7 +475,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始失敗後に古い初回一覧が届いても記録操作を抑止する()
+    public async Task 記録の開始と一覧の再取得に失敗した後で古い初回一覧が届いても追加の開始や終了は要求しません()
     {
         await 開始失敗後に古い初回一覧を受け取る();
 
@@ -487,7 +487,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始失敗後の状態を確認できるまでは追加の開始と終了を要求しない()
+    public async Task 記録の開始に失敗した後で一覧を確認できるまでは追加の開始や終了を要求しません()
     {
         await 開始失敗後の再取得にも失敗させる();
         service.StartResponse = null;
@@ -501,7 +501,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 終了失敗後の状態を確認できるまでは追加の終了と開始を要求しない()
+    public async Task 記録の終了に失敗した後で一覧を確認できるまでは追加の開始や終了を要求しません()
     {
         await 終了失敗後の再取得にも失敗させる();
         service.EndResponse = null;
@@ -517,7 +517,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 手動再取得が成功すると取得した記録を一覧に反映する(bool 記録中)
+    public async Task 記録一覧の手動再取得に成功すると取得した記録で一覧を更新します(bool 記録中)
     {
         await 手動再取得で返す記録を用意する(記録中);
 
@@ -529,7 +529,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 手動再取得が成功すると未確認状態を解除する(bool 記録中)
+    public async Task 記録一覧を手動で再取得できれば記録の最新状態は確認済みになります(bool 記録中)
     {
         await 手動再取得で返す記録を用意する(記録中);
 
@@ -541,7 +541,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 手動再取得で確認した記録を操作対象の状態に反映する(bool 記録中)
+    public async Task 記録一覧を手動で再取得すると取得した記録が未終了の場合だけ記録中になります(bool 記録中)
     {
         await 手動再取得で返す記録を用意する(記録中);
 
@@ -551,7 +551,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 手動再取得で確認した未終了の記録を終了できる()
+    public async Task 記録一覧を手動で再取得して未終了の記録を確認するとその記録を終了できます()
     {
         await 手動再取得で返す記録を用意する(記録中: true);
         await tested.LoadAsync();
@@ -562,7 +562,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 手動再取得で終了済みの記録を確認すると開始できる()
+    public async Task 記録一覧を手動で再取得して終了済みの記録を確認すると新しい記録を開始できます()
     {
         await 手動再取得で返す記録を用意する(記録中: false);
         await tested.LoadAsync();
@@ -573,7 +573,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 手動再取得にも失敗すると直前の一覧を残す()
+    public async Task 記録の開始に失敗して自動でも手動でも一覧を再取得できないと直前の一覧が残ります()
     {
         await 終了済みの履歴がある状態で開始と再取得を失敗させる();
 
@@ -583,7 +583,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 手動再取得にも失敗すると未確認状態を保つ()
+    public async Task 記録の開始に失敗して自動でも手動でも一覧を再取得できないと最新状態は未確認のままです()
     {
         await 終了済みの履歴がある状態で開始と再取得を失敗させる();
 
@@ -593,7 +593,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 手動再取得にも失敗すると通信中の状態を解除する()
+    public async Task 記録の開始に失敗して自動でも手動でも一覧を再取得できないと通信中の状態が解除されます()
     {
         await 終了済みの履歴がある状態で開始と再取得を失敗させる();
 
@@ -603,7 +603,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始後の自動再取得に失敗しても手動再取得で一覧を再要求する()
+    public async Task 記録の開始と一覧の自動再取得に失敗しても手動で一覧を再要求できます()
     {
         await 終了済みの履歴がある状態で開始と再取得を失敗させる();
 
@@ -613,7 +613,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 手動再取得の応答待ちは通信中として扱う()
+    public async Task 記録一覧の手動再取得の応答を待つ間は通信中になります()
     {
         await 開始失敗後の再取得にも失敗させる();
         service.StartResponse = null;
@@ -628,7 +628,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 手動再取得の応答待ちに重ねて再取得しても追加の一覧要求を送らない()
+    public async Task 記録一覧の手動再取得の応答を待つ間にもう一度再取得しても一覧を重ねて要求しません()
     {
         await 開始失敗後の再取得にも失敗させる();
         service.StartResponse = null;
@@ -644,7 +644,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 手動再取得の通信中は開始と終了を要求しない()
+    public async Task 記録一覧を手動で再取得している間は記録の開始や終了を要求しません()
     {
         await 開始失敗後の再取得にも失敗させる();
         service.StartResponse = null;
@@ -663,19 +663,19 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public void 初期状態の記録一覧は空である()
+    public void 初期状態の記録一覧は空です()
     {
         tested.Records.Should().BeEmpty();
     }
 
     [Fact]
-    public void 初期状態の操作欄に記録はない()
+    public void 初期状態の操作欄には作業記録を表示しません()
     {
         tested.DisplayedRecord.Should().BeNull();
     }
 
     [Fact]
-    public void 初期状態は記録中ではない()
+    public void 記録画面の初期状態では記録中の作業はありません()
     {
         tested.IsRecording.Should().BeFalse();
     }
@@ -683,7 +683,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 読み込んだ順序のまま記録一覧に反映する(bool 記録中の項目を含む)
+    public async Task 記録一覧にはサーバーから読み込んだ順に作業記録が並びます(bool 記録中の項目を含む)
     {
         読み込む記録一覧を用意する(記録中の項目を含む);
 
@@ -695,7 +695,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 読み込んだ一覧に未終了の記録があれば記録中になる(bool 記録中の項目を含む)
+    public async Task 読み込んだ一覧に未終了の記録が含まれる場合だけ記録中になります(bool 記録中の項目を含む)
     {
         読み込む記録一覧を用意する(記録中の項目を含む);
 
@@ -705,7 +705,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 記録中の項目を読み込んでも操作欄には表示しない()
+    public async Task 一覧に記録中の作業があっても読み込んだだけでは操作欄に記録を表示しません()
     {
         読み込む記録一覧を用意する(記録中の項目を含む: true);
 
@@ -715,7 +715,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始すると確定した記録を一覧の末尾に加える()
+    public async Task 記録の開始に成功すると確定した記録が一覧の末尾に加わります()
     {
         await 終了済みの履歴を読み込む();
 
@@ -725,7 +725,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始すると確定した記録を操作欄に表示する()
+    public async Task 記録の開始に成功すると確定した記録が操作欄に表示されます()
     {
         await 終了済みの履歴を読み込む();
 
@@ -735,7 +735,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始すると操作対象が記録中になる()
+    public async Task 記録の開始に成功すると選択中の作業は記録中になります()
     {
         await 終了済みの履歴を読み込む();
 
@@ -745,7 +745,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始後に古い初回一覧が届くと過去の記録の後に開始した記録が残る()
+    public async Task 記録の開始後に古い初回一覧が届いても過去の記録の後に新しく開始した記録が並びます()
     {
         await 記録開始後に古い初回一覧を受け取る();
 
@@ -753,7 +753,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始後に古い初回一覧が届いても操作欄には開始した記録が残る()
+    public async Task 記録の開始後に古い初回一覧が届いても操作欄には新しく開始した記録が残ります()
     {
         await 記録開始後に古い初回一覧を受け取る();
 
@@ -761,7 +761,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始後に古い初回一覧が届いても終了するまで記録中のままである()
+    public async Task 記録の開始後に古い初回一覧が届いてもその記録を終了するまで記録中のままです()
     {
         await 記録開始後に古い初回一覧を受け取る();
 
@@ -773,7 +773,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始後に古い初回一覧が届いても開始した記録のIDで終了を依頼する()
+    public async Task 記録の開始後に古い初回一覧が届いても新しく開始した記録のIDで終了を要求します()
     {
         await 記録開始後に古い初回一覧を受け取る();
 
@@ -783,7 +783,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 開始後に古い初回一覧が届いても終了時に過去の記録を残す()
+    public async Task 記録の開始後に古い初回一覧が届いても新しい記録を終了した一覧には過去の記録が残ります()
     {
         await 記録開始後に古い初回一覧を受け取る();
 
@@ -793,7 +793,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 古い一覧と同じIDの記録は最新の操作結果で置き換える()
+    public async Task 一覧の取得中に終了した記録が応答では未終了でも同じIDの記録は終了済みの一件だけが残ります()
     {
         await 記録の更新と別の記録の開始後に古い一覧を受け取る();
 
@@ -801,7 +801,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 古い一覧にない記録を応答内の記録の後に加える()
+    public async Task 一覧の取得中に開始した記録が応答に含まれなければ一覧の末尾に加えます()
     {
         await 記録の更新と別の記録の開始後に古い一覧を受け取る();
 
@@ -810,7 +810,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 古い一覧にない記録は最新の更新を最初の操作順で残す()
+    public async Task 一覧の取得中に開始した複数の記録が応答に含まれなくても各記録の最新状態が開始順に残ります()
     {
         var 応答 = service.DelayListResponse();
         var 読み込み = tested.LoadAsync();
@@ -828,7 +828,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 古い一覧の先頭にも記録中の項目があれば取得中に開始した記録を先に終了する()
+    public async Task 一覧の取得中に記録を開始すると応答の先頭に別の未終了の記録があっても新しく開始した記録から終了します()
     {
         var 応答 = service.DelayListResponse();
         var 読み込み = tested.LoadAsync();
@@ -842,7 +842,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 操作後に一覧を再読み込みするとサーバーの最新の一覧で置き換える()
+    public async Task 記録の開始後に一覧を再読み込みするとサーバーの最新の一覧に置き換わります()
     {
         await 履歴がある状態で記録を開始する();
         service.Records = [service.EndedRecord];
@@ -853,7 +853,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 操作後に再読み込みした記録が終了済みなら操作対象は記録中ではなくなる()
+    public async Task 開始した記録が再読み込みした一覧で終了済みなら選択中の作業は記録中ではなくなります()
     {
         await 履歴がある状態で記録を開始する();
         service.Records = [service.EndedRecord];
@@ -866,7 +866,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 終了すると対象の記録IDをサービスに渡す(bool 一覧から読み込む)
+    public async Task 記録を終了すると記録サービスに終了対象の記録IDを渡します(bool 一覧から読み込む)
     {
         await 終了対象の記録を用意する(一覧から読み込む);
 
@@ -878,7 +878,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 終了すると履歴を保って対象の記録だけを更新する(bool 一覧から読み込む)
+    public async Task 記録を終了すると一覧の履歴を残して終了対象の記録だけを更新します(bool 一覧から読み込む)
     {
         await 終了対象の記録を用意する(一覧から読み込む);
 
@@ -890,7 +890,7 @@ public sealed class TimeRecorderViewModelTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task 終了すると操作対象は記録中ではなくなる(bool 一覧から読み込む)
+    public async Task 記録を終了すると選択中の作業は記録中ではなくなります(bool 一覧から読み込む)
     {
         await 終了対象の記録を用意する(一覧から読み込む);
 
@@ -900,7 +900,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 自分で開始した記録を終了すると操作欄に終了結果が残る()
+    public async Task この画面で開始した記録を終了すると操作欄に終了済みの記録が残ります()
     {
         await 履歴がある状態で記録を開始する();
 
@@ -910,7 +910,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 再び開始すると終了済みの履歴の後に新しい記録を加える()
+    public async Task 記録を終了して新しく開始すると新しい記録が終了済みの履歴の後に加わります()
     {
         await 記録を終了して次に別の記録を開始できるようにする();
 
@@ -920,7 +920,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 再び開始すると操作欄を新しい未終了の記録に差し替える()
+    public async Task 記録を終了して新しく開始すると操作欄には新しい未終了の記録が表示されます()
     {
         await 記録を終了して次に別の記録を開始できるようにする();
 
@@ -931,7 +931,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 再び開始すると操作対象は記録中に戻る()
+    public async Task 記録を終了して新しく開始すると選択中の作業は再び記録中になります()
     {
         await 記録を終了して次に別の記録を開始できるようにする();
 
@@ -941,7 +941,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 読み込んだ記録を終了しても操作欄に直近の結果は表示しない()
+    public async Task 一覧から読み込んだ記録を終了しても操作欄にはその終了結果を表示しません()
     {
         await 終了対象の記録を用意する(一覧から読み込む: true);
 
@@ -951,7 +951,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 終了対象がなければサービスへ終了を要求しない()
+    public async Task 記録中の作業がなければ記録サービスに終了を要求しません()
     {
         await tested.EndTimeRecordAsync();
 
@@ -959,7 +959,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 終了対象がないときの終了操作では画面状態を変えない()
+    public async Task 初期状態で記録の終了を要求しても一覧と操作欄は空のままで記録中にもなりません()
     {
         await tested.EndTimeRecordAsync();
 

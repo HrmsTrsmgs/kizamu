@@ -23,7 +23,7 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     [Theory]
     [InlineData("https://accounts.google.com")]
     [InlineData("accounts.google.com")]
-    public async Task 有効なGoogleトークンでは更新やメール変更後も同じsubで本人を識別する(string issuer)
+    public async Task GoogleのIDトークンを更新してメールアドレスが変わっても同じsubを本人識別子として取得できます(string issuer)
     {
         var 初回トークン = CreateToken(issuer: issuer, email: "before@example.test");
         var 更新後トークン = CreateToken(issuer: issuer, email: "after@example.test");
@@ -33,14 +33,14 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     }
 
     [Fact]
-    public async Task メールが同じでもsubが異なる利用者を区別する()
+    public async Task GoogleのIDトークンのメールアドレスが同じでもsubが異なれば本人識別子も異なります()
     {
         (await tested.VerifyAsync(CreateToken(subject: "first-user"))).Should().Be("first-user");
         (await tested.VerifyAsync(CreateToken(subject: "second-user"))).Should().Be("second-user");
     }
 
     [Fact]
-    public async Task Googleの公開鍵で検証できない署名から本人識別子を返さない()
+    public async Task Googleの公開鍵で署名を検証できないIDトークンからは本人識別子を取得できません()
     {
         using var attackerKey = RSA.Create(2048);
 
@@ -48,31 +48,31 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     }
 
     [Fact]
-    public async Task 発行者がGoogleでないトークンから本人識別子を返さない()
+    public async Task 発行者がGoogle以外のIDトークンからは本人識別子を取得できません()
     {
         (await tested.VerifyAsync(CreateToken(issuer: "https://attacker.example.test"))).Should().BeNull();
     }
 
     [Fact]
-    public async Task 対象のクライアントが異なるトークンから本人識別子を返さない()
+    public async Task 別のクライアント向けのGoogleのIDトークンからは本人識別子を取得できません()
     {
         (await tested.VerifyAsync(CreateToken(audience: "another-client"))).Should().BeNull();
     }
 
     [Fact]
-    public async Task 有効期限が過ぎたトークンから本人識別子を返さない()
+    public async Task 有効期限を過ぎたGoogleのIDトークンからは本人識別子を取得できません()
     {
         (await tested.VerifyAsync(CreateToken(expired: true))).Should().BeNull();
     }
 
     [Fact]
-    public async Task トークンにsubがなければ本人識別子を返さない()
+    public async Task GoogleのIDトークンにsubがなければ本人識別子を取得できません()
     {
         (await tested.VerifyAsync(CreateToken(subject: null))).Should().BeNull();
     }
 
     [Fact]
-    public async Task JWT形式でない文字列から本人識別子を返さない()
+    public async Task JWT形式でない文字列をGoogleのIDトークンとして検証しても本人識別子を取得できません()
     {
         (await tested.VerifyAsync("not-a-jwt")).Should().BeNull();
     }

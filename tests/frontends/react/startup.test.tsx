@@ -7,7 +7,7 @@ describe('通常起動', () => {
     document.body.innerHTML = ''
   })
 
-  it('Googleログインで取得したIDトークンを記録一覧の要求へ送ります', async () => {
+  it('Googleログイン後に記録一覧を取得すると、取得したIDトークンをBearer形式で送ります', async () => {
     let receiveCredential: ((response: { credential: string }) => void) | undefined
     vi.stubGlobal('google', {
       accounts: { id: {

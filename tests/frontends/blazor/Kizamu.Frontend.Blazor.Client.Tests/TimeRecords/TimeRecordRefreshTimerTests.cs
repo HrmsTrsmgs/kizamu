@@ -17,7 +17,7 @@ public sealed class TimeRecordRefreshTimerTests : IDisposable
     }
 
     [Fact]
-    public void 記録中に設定し直すとその一秒後から一秒ごとに一度だけ更新する()
+    public void 記録中に更新タイマーを設定し直すと一秒後から一秒に一度だけ更新を通知します()
     {
         clock.Advance(TimeSpan.FromMilliseconds(500));
 
@@ -32,7 +32,7 @@ public sealed class TimeRecordRefreshTimerTests : IDisposable
     }
 
     [Fact]
-    public void 記録を終了すると定期更新が止まる()
+    public void 記録の終了時刻を設定すると更新タイマーの定期通知が止まります()
     {
         tested.ScheduleRefresh(clock.GetUtcNow());
         clock.Advance(TimeSpan.FromSeconds(1));
@@ -41,7 +41,7 @@ public sealed class TimeRecordRefreshTimerTests : IDisposable
     }
 
     [Fact]
-    public void 記録中に破棄すると定期更新が止まる()
+    public void 記録中に更新タイマーを破棄すると定期通知が止まります()
     {
         tested.Dispose();
         clock.Advance(TimeSpan.FromSeconds(1));

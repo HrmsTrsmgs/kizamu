@@ -20,20 +20,20 @@ describe('メモリ上の記録', () => {
     ended = first.end(終了時刻)
   })
 
-  test('置換した記録を識別子で取得できます', () => {
+  test('保存した記録を終了済みの記録に置き換えると、同じ識別子で終了済みの記録を取得できます', () => {
     tested.replace(ended)
 
     ;({ record: tested.find('first') }).should.toStrictEqual({ record: ended })
   })
 
-  test('置換後も一覧では記録の追加順を保ちます', () => {
+  test('保存した記録を終了済みの記録に置き換えても、一覧には追加した順に並びます', () => {
     tested.replace(ended)
 
     tested.all().should.toStrictEqual([ended, second])
   })
 })
 
-test('時刻の取得元は現在の日時点を返します', () => {
+test('記録用の時計はシステムの現在時刻を返します', () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   try {
     vi.setSystemTime(new Date('2026-08-01T09:00:00Z'))
@@ -44,6 +44,6 @@ test('時刻の取得元は現在の日時点を返します', () => {
   }
 })
 
-test('識別子の生成元はバージョン4のUUIDを返します', () => {
+test('新しい記録の識別子にはバージョン4のUUIDを生成します', () => {
   timeRecordSources.newId().should.match(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)
 })

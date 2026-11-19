@@ -12,7 +12,7 @@ describe('projectTabsReducer', () => {
     state.projectName.should.equal('プロジェクトA')
   })
 
-  it('追加を開くとダイアログを表示します', () => {
+  it('プロジェクトの追加を始めると、追加ダイアログが開きます', () => {
     initialProjectTabsState.showProjectDialog.should.equal(false)
 
     const state = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
@@ -33,13 +33,13 @@ describe('projectTabsReducer', () => {
       state.showProjectDialog.should.equal(false)
     })
 
-    it('追加をキャンセルすると一覧にプロジェクトを登録しません', () => {
+    it('プロジェクトの追加をキャンセルすると、登録済みの一覧は空のままです', () => {
       const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
 
       state.projects.should.toStrictEqual([])
     })
 
-    it('登録後に追加を開くとプロジェクト名は空です', () => {
+    it('プロジェクトを登録して追加ダイアログを開き直すと、名前の入力欄は空です', () => {
       const named = projectTabsReducer(opened, { type: 'projectNameChanged', name: 'プロジェクトA' })
 
       const registered = projectTabsReducer(named, { type: 'projectRegistered' })
@@ -49,7 +49,7 @@ describe('projectTabsReducer', () => {
     })
   })
 
-  it('追加画面から登録するとダイアログを閉じます', () => {
+  it('入力したプロジェクトを登録すると追加ダイアログが閉じます', () => {
     const opened = { ...initialProjectTabsState, showProjectDialog: true, projectName: 'プロジェクトA' }
 
     const state = projectTabsReducer(opened, { type: 'projectRegistered' })
@@ -65,7 +65,7 @@ describe('projectTabsReducer', () => {
       registered = projectTabsReducer(named, { type: 'projectRegistered' })
     })
 
-    it('登録したプロジェクトを選択すると選択した対象を保持します', () => {
+    it('一覧からプロジェクトを選ぶと、そのプロジェクトが選択中になります', () => {
       const project = registered.projects[0]
 
       const state = projectTabsReducer(registered, { type: 'projectSelected', project })
@@ -73,7 +73,7 @@ describe('projectTabsReducer', () => {
       state.should.have.property('selectedProject', project)
     })
 
-    it('登録したプロジェクトを一覧に保持します', () => {
+    it('二つのプロジェクトを順に登録すると、一覧に両方が登録順に並びます', () => {
       const next = projectTabsReducer(registered, { type: 'projectNameChanged', name: 'プロジェクトB' })
 
       const state = projectTabsReducer(next, { type: 'projectRegistered' })

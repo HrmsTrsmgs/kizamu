@@ -24,7 +24,7 @@ public sealed class TimeRecordEndOperationTests
 
     [Theory]
     [MemberData(nameof(記録時刻の例))]
-    public void 記録を終了すると指定した識別子と保存された開始時刻と現在の終了時刻を返す(
+    public void 記録の終了結果には元の識別子と開始時刻に加えて終了時点の現在時刻が含まれます(
         DateTimeOffset startedAt, DateTimeOffset endedAt)
     {
         var timeRecord = 記録を開始して保存する(startedAt);
@@ -35,7 +35,7 @@ public sealed class TimeRecordEndOperationTests
 
     [Theory]
     [MemberData(nameof(記録時刻の例))]
-    public void 記録を終了すると保存された記録の終了時刻を現在時刻に更新する(
+    public void 記録を終了すると保存された記録の終了時刻が現在時刻になります(
         DateTimeOffset startedAt, DateTimeOffset endedAt)
     {
         var timeRecord = 記録を開始して保存する(startedAt);
@@ -49,7 +49,7 @@ public sealed class TimeRecordEndOperationTests
     }
 
     [Fact]
-    public void 複数の記録があるときは指定した記録の終了結果を返す()
+    public void 二件のうち先に開始した記録を終了するとその記録の識別子と開始時刻と終了時刻が返ります()
     {
         var (最初の記録, _) = 二件の記録を開始して保存する();
         timeProvider.SetUtcNow(遅い時刻);
@@ -58,7 +58,7 @@ public sealed class TimeRecordEndOperationTests
     }
 
     [Fact]
-    public void 複数の記録から指定した記録だけを終了する()
+    public void 複数の記録が進行中でも指定した記録だけに終了時刻が設定されます()
     {
         var (最初の記録, 次の記録) = 二件の記録を開始して保存する();
         timeProvider.SetUtcNow(遅い時刻);
@@ -75,7 +75,7 @@ public sealed class TimeRecordEndOperationTests
     }
 
     [Fact]
-    public void 終了済みの記録を再度指定すると更新した終了時刻を返す()
+    public void 終了済みの記録に再び終了を要求すると今回の要求時刻が新しい終了時刻として返ります()
     {
         var (最初の記録, _) = 終了済みと記録中の二件を保存する();
         timeProvider.SetUtcNow(遅い時刻);
@@ -84,7 +84,7 @@ public sealed class TimeRecordEndOperationTests
     }
 
     [Fact]
-    public void 終了済みの記録を再度指定するとその記録だけの終了時刻を更新する()
+    public void 終了済みの記録に再び終了を要求するとその記録の終了時刻だけが現在時刻に更新されます()
     {
         var (最初の記録, 次の記録) = 終了済みと記録中の二件を保存する();
         timeProvider.SetUtcNow(遅い時刻);
@@ -96,7 +96,7 @@ public sealed class TimeRecordEndOperationTests
     }
 
     [Fact]
-    public void 異なる識別子で終了を要求しても現在の記録は終了しない()
+    public void 存在しない識別子で終了を要求しても開始した記録の終了時刻は未設定のままです()
     {
         var timeRecord = 記録を開始して保存する(早い時刻);
         timeProvider.SetUtcNow(遅い時刻);

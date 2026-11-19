@@ -12,7 +12,7 @@ public sealed class TimeRecordAuthorizationTests
     [InlineData("list")]
     [InlineData("start")]
     [InlineData("end")]
-    public async Task 利用可能な認証トークンを記録APIへ送ります(string operation)
+    public async Task 記録の一覧取得と開始と終了ではIDトークンをBearer認証で送ります(string operation)
     {
         var handler = new TestHttpMessageHandler();
         string? authorization = null;

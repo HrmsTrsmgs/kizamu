@@ -7,7 +7,7 @@ import {
 } from '../../../../src/frontends/react/src/presentation/timeRecorderOperationState'
 
 describe('timeRecorderOperationReducer', () => {
-  it('操作中は記録操作と再取得を停止し、成功すると再開します', () => {
+  it('記録操作の処理中は記録の変更と一覧の再取得ができず、成功後は両方を実行できます', () => {
     const busy = timeRecorderOperationReducer(initialTimeRecorderOperationState, 'operationStarted')
 
     getTimeRecorderControls(busy).should.toStrictEqual({ canChangeRecord: false, canReload: false, notice: null })
@@ -17,7 +17,7 @@ describe('timeRecorderOperationReducer', () => {
     getTimeRecorderControls(completed).should.toStrictEqual({ canChangeRecord: true, canReload: true, notice: null })
   })
 
-  it('最新状態が確認済みなら失敗通知を表示して記録操作と再取得を許可します', () => {
+  it('一覧の最新状態を確認できていれば、記録操作に失敗しても記録の変更と再取得ができ、失敗通知が残ります', () => {
     const failed = timeRecorderOperationReducer(initialTimeRecorderOperationState, 'operationFailed')
 
     getTimeRecorderControls(failed).should.toStrictEqual({ canChangeRecord: true, canReload: true, notice: 'operationFailed' })
@@ -38,7 +38,7 @@ describe('timeRecorderOperationReducer', () => {
       unconfirmed = timeRecorderOperationReducer(initialTimeRecorderOperationState, 'recordsUnconfirmed')
     })
 
-    it('操作失敗時に一覧が未確認なら再取得だけを許可し未確認の案内を優先します', () => {
+    it('記録操作に失敗して一覧も未確認なら、失敗通知より未確認の案内を優先し、再取得だけを許可します', () => {
       const failed = timeRecorderOperationReducer(unconfirmed, 'operationFailed')
 
       getTimeRecorderControls(failed).should.toStrictEqual({ canChangeRecord: false, canReload: true, notice: 'stateUnconfirmed' })

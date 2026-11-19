@@ -14,7 +14,7 @@ public sealed class HealthStatusViewModelTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task 確認した接続状態を公開する(bool 正常)
+    public async Task サーバーの接続確認が終わると接続状態に正常か失敗かが反映されます(bool 正常)
     {
         service.Response = Task.FromResult(正常);
 
@@ -24,7 +24,7 @@ public sealed class HealthStatusViewModelTests
     }
 
     [Fact]
-    public async Task 応答を待つ間は接続状態が未確定である()
+    public async Task サーバーの接続確認の応答を待つ間は接続状態が未確定です()
     {
         var 応答 = new TaskCompletionSource<bool>();
         service.Response = 応答.Task;
@@ -37,7 +37,7 @@ public sealed class HealthStatusViewModelTests
     }
 
     [Fact]
-    public async Task 接続状態を確認できない場合は失敗として扱う()
+    public async Task サーバーの接続確認で例外が発生すると接続状態は失敗になります()
     {
         service.Response = Task.FromException<bool>(new InvalidOperationException());
 

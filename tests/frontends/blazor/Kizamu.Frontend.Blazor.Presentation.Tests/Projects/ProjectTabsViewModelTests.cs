@@ -9,7 +9,7 @@ public sealed class ProjectTabsViewModelTests
     readonly ProjectTabsViewModel tested = new();
 
     [Fact]
-    public void プロジェクトを選択すると選択したプロジェクトを保持する()
+    public void プロジェクトを選ぶとそのプロジェクトがタブの選択対象になります()
     {
         var プロジェクト = new Project("プロジェクトA");
 
@@ -19,7 +19,7 @@ public sealed class ProjectTabsViewModelTests
     }
 
     [Fact]
-    public void 追加をキャンセルするとダイアログを閉じる()
+    public void プロジェクトの追加をキャンセルすると追加ダイアログが閉じます()
     {
         名前を入力した追加ダイアログを開く("プロジェクトA");
 
@@ -29,7 +29,7 @@ public sealed class ProjectTabsViewModelTests
     }
 
     [Fact]
-    public void 追加をキャンセルすると入力した名前を登録しない()
+    public void プロジェクトの追加をキャンセルすると入力した名前のプロジェクトは登録されません()
     {
         名前を入力した追加ダイアログを開く("プロジェクトA");
 
@@ -39,7 +39,7 @@ public sealed class ProjectTabsViewModelTests
     }
 
     [Fact]
-    public void 追加を開くとダイアログを表示する()
+    public void プロジェクトの追加を始めると名前を入力するダイアログが開きます()
     {
         tested.OpenProjectDialog();
 
@@ -47,7 +47,7 @@ public sealed class ProjectTabsViewModelTests
     }
 
     [Fact]
-    public void 入力した名前を登録すると一覧に追加する()
+    public void プロジェクトを登録すると入力した名前のプロジェクトが一覧に加わります()
     {
         tested.ProjectName = "プロジェクトA";
 
@@ -57,7 +57,7 @@ public sealed class ProjectTabsViewModelTests
     }
 
     [Fact]
-    public void 追加画面から登録するとダイアログを閉じる()
+    public void 追加ダイアログでプロジェクトを登録するとダイアログが閉じます()
     {
         名前を入力した追加ダイアログを開く("プロジェクトA");
 
@@ -67,7 +67,7 @@ public sealed class ProjectTabsViewModelTests
     }
 
     [Fact]
-    public void 登録後に追加を開くとプロジェクト名は空になる()
+    public void プロジェクトの登録後に追加ダイアログを開き直すと名前の入力欄は空です()
     {
         プロジェクトを登録しておく("プロジェクトA");
 

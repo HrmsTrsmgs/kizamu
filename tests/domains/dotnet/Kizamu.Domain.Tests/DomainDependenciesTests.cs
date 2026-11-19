@@ -11,20 +11,20 @@ public sealed class DomainDependenciesTests
         select name!;
 
     [Fact]
-    public void Domainは実装固有の層を参照しない()
+    public void DomainはKizamuの他のアセンブリを参照しません()
     {
         参照先.Should().NotContain(it => it.StartsWith("Kizamu.", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void DomainはHTTPを参照しない()
+    public void DomainはHTTP関連のアセンブリを参照しません()
     {
         参照先.Should().NotContain(it => it == "System.Net.Http" || it == "System.Net.Http.Json"
             || it.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void DomainはJSONを参照しない()
+    public void DomainはJSON関連のアセンブリを参照しません()
     {
         参照先.Should().NotContain(it => it == "System.Text.Json" || it == "System.Net.Http.Json");
     }

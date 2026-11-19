@@ -16,13 +16,13 @@ beforeEach(() => {
 })
 
 for (const issuer of ['https://accounts.google.com', 'accounts.google.com']) {
-  test(`有効なGoogleトークンでは更新やメール変更後も同じsubで本人を識別する (${issuer})`, async () => {
+  test(`発行者が ${issuer} の有効なGoogle IDトークンでは、メールアドレスが変わっても同じsubで本人を識別します`, async () => {
     ({ subject: await tested.verify(createToken({ issuer, email: 'before@example.test' })) }).should.deep.equal({ subject: 'google-user' })
     ;({ subject: await tested.verify(createToken({ issuer, email: 'after@example.test' })) }).should.deep.equal({ subject: 'google-user' })
   })
 }
 
-test('メールが同じでもsubが異なる利用者を区別する', async () => {
+test('Google IDトークンのメールアドレスが同じでも、subが異なれば別の利用者として識別します', async () => {
   ({ subject: await tested.verify(createToken({ subject: 'first-user' })) }).should.deep.equal({ subject: 'first-user' })
   ;({ subject: await tested.verify(createToken({ subject: 'second-user' })) }).should.deep.equal({ subject: 'second-user' })
 })
@@ -34,7 +34,7 @@ test.each([
   ['有効期限が過ぎたトークン', () => createToken({ expired: true })],
   ['subがないトークン', () => createToken({ subject: null })],
   ['JWT形式でない文字列', () => 'not-a-jwt'],
-])('%sから本人識別子を返さない', async (_, token) => {
+])('%sを検証すると、本人識別子はnullです', async (_, token) => {
   ({ subject: await tested.verify(token()) }).should.deep.equal({ subject: null })
 })
 

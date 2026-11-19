@@ -1,7 +1,7 @@
 import { test } from 'vitest'
 import { createApp } from '../../../src/backends/node/app.js'
 
-test('正常性を確認すると正常な状態が返されます', async () => {
+test('GET /api/health は HTTP 200 と status が ok の JSON を返します', async () => {
   const app = createApp()
   try {
     const response = await app.inject({ method: 'GET', url: '/api/health' })

@@ -6,7 +6,7 @@ namespace Kizamu.Frontend.Blazor.Infrastructure.Tests;
 public sealed class InfrastructureDependenciesTests
 {
     [Fact]
-    public void 通信実装は画面を参照せずPresentationとDomainに依存する()
+    public void Blazorの通信実装が参照するKizamuのアセンブリはPresentationとDomainだけです()
     {
         typeof(TimeRecordApi).Assembly.GetReferencedAssemblies()
             .Select(it => it.Name).Where(it => it is not null && it.StartsWith("Kizamu.", StringComparison.Ordinal))

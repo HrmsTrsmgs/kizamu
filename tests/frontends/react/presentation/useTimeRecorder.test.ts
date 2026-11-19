@@ -40,7 +40,7 @@ describe('useTimeRecorder', () => {
       })
     })
 
-    it('開始応答を待つ間は追加の要求を送りません', async () => {
+    it('記録の開始応答を待つ間は、追加の開始要求も終了要求も送りません', async () => {
       startTimeRecord.should.have.callCount(1)
       endTimeRecord.should.have.callCount(0)
 
@@ -50,7 +50,7 @@ describe('useTimeRecorder', () => {
       })
     })
 
-    it('開始が成功した後は終了できます', async () => {
+    it('開始要求が成功した後は、その記録の終了を要求できます', async () => {
       await act(async () => {
         recorder.response.resolve(記録)
         await operation
@@ -61,7 +61,7 @@ describe('useTimeRecorder', () => {
       endTimeRecord.should.have.callCount(1)
     })
 
-    it('開始が失敗した後はもう一度開始できます', async () => {
+    it('記録の開始に失敗し、再取得した一覧が空なら開始を再度要求できます', async () => {
       await act(async () => {
         recorder.response.reject(new Error('failed'))
         await operation.should.rejects.toThrow('failed')
@@ -87,7 +87,7 @@ describe('useTimeRecorder', () => {
       })
     })
 
-    it('終了応答を待つ間は追加の要求を送りません', async () => {
+    it('記録の終了応答を待つ間は、追加の開始要求も終了要求も送りません', async () => {
       startTimeRecord.should.have.callCount(1)
       endTimeRecord.should.have.callCount(1)
 
@@ -97,7 +97,7 @@ describe('useTimeRecorder', () => {
       })
     })
 
-    it('終了が成功した後は開始できます', async () => {
+    it('終了要求が成功した後は、新しい記録の開始を要求できます', async () => {
       await act(async () => {
         recorder.response.resolve(終了済み記録)
         await operation
@@ -108,7 +108,7 @@ describe('useTimeRecorder', () => {
       startTimeRecord.should.have.callCount(2)
     })
 
-    it('終了が失敗した後はもう一度終了できます', async () => {
+    it('記録の終了に失敗し、再取得した一覧で記録中なら終了を再度要求できます', async () => {
       await act(async () => {
         recorder.response.reject(new Error('failed'))
         await operation.should.rejects.toThrow('failed')
@@ -131,13 +131,13 @@ describe('useTimeRecorder', () => {
       await waitFor(() => getTimeRecords.should.have.callCount(1))
     })
 
-    it('呼び出し元に元の開始エラーを返します', async () => {
+    it('記録の開始に失敗して一覧を再取得できた場合、呼び出し元には開始時のエラーが届きます', async () => {
       await act(async () => {
         await expect(recorder.result.current.startTimeRecord()).rejects.toBe(開始失敗)
       })
     })
 
-    it('再取得した一覧を公開して記録中の記録を終了対象にします', async () => {
+    it('開始に失敗しても、再取得した一覧に記録中の作業があれば、その一覧を保持し、その作業を終了対象にします', async () => {
       await act(async () => {
         await expect(recorder.result.current.startTimeRecord()).rejects.toThrow()
       })
@@ -159,13 +159,13 @@ describe('useTimeRecorder', () => {
       await waitFor(() => recorder.result.current.state.should.have.property('timeRecordId', 記録ID))
     })
 
-    it('呼び出し元に元の終了エラーを返します', async () => {
+    it('記録の終了に失敗して一覧を再取得できた場合、呼び出し元には終了時のエラーが届きます', async () => {
       await act(async () => {
         await expect(recorder.result.current.endTimeRecord()).rejects.toBe(終了失敗)
       })
     })
 
-    it('再取得した終了済みの一覧を公開して終了対象を解除します', async () => {
+    it('終了に失敗しても、再取得した一覧で作業が終了済みなら、その一覧を保持し、終了対象を解除します', async () => {
       await act(async () => {
         await expect(recorder.result.current.endTimeRecord()).rejects.toThrow()
       })
@@ -285,7 +285,7 @@ describe('useTimeRecorder', () => {
       getTimeRecords.mockReturnValueOnce(初期一覧の応答.promise).mockRejectedValueOnce(new Error('一覧取得失敗'))
     })
 
-    it('開始失敗後に古い初回一覧が届いても未確認状態と操作の抑止を保ちます', async () => {
+    it('開始と再取得に失敗した後に古い初回一覧が届いても、状態は未確認のまま、開始・終了の追加要求は送りません', async () => {
       startTimeRecord.mockRejectedValueOnce(new Error('開始失敗'))
       const { result } = renderRecorder()
 
@@ -299,7 +299,7 @@ describe('useTimeRecorder', () => {
       endTimeRecord.should.have.callCount(0)
     })
 
-    it('手動の一覧取得に失敗しても待機中の初期取得にはその後の記録開始を反映します', async () => {
+    it('手動の一覧取得に失敗してから記録を開始すると、後から届いた初回一覧にその記録が加わり、終了対象になります', async () => {
       const { result } = renderRecorder()
 
       await act(async () => {
@@ -389,14 +389,14 @@ describe('useTimeRecorder', () => {
       getTimeRecords.mockResolvedValue([終了済み記録, 一覧の記録中の記録])
     })
 
-    it('初期化による一覧要求は一度だけです', async () => {
+    it('初期化時に作業記録の一覧を一度だけ要求します', async () => {
       const { result } = renderRecorder()
 
       await waitFor(() => result.current.state.records.should.have.lengthOf(2))
       getTimeRecords.should.have.callCount(1)
     })
 
-    it('取得した一覧と記録中の終了対象を公開します', async () => {
+    it('初回一覧に終了済みと記録中の作業があると、両方を一覧に載せ、記録中の作業を終了対象にします', async () => {
       const { result } = renderRecorder()
 
       await waitFor(() => result.current.state.records.should.toStrictEqual([終了済み記録, 一覧の記録中の記録]))
@@ -404,7 +404,7 @@ describe('useTimeRecorder', () => {
     })
   })
 
-  it('開始操作でサービスを呼び出して確定した開始時刻と記録を保持します', async () => {
+  it('開始要求に成功すると、応答の記録を一覧に追加し、操作欄の表示対象と終了対象にします', async () => {
     const { result } = renderRecorder()
 
     await act(() => result.current.startTimeRecord())
@@ -415,7 +415,7 @@ describe('useTimeRecorder', () => {
     })
   })
 
-  it('開始の応答前に対象を切り替えても開始元の記録中状態を更新します', async () => {
+  it('記録の開始応答を待つ間にプロジェクトを切り替えても、応答の記録は開始元のプロジェクトの終了対象になります', async () => {
     const プロジェクトA = new Project('プロジェクトA')
     const 応答 = deferred<typeof 記録>()
     startTimeRecord.mockReturnValue(応答.promise)
@@ -453,7 +453,7 @@ describe('useTimeRecorder', () => {
       })
     })
 
-    it('一覧に過去の記録と開始した記録を残し後者を終了対象に保ちます', () => {
+    it('記録開始後に古い初回一覧が届くと、過去の記録と新しい記録が一覧に残り、新しい記録が終了対象になります', () => {
       recorder.result.current.state.should.toStrictEqual({
         records: [過去の記録, 記録],
         timeRecordId: 記録ID,
@@ -473,7 +473,7 @@ describe('useTimeRecorder', () => {
     })
   })
 
-  it('操作後の再読み込みはサーバーの更新と削除を反映します', async () => {
+  it('記録開始後に一覧を読み直すと、サーバーで終了した記録を更新し、サーバーから消えた記録を一覧から除きます', async () => {
     const 過去の記録 = presentedRecord(次の記録ID, 開始時刻, 終了時刻)
     getTimeRecords.mockResolvedValue([過去の記録])
     const { result, rerender } = renderRecorder()
@@ -488,7 +488,7 @@ describe('useTimeRecorder', () => {
     result.current.state.should.have.property('timeRecordId', null)
   })
 
-  it('終了操作で現在の記録を指定して確定した終了時刻と一覧を更新します', async () => {
+  it('終了を要求すると記録中のIDが送られ、応答の終了済み記録で一覧と操作欄を更新します', async () => {
     const { result } = await renderStartedRecorder()
 
     await act(() => result.current.endTimeRecord())

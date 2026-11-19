@@ -12,21 +12,21 @@ public sealed class PresentationDependenciesTests
         select name!;
 
     [Fact]
-    public void Presentationのアプリケーション依存先はDomainだけである()
+    public void BlazorのPresentationが参照するKizamuのアセンブリはDomainだけです()
     {
         参照先.Where(it => it.StartsWith("Kizamu.", StringComparison.Ordinal))
             .Should().Equal("Kizamu.Domain");
     }
 
     [Fact]
-    public void PresentationはHTTPを参照しない()
+    public void BlazorのPresentationはHTTP通信やWebサーバー用のアセンブリを参照しません()
     {
         参照先.Should().NotContain(it => it == "System.Net.Http" || it == "System.Net.Http.Json"
             || it.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void PresentationはJSONを参照しない()
+    public void BlazorのPresentationはJSON処理用のアセンブリを参照しません()
     {
         参照先.Should().NotContain(it => it == "System.Text.Json" || it == "System.Net.Http.Json");
     }

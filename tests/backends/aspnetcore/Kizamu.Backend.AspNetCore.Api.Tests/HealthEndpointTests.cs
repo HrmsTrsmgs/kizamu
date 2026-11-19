@@ -13,7 +13,7 @@ public sealed class HealthEndpointTests(WebApplicationFactory<Program> factory)
     readonly HttpClient client = factory.CreateClient();
 
     [Fact]
-    public async Task 正常性を確認すると正常な状態が返されます()
+    public async Task 業務APIのヘルスチェックは200と状態値okを返します()
     {
         using var response = await client.GetAsync("/api/health", CancellationToken);
         var body = await response.Content.ReadFromJsonAsync<HealthResponse>(CancellationToken);

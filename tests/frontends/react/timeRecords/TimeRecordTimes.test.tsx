@@ -30,7 +30,7 @@ describe('TimeRecordTimes', () => {
     })
   })
 
-  it('小数秒が3桁を超える日時は秒や日付を繰り上げずに切り捨てます', () => {
+  it('開始・終了時刻のdatetime属性では、小数秒を3桁で切り捨てるため、秒や日付は繰り上がりません', () => {
     const 開始時刻 = '2026-08-01T23:59:59.9999999Z'
     const 終了時刻 = '2026-08-02T00:00:59.9999999Z'
 
@@ -42,7 +42,7 @@ describe('TimeRecordTimes', () => {
 })
 
 describe('formatHtmlDateTime', () => {
-  it('日付の境界で小数秒を切り捨てます', () => {
+  it('日付が変わる直前の時刻をHTML形式にすると、小数秒を3桁で切り捨てて同じ日付のまま返します', () => {
     formatHtmlDateTime(timestamp('2026-08-01T23:59:59.9999999Z').instant)
       .should.equal('2026-08-01T23:59:59.999Z')
   })

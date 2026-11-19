@@ -37,7 +37,7 @@ afterEach(async () => {
   vi.useRealTimers()
 })
 
-test.each(['GET', 'POST'] as const)('Bearer以外の認証方式では%s要求に401が返されます', async (method) => {
+test.each(['GET', 'POST'] as const)('記録APIにBasic認証で%s要求を送ると401が返されます', async (method) => {
   const response = await app.inject({
     method,
     url: method === 'GET' ? '/api/time-records' : '/api/time-records/start',
@@ -47,19 +47,19 @@ test.each(['GET', 'POST'] as const)('Bearer以外の認証方式では%s要求�
   response.statusCode.should.equal(401)
 })
 
-test('未認証で記録一覧を取得すると401が返されます', async () => {
+test('認証情報のない記録一覧の取得要求には401が返されます', async () => {
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })
 
   response.statusCode.should.equal(401)
 })
 
-test('未認証で記録を開始すると401が返されます', async () => {
+test('認証情報のない記録開始要求には401が返されます', async () => {
   const response = await postWithoutAuthorization(app, '/api/time-records/start')
 
   response.statusCode.should.equal(401)
 })
 
-test('未認証で記録を開始すると記録は追加されません', async () => {
+test('認証情報のない記録開始要求を送っても一覧には記録が追加されません', async () => {
   await postWithoutAuthorization(app, '/api/time-records/start')
 
   const records = await readTimeRecords(app)
@@ -74,20 +74,20 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
     vi.setSystemTime(終了時刻)
   })
 
-  test('未認証で記録を終了すると401が返されます', async () => {
+  test('認証情報のない記録終了要求には401が返されます', async () => {
     const response = await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
 
     response.statusCode.should.equal(401)
   })
 
-  test('未認証で記録を終了すると記録は変更されません', async () => {
+  test('認証情報のない記録終了要求を送っても一覧の記録は開始時のままです', async () => {
     await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
 
     const records = await readTimeRecords(app)
     records.should.deep.equal([startedRecord])
   })
 
-  test('記録を終了すると同じ識別子と元の開始時刻とサーバーの終了時刻が返されます', async () => {
+  test('記録を終了すると、元の識別子と開始時刻が保たれ、サーバーの現在時刻が終了時刻として返されます', async () => {
     const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`)
 
     response.statusCode.should.equal(200)
@@ -134,7 +134,7 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
   )
 
   test.each(同一オリジンを示さないヘッダー値)(
-    'Sec-Fetch-Siteが同一オリジンを示さない終了要求では記録が終了されません（%s）',
+    'Sec-Fetch-Siteが同一オリジンを示さない終了要求（%s）を送っても、対象の記録は記録中のままです',
     async (secFetchSite) => {
       await postWithFetchSite(app, `/api/time-records/${startedRecord.id}/end`, secFetchSite)
 
@@ -144,7 +144,7 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
   )
 })
 
-describe('first-user が記録を開始して終了時刻まで進めたとき', () => {
+describe('別の利用者が開始した記録があるとき', () => {
   let startedRecord: TimeRecordResponse
 
   beforeEach(async () => {
@@ -152,13 +152,13 @@ describe('first-user が記録を開始して終了時刻まで進めたとき',
     vi.setSystemTime(終了時刻)
   })
 
-  test('他の利用者の記録を終了すると404が返されます', async () => {
+  test('他の利用者の記録の終了を要求すると404が返されます', async () => {
     const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
 
     response.statusCode.should.equal(404)
   })
 
-  test('他の利用者の記録を終了すると所有者の記録は変更されません', async () => {
+  test('他の利用者が終了を要求しても、所有者の一覧には元の記録が残ります', async () => {
     await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
 
     const records = await readTimeRecords(app, 'first-user')
@@ -166,7 +166,7 @@ describe('first-user が記録を開始して終了時刻まで進めたとき',
   })
 })
 
-test('二人が開始した記録の一覧にはそれぞれ本人の記録だけが返されます', async () => {
+test('二人がそれぞれ記録を開始すると、各利用者の一覧には本人の記録だけが含まれます', async () => {
   const firstRecord = await prepareStartedRecord(app, 'first-user')
   const secondRecord = await prepareStartedRecord(app, 'second-user')
   const firstRecords = await readTimeRecords(app, 'first-user')
@@ -175,7 +175,7 @@ test('二人が開始した記録の一覧にはそれぞれ本人の記録だ�
   secondRecords.should.deep.equal([secondRecord])
 })
 
-test('記録を開始すると空でないGUIDとサーバーの開始時刻があり終了時刻がない記録が返されます', async () => {
+test('記録を開始すると、空でないGUIDとサーバーの現在時刻を持ち、終了時刻はnullの記録がHTTP 201で返されます', async () => {
   const response = await postFromSameOrigin(app, '/api/time-records/start')
 
   response.statusCode.should.equal(201)
@@ -187,7 +187,7 @@ test('記録を開始すると空でないGUIDとサーバーの開始時刻が�
   startedRecord.should.have.property('endedAt', null)
 })
 
-test('まだ開始していないときに一覧を取得すると空の配列が返されます', async () => {
+test('まだ記録を開始していない利用者が一覧を取得すると空の配列が返されます', async () => {
   const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
 
   response.statusCode.should.equal(200)
@@ -195,7 +195,7 @@ test('まだ開始していないときに一覧を取得すると空の配列�
   content.should.have.property('body').that.deep.equal([])
 })
 
-test('別のアプリで開始した記録は新しく生成したアプリの一覧には含まれません', async () => {
+test('同じ利用者でも、別に起動したアプリの一覧には元のアプリで開始した記録は含まれません', async () => {
   const startResponse = await postFromSameOrigin(app, '/api/time-records/start')
   startResponse.statusCode.should.equal(201)
   const independentApp = createTestApp()

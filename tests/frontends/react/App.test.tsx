@@ -28,13 +28,13 @@ describe('未ログインのApp', () => {
       should.not.exist(screen.queryByRole('button', { name: 'Googleでログイン' }))
     })
 
-    it('Googleログインで取得したトークンを記録サービスの生成に渡します', async () => {
+    it('Googleログインで取得したIDトークンを使って記録サービスを作成します', async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
 
       await waitFor(() => createTimeRecords.should.have.been.calledWith('google-id-token'))
     })
 
-    it('ログアウトボタンをログインボタンと同じ場所に表示します', async () => {
+    it('Googleログインに成功すると、ログインボタンがあった場所にログアウトボタンが表示されます', async () => {
       const login = screen.getByRole('button', { name: 'Googleでログイン' })
       const loginPlace = login.parentElement
 
@@ -68,7 +68,7 @@ describe('未ログインのApp', () => {
     })
   })
 
-  it('Googleログインを表示し記録画面を表示しません', () => {
+  it('ログイン前の画面にはGoogleのログインボタンが表示され、記録の開始ボタンは表示されません', () => {
     render(<App health={health} timeRecords={createTimeRecordServiceStub()} />)
 
     screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
@@ -76,7 +76,7 @@ describe('未ログインのApp', () => {
   })
 })
 
-describe('App', () => {
+describe('ログイン済みのApp', () => {
   beforeEach(() => {
     render(<App isAuthenticated health={health} timeRecords={createTimeRecordServiceStub()} />)
   })
@@ -119,7 +119,7 @@ describe('App', () => {
     should.not.exist(screen.queryByRole('dialog', { name: 'プロジェクトを追加' }))
   })
 
-  it('初期状態では未指定を選択中として表示します', () => {
+  it('初期表示ではプロジェクトの「未指定」タブが選択されています', () => {
     within(screen.getByRole('tablist', { name: 'プロジェクト' })).getByText('未指定').should.toHaveAttribute('aria-selected', 'true')
   })
 
@@ -144,7 +144,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'プロジェクトA', level: 2 }).should.toBeInTheDocument()
     })
 
-    it('タブを切り替えて戻ると記録中の対象には終了操作を表示します', async () => {
+    it('別のプロジェクトから記録中のタブに戻ると、記録の終了ボタンが表示されます', async () => {
       プロジェクトを登録する('プロジェクトB')
       fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
       fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))

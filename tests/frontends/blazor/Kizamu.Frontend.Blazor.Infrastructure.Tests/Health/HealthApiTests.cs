@@ -19,7 +19,7 @@ public sealed class HealthApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 正常性確認APIへGETします()
+    public async Task サーバーの接続確認では正常性確認APIへGET要求を送ります()
     {
         await tested.CheckHealthAsync();
 
@@ -27,13 +27,13 @@ public sealed class HealthApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 正常な応答ではtrueを返します()
+    public async Task 正常性確認APIが成功し本文のstatusがokなら接続確認はtrueを返します()
     {
         (await tested.CheckHealthAsync()).Should().BeTrue();
     }
 
     [Fact]
-    public async Task 正常でないHTTP応答ではfalseを返します()
+    public async Task 正常性確認APIがHTTPエラーを返すと接続確認はfalseを返します()
     {
         handler.Respond = it => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
 
@@ -44,7 +44,7 @@ public sealed class HealthApiTests : IDisposable
     [InlineData("{}")]
     [InlineData("{\"status\":\"error\"}")]
     [InlineData("null")]
-    public async Task 正常でない応答内容ではfalseを返します(string json)
+    public async Task 正常性確認APIが成功しても本文のstatusがokでなければ接続確認はfalseを返します(string json)
     {
         handler.Respond = it => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json) });
 

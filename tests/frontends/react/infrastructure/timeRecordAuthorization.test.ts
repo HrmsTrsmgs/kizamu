@@ -17,7 +17,7 @@ describe('記録APIの認証', () => {
     ['一覧', '/api/time-records', 'GET'],
     ['開始', '/api/time-records/start', 'POST'],
     ['終了', `/api/time-records/${記録ID}/end`, 'POST'],
-  ])('%s要求へ利用可能な認証トークンを送ります', async (operation, path, method) => {
+  ])('記録の%s要求では、指定したIDトークンをAuthorizationヘッダーにBearer形式で送ります', async (operation, path, method) => {
     fetchMock.mockImplementation(async () => Response.json(operation === '一覧'
       ? []
       : { id: 記録ID, startedAt: '2026-08-01T09:00:00Z', endedAt: null }))

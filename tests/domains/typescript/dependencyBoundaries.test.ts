@@ -4,7 +4,7 @@ import { beforeAll, describe, it } from 'vitest'
 
 const lint = new ESLint({ cwd: fileURLToPath(new URL('../../../src/domains/typescript', import.meta.url)) })
 
-describe('共有Domainの依存境界', () => {
+describe('共有Domainに適用するESLintの依存制約', () => {
   beforeAll(async () => {
     await lint.lintText('export {}', { filePath: 'example.ts' })
   }, 30_000)
@@ -57,7 +57,7 @@ describe('共有Domainの依存境界', () => {
     rules.filter(rule => rule?.startsWith('no-restricted')).should.deep.equal([])
   })
 
-  it('既存の日時ライブラリの参照を許可します', async () => {
+  it('共有Domainから日時ライブラリtemporal-polyfillの型を参照できます', async () => {
     const rules = await reportedRules("export type { Temporal } from 'temporal-polyfill'")
 
     rules.filter(rule => rule?.startsWith('no-restricted')).should.deep.equal([])

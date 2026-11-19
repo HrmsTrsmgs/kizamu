@@ -24,7 +24,7 @@ public sealed class BlazorHostingTests(WebApplicationFactory<global::Program> fa
     [Theory]
     [InlineData("/app.css", "text/css")]
     [InlineData("/_framework/blazor.webassembly.js", "text/javascript")]
-    public async Task Blazor画面に必要な静的ファイルを配信します(string path, string mediaType)
+    public async Task Blazor画面のCSSと起動スクリプトをそれぞれのメディアタイプで配信します(string path, string mediaType)
     {
         using var response = await client.GetAsync(path, CancellationToken);
 

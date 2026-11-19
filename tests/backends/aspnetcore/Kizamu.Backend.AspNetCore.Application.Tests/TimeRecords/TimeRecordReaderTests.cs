@@ -22,13 +22,13 @@ public sealed class TimeRecordReaderTests
     }
 
     [Fact]
-    public void 保存された記録がなければ空の一覧を返す()
+    public void 保存した記録がなければ記録一覧は空です()
     {
         tested.Execute().Should().BeEmpty();
     }
 
     [Fact]
-    public void 保存された順に記録中と終了済みの記録の識別子と時刻を返す()
+    public void 記録一覧では記録中と終了済みの各記録の識別子と時刻を保存順に取得できます()
     {
         記録中と終了済みの記録を保存する(次の開始時刻.AddHours(1));
 
@@ -38,7 +38,7 @@ public sealed class TimeRecordReaderTests
     }
 
     [Fact]
-    public void 一覧の各列挙開始前に追加された記録を返す()
+    public void 同じ記録一覧を列挙するたびにその時点までに追加した記録を取得できます()
     {
         var 一覧 = tested.Execute();
         state.Add(最初の記録);
@@ -53,7 +53,7 @@ public sealed class TimeRecordReaderTests
     }
 
     [Fact]
-    public void 一覧の列挙中に記録を追加しても列挙を完了できる()
+    public void 記録一覧の列挙中に追加した記録はその回の列挙に含まれません()
     {
         state.Add(最初の記録);
         var 一覧 = tested.Execute();

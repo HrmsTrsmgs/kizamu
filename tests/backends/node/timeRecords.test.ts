@@ -34,7 +34,7 @@ beforeEach(() => {
   })
 })
 
-test('開始するたびに生成された識別子と現在時刻で開始した記録を返します', () => {
+test('開始するたびに新しい識別子が発行され、現在時刻を開始時刻とする記録が返されます', () => {
   const first = tested.start()
   const second = tested.start()
 
@@ -55,7 +55,7 @@ describe('二件の記録を開始したとき', () => {
     tested.list().should.toStrictEqual([first, second])
   })
 
-  test('複数の記録があるときは指定した記録の終了結果を返します', () => {
+  test('複数の記録のうち一件を指定して終了すると、現在時刻を終了時刻とするその記録が返されます', () => {
     now = 終了時刻
 
     const ended = tested.end(first.id)
