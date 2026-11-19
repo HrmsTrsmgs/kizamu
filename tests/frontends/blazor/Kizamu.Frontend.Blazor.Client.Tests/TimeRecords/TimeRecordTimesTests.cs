@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Client.TimeRecords;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
@@ -53,8 +54,7 @@ public sealed class TimeRecordTimesTests : IDisposable
         var 開始時刻 = DateTimeOffset.Parse("2026-08-01T23:59:59.9999999+09:00");
         var 終了時刻 = DateTimeOffset.Parse("2026-08-02T00:00:59.9999999+09:00");
         var tested = context.Render<TimeRecordTimes>(it => it
-            .Add(it => it.StartedAt, 開始時刻)
-            .Add(it => it.EndedAt, 終了時刻));
+            .Add(it => it.Record, new TimeRecord(Guid.Empty, 開始時刻, 終了時刻)));
 
         tested.FindAll("time").Select(it => it.GetAttribute("datetime")).Should().Equal(
             "2026-08-01T23:59:59.999+09:00", "2026-08-02T00:00:59.999+09:00");
@@ -71,6 +71,19 @@ public sealed class TimeRecordTimesTests : IDisposable
     }
 
     [Fact]
+    public void 終了済みの記録を表示するときは時計を読みません()
+    {
+        context.Services.AddSingleton<TimeProvider>(new 読み取り禁止の時計());
+
+        終了済みの表示.Find(".time-record-duration-value").TextContent.Should().Be("1時間30分");
+    }
+
+    sealed class 読み取り禁止の時計 : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => throw new InvalidOperationException("終了済みの記録には現在時刻を使いません。");
+    }
+
+    [Fact]
     public async Task 終了済みの作業時間は現在時刻が進んでも変わりません()
     {
         await 終了済みの表示.InvokeAsync(() => clock.Advance(TimeSpan.FromHours(1)));
@@ -82,7 +95,7 @@ public sealed class TimeRecordTimesTests : IDisposable
     public async Task 記録を終了すると定期的な再描画を停止します()
     {
         var tested = 記録中の表示;
-        tested.Render(it => it.Add(it => it.EndedAt, 終了時刻));
+        tested.Render(it => it.Add(it => it.Record, tested.Instance.Record.End(終了時刻)));
         var 終了後の描画回数 = tested.RenderCount;
 
         await tested.InvokeAsync(() => clock.Advance(TimeSpan.FromSeconds(1)));
@@ -103,8 +116,7 @@ public sealed class TimeRecordTimesTests : IDisposable
     public void 操作欄にだけ時刻のアクセシブルな名前を付けます(bool 操作欄)
     {
         var tested = context.Render<TimeRecordTimes>(it => it
-            .Add(it => it.StartedAt, 開始時刻)
-            .Add(it => it.EndedAt, 終了時刻)
+            .Add(it => it.Record, new TimeRecord(Guid.Empty, 開始時刻, 終了時刻))
             .Add(it => it.Labelled, 操作欄));
 
         tested.FindAll("time[aria-label]").Should().HaveCount(操作欄 ? 2 : 0);
@@ -112,8 +124,7 @@ public sealed class TimeRecordTimesTests : IDisposable
 
     IRenderedComponent<TimeRecordTimes> 表示する(DateTimeOffset? 終了時刻) =>
         context.Render<TimeRecordTimes>(it => it
-            .Add(it => it.StartedAt, 開始時刻)
-            .Add(it => it.EndedAt, 終了時刻));
+            .Add(it => it.Record, new TimeRecord(Guid.Empty, 開始時刻, 終了時刻)));
 
     public void Dispose() => context.Dispose();
 }

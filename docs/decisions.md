@@ -58,7 +58,8 @@
 * 採らなかった案：画面でDTOをそのまま状態として保持し続ける案は不採用。INPC・INCCの採用やモデルの同一性管理は、この修正で確定したことには含めません。
 * TypeScriptの共有（2026-11-06）：`src/domains/typescript/` のモデルと必要な処理をNodeとReactの両方から利用します。React内だけにDomainを置く今回の整理は、共有化まで含めるよう開発者が変更を指示しました。C#側と同じく、実行環境に依存しない業務モデルを共用するためです。HTMLの `datetime` 属性の元表記を保つ情報はReact側へ分け、HTTP DTOやHTML固有の情報を共有Domainへ持ち込みません。
 * 共有化に伴う依存（2026-11-06承認）：既存の `temporal-polyfill 1.0.2`（MIT）を共有DomainとNodeの実行時にも利用します。日時APIを自作せず既存のライブラリを共通利用するための追加先変更です。Node配布物とlockfileの依存構成が変わりますが、新しい種類・バージョンの外部ライブラリは増やしません。
-* TypeScriptモデルの形式（2026-11-06指示）：共有 `TimeRecord` は不変クラスとし、記録のデータと開始・終了操作を一つにまとめます。終了操作は元の記録を変更せず新しいインスタンスを返します。現在すでにある業務概念をまとめ、C#側との対応を追いやすくするためです。先行した「Readonlyの型＋独立した開始・終了関数」も有効な形式ですが、今回はC#との対応を優先して変更します。Reactの関数コンポーネント推奨を、Domainのクラスまで避ける理由とはしません。DTOは型定義、画面状態はフック／Reducer、通信サービスはオブジェクト、独立した期間計算は純粋関数のまま維持します。
+* TypeScriptモデルの形式（2026-11-06指示）：共有 `TimeRecord` は不変クラスとし、記録のデータと開始・終了操作を一つにまとめます。終了操作は元の記録を変更せず新しいインスタンスを返します。現在すでにある業務概念をまとめ、C#側との対応を追いやすくするためです。先行した「Readonlyの型＋独立した開始・終了関数」も有効な形式ですが、今回はC#との対応を優先して変更します。Reactの関数コンポーネント推奨を、Domainのクラスまで避ける理由とはしません。DTOは型定義、画面状態はフック／Reducer、通信サービスはオブジェクトとし、この時点では独立した期間計算を純粋関数のまま維持しました。
+* 経過時間（2026-11-20変更）：終了済みなら終了時刻、記録中なら指定した基準時刻までを計る判断は記録自身に属するため、C#・TypeScriptとも `TimeRecord` の `DurationAt`／`durationAt` にまとめます。現在時刻の取得と画面への書式設定は表示側が担います。
 * 根拠：開発者の修正指示、`d2adae0`、[TimeRecordApiTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecordTests](../tests/domains/dotnet/Kizamu.Domain.Tests/TimeRecordTests.cs)。
 
 ## D004：Clockifyへは終了済み記録だけを送る

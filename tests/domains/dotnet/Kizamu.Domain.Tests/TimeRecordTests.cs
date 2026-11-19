@@ -46,6 +46,18 @@ public sealed class TimeRecordTests
     }
 
     [Fact]
+    public void 記録中の経過時間は開始から指定した時刻までです()
+    {
+        tested.DurationAt(開始時刻.AddHours(26).AddMinutes(15)).Should().Be(new TimeSpan(26, 15, 0));
+    }
+
+    [Fact]
+    public void 終了済みの経過時間は指定した時刻にかかわらず開始から終了までです()
+    {
+        tested.End(終了時刻).DurationAt(終了時刻.AddDays(1)).Should().Be(TimeSpan.FromMinutes(90));
+    }
+
+    [Fact]
     public void 記録を終了すると元の記録は開始状態のまま終了済みの記録が返ります()
     {
         var 終了した記録 = tested.End(終了時刻);

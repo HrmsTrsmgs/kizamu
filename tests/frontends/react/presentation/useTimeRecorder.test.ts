@@ -411,7 +411,7 @@ describe('useTimeRecorder', () => {
 
     startTimeRecord.should.have.callCount(1)
     result.current.state.should.toStrictEqual({
-      records: [記録], timeRecordId: 記録ID, startedAt: 開始時刻, endedAt: null,
+      records: [記録], timeRecordId: 記録ID, displayedRecord: 記録,
     })
   })
 
@@ -457,8 +457,7 @@ describe('useTimeRecorder', () => {
       recorder.result.current.state.should.toStrictEqual({
         records: [過去の記録, 記録],
         timeRecordId: 記録ID,
-        startedAt: 開始時刻,
-        endedAt: null,
+        displayedRecord: 記録,
       })
     })
 
@@ -469,8 +468,7 @@ describe('useTimeRecorder', () => {
       recorder.result.current.state.should.toStrictEqual({
         records: [過去の記録, 終了済み記録],
         timeRecordId: null,
-        startedAt: 開始時刻,
-        endedAt: 終了時刻,
+        displayedRecord: 終了済み記録,
       })
     })
   })
@@ -497,7 +495,7 @@ describe('useTimeRecorder', () => {
 
     endTimeRecord.should.have.been.calledOnceWith(記録ID)
     result.current.state.should.toStrictEqual({
-      records: [終了済み記録], timeRecordId: null, startedAt: 開始時刻, endedAt: 終了時刻,
+      records: [終了済み記録], timeRecordId: null, displayedRecord: 終了済み記録,
     })
   })
 

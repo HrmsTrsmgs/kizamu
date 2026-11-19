@@ -41,6 +41,11 @@ public sealed record TimeRecord
     public static TimeRecord Start(DateTimeOffset startedAt) =>
         new(Guid.NewGuid(), startedAt, null);
 
+    /// <summary>開始から終了までの経過時間を返します。記録中は指定した時刻までを計ります。</summary>
+    /// <param name="asOf">記録中の経過時間を求める基準時刻。</param>
+    /// <returns>作業記録の経過時間。</returns>
+    public TimeSpan DurationAt(DateTimeOffset asOf) => (EndedAt ?? asOf) - StartedAt;
+
     /// <summary>
     /// 元の作業記録を保持し、指定した時刻で終了した記録を生成します。
     /// </summary>

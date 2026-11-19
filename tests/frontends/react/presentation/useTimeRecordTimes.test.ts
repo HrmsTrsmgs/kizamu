@@ -1,11 +1,13 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { useTimeRecordTimes } from '../../../../src/frontends/react/src/presentation/useTimeRecordTimes'
-import type { RecordTimestamp } from '../../../../src/frontends/react/src/presentation/timeRecordPresentation'
+import { TimeRecord } from 'kizamu-domain-typescript'
+import { Temporal } from 'temporal-polyfill'
 import { timestamp } from '../test/timeRecords'
 
 const 開始時刻 = timestamp('2026-08-01T09:00:00Z')
 const 終了時刻 = timestamp('2026-08-01T10:30:00Z')
+const 記録 = TimeRecord.start('記録', 開始時刻.instant)
 const 開始から1時間31分後の1秒前 = '2026-08-01T10:30:59Z'
 const 開始から2時間15分後の終了時刻 = '2026-08-01T11:15:00Z'
 
@@ -14,10 +16,13 @@ describe('useTimeRecordTimes', () => {
     vi.useFakeTimers()
     vi.setSystemTime(終了時刻.isoText)
   })
-  afterEach(() => vi.useRealTimers())
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.useRealTimers()
+  })
 
   it('開始と終了の日時点を日本時間の分単位に整形します', () => {
-    const { result } = renderHook(() => useTimeRecordTimes(開始時刻, 終了時刻))
+    const { result } = renderHook(() => useTimeRecordTimes(記録.end(終了時刻.instant)))
 
     result.current.startedAtText.should.equal('2026/08/01 18:00')
     result.current.should.have.property('endedAtText', '2026/08/01 19:30')
@@ -27,7 +32,10 @@ describe('useTimeRecordTimes', () => {
     { endedAt: 終了時刻, expectedDuration: '1時間30分' },
     { endedAt: timestamp(開始から2時間15分後の終了時刻), expectedDuration: '2時間15分' },
   ])('終了済み記録では終了時刻までを作業時間とします: $expectedDuration', ({ endedAt, expectedDuration }) => {
-    const { result } = renderHook(() => useTimeRecordTimes(開始時刻, endedAt))
+    const clock = vi.spyOn(Temporal.Now, 'instant')
+    const { result } = renderHook(() => useTimeRecordTimes(記録.end(endedAt.instant)))
+
+    clock.should.have.callCount(0)
 
     result.current.durationText.should.equal(expectedDuration)
   })
@@ -68,7 +76,7 @@ describe('useTimeRecordTimes', () => {
     })
 
     it('終了した記録の時間は時刻が進んでも変わりません', async () => {
-      view.rerender({ endedAt: 終了時刻 })
+      view.rerender(記録.end(終了時刻.instant))
 
       await act(() => vi.advanceTimersByTimeAsync(60_000))
 
@@ -76,7 +84,7 @@ describe('useTimeRecordTimes', () => {
     })
 
     it('記録が終了したら時刻の更新タイマーを解除します', async () => {
-      view.rerender({ endedAt: 終了時刻 })
+      view.rerender(記録.end(終了時刻.instant))
       await act(() => vi.advanceTimersByTimeAsync(60_000))
 
       vi.getTimerCount().should.equal(0)
@@ -93,7 +101,7 @@ describe('useTimeRecordTimes', () => {
 
   it('作業時間が次の整数分になると表示用の時間を更新します', async () => {
     vi.setSystemTime(開始から1時間31分後の1秒前)
-    const { result } = renderHook(() => useTimeRecordTimes(開始時刻, null))
+    const { result } = renderHook(() => useTimeRecordTimes(記録))
     result.current.durationText.should.equal('1時間30分')
 
     await act(() => vi.advanceTimersByTimeAsync(1_000))
@@ -103,6 +111,5 @@ describe('useTimeRecordTimes', () => {
 })
 
 function 記録中の時刻を表示する() {
-  const initialProps: { endedAt: RecordTimestamp | null } = { endedAt: null }
-  return renderHook(({ endedAt }) => useTimeRecordTimes(開始時刻, endedAt), { initialProps })
+  return renderHook(useTimeRecordTimes, { initialProps: 記録 })
 }

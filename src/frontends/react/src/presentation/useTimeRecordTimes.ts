@@ -1,7 +1,6 @@
 import { useEffect, useReducer } from 'react'
 import { Temporal } from 'temporal-polyfill'
-import type { RecordTimestamp } from './timeRecordPresentation'
-import { calculateTimeRecordDuration } from 'kizamu-domain-typescript'
+import type { TimeRecord } from 'kizamu-domain-typescript'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('ja-JP', {
   timeZone: 'Asia/Tokyo',
@@ -13,7 +12,8 @@ const dateTimeFormatter = new Intl.DateTimeFormat('ja-JP', {
   hourCycle: 'h23',
 })
 
-export function useTimeRecordTimes(startedAt: RecordTimestamp, endedAt: RecordTimestamp | null) {
+export function useTimeRecordTimes(record: TimeRecord) {
+  const { startedAt, endedAt } = record
   const [, updateCurrentTime] = useReducer(count => count + 1, 0)
 
   useEffect(() => {
@@ -22,14 +22,11 @@ export function useTimeRecordTimes(startedAt: RecordTimestamp, endedAt: RecordTi
     return () => clearInterval(intervalId)
   }, [endedAt])
 
-  const duration = calculateTimeRecordDuration(
-    startedAt.instant,
-    endedAt === null ? Temporal.Now.instant() : endedAt.instant,
-  )
+  const duration = record.durationAt(endedAt ?? Temporal.Now.instant())
 
   return {
-    startedAtText: dateTimeFormatter.format(startedAt.instant.epochMilliseconds),
-    endedAtText: endedAt === null ? null : dateTimeFormatter.format(endedAt.instant.epochMilliseconds),
+    startedAtText: dateTimeFormatter.format(startedAt.epochMilliseconds),
+    endedAtText: endedAt === null ? null : dateTimeFormatter.format(endedAt.epochMilliseconds),
     durationText: `${duration.hours}時間${duration.minutes}分`,
   }
 }

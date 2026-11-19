@@ -49,6 +49,20 @@ describe('timeRecorderReducer', () => {
       tested.records.should.deep.equal([記録])
     })
 
+    it('AとBで順に開始してAに戻って終了すると操作欄にAの開始と終了を表示します', () => {
+      const プロジェクトB = new Project('プロジェクトB')
+      const Bの記録 = presentedRecord('Bの記録', timestamp('2026-08-01T10:00:00Z'))
+      let state = timeRecorderReducer(initialTimeRecorderState, { type: 'projectSelected', project: プロジェクトA })
+      state = timeRecorderReducer(state, { type: 'recordStarted', record: 記録 })
+      state = timeRecorderReducer(state, { type: 'projectSelected', project: プロジェクトB })
+      state = timeRecorderReducer(state, { type: 'recordStarted', record: Bの記録 })
+      state = timeRecorderReducer(state, { type: 'projectSelected', project: プロジェクトA })
+
+      state = timeRecorderReducer(state, { type: 'recordEnded', record: 終了済み記録 })
+
+      state.should.have.property('displayedRecord', 終了済み記録)
+    })
+
     it('未指定とプロジェクトを切り替えて戻ると元の記録中状態を保持します', () => {
       let tested = timeRecorderReducer(initialTimeRecorderState, {
         type: 'recordStarted',
@@ -207,7 +221,7 @@ describe('timeRecorderReducer', () => {
   it('記録を開始すると一覧と現在の記録を更新して終了時刻を消去します', () => {
     const state: TimeRecorderState = {
       ...initialTimeRecorderState,
-      endedAt: 終了時刻,
+      displayedRecord: 終了済み記録,
     }
 
     const result = timeRecorderReducer(state, {
@@ -218,8 +232,7 @@ describe('timeRecorderReducer', () => {
     result.should.toStrictEqual({
       records: [記録],
       timeRecordId: 記録ID,
-      startedAt: 開始時刻,
-      endedAt: null,
+      displayedRecord: 記録,
     })
   })
 
@@ -230,8 +243,7 @@ describe('timeRecorderReducer', () => {
     const 前回を終了した状態 = {
       ...initialTimeRecorderState,
       records: [終了済み記録],
-      startedAt: 開始時刻,
-      endedAt: 終了時刻,
+      displayedRecord: 終了済み記録,
     }
 
     const state = timeRecorderReducer(前回を終了した状態, { type: 'recordStarted', record: 次の記録 })
@@ -239,8 +251,7 @@ describe('timeRecorderReducer', () => {
     state.should.toStrictEqual({
       records: [終了済み記録, 次の記録],
       timeRecordId: 次の記録ID,
-      startedAt: 次の開始時刻,
-      endedAt: null,
+      displayedRecord: 次の記録,
     })
   })
 
@@ -249,8 +260,7 @@ describe('timeRecorderReducer', () => {
       ...initialTimeRecorderState,
       selectedProject: new Project('プロジェクトA'),
       records: [終了済み記録],
-      startedAt: 開始時刻,
-      endedAt: 終了時刻,
+      displayedRecord: 終了済み記録,
     }
     const 未指定の記録 = presentedRecord('未指定の記録', timestamp('2026-08-01T11:00:00Z'))
 
@@ -265,8 +275,7 @@ describe('timeRecorderReducer', () => {
 
       state.should.have.property('selectedProject', 表示中の状態.selectedProject)
       state.should.have.property('timeRecordId', null)
-      state.should.have.property('startedAt', 開始時刻)
-      state.should.have.property('endedAt', 終了時刻)
+      state.should.have.property('displayedRecord', 終了済み記録)
 
       const 未指定の状態 = timeRecorderReducer(state, { type: 'projectSelected', project: undefined })
       未指定の状態.should.have.property('timeRecordId', '未指定の記録')
@@ -277,8 +286,7 @@ describe('timeRecorderReducer', () => {
     const state: TimeRecorderState = {
       records: [記録],
       timeRecordId: 記録ID,
-      startedAt: 開始時刻,
-      endedAt: null,
+      displayedRecord: 記録,
     }
 
     const result = timeRecorderReducer(state, {
@@ -289,8 +297,7 @@ describe('timeRecorderReducer', () => {
     result.should.toStrictEqual({
       records: [終了済み記録],
       timeRecordId: null,
-      startedAt: 開始時刻,
-      endedAt: 終了時刻,
+      displayedRecord: 終了済み記録,
     })
   })
 })

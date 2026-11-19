@@ -29,7 +29,7 @@
             }
             @if (ViewModel.DisplayedRecord is { } displayed)
             {
-                <TimeRecordTimes StartedAt="displayed.StartedAt" EndedAt="displayed.EndedAt" Labelled="true" />
+                <TimeRecordTimes Record="displayed" Labelled="true" />
             }
         </div>
     </section>
@@ -43,7 +43,7 @@
             {
                 <li @key="record.Id">
                     <span class="record-status @(record.EndedAt is null ? "is-active" : "")" aria-hidden="true"></span>
-                    <TimeRecordTimes StartedAt="record.StartedAt" EndedAt="record.EndedAt" />
+                    <TimeRecordTimes Record="record" />
                 </li>
             }
         </ul>

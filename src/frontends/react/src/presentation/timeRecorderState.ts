@@ -1,13 +1,12 @@
 import type { Project } from 'kizamu-domain-typescript'
-import { getTimeRecordTimestamps, type RecordTimestamp, type TimeRecordPresentation } from './timeRecordPresentation'
+import type { TimeRecordPresentation } from './timeRecordPresentation'
 
 export type TimeRecorderState = Readonly<{
   selectedProject?: Project
   projectTimeRecordIds?: ReadonlyMap<Project | undefined, string | null>
   records: readonly TimeRecordPresentation[]
   timeRecordId: string | null
-  startedAt: RecordTimestamp | null
-  endedAt: RecordTimestamp | null
+  displayedRecord: TimeRecordPresentation | null
 }>
 
 export type TimeRecorderAction =
@@ -19,8 +18,7 @@ export type TimeRecorderAction =
 export const initialTimeRecorderState: TimeRecorderState = {
   records: [],
   timeRecordId: null,
-  startedAt: null,
-  endedAt: null,
+  displayedRecord: null,
 }
 
 export function timeRecorderReducer(
@@ -57,8 +55,7 @@ export function timeRecorderReducer(
         ...state,
         records: [...state.records, action.record],
         timeRecordId: action.record.record.id,
-        startedAt: getTimeRecordTimestamps(action.record).startedAt,
-        endedAt: null,
+        displayedRecord: action.record,
       }
     case 'recordEnded':
       return {
@@ -66,7 +63,7 @@ export function timeRecorderReducer(
         records: state.records.map(record =>
           record.record.id === action.record.record.id ? action.record : record),
         timeRecordId: null,
-        endedAt: getTimeRecordTimestamps(action.record).endedAt,
+        displayedRecord: state.displayedRecord === null ? null : action.record,
       }
   }
 }

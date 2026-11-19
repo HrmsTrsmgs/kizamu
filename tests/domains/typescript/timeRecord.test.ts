@@ -15,6 +15,12 @@ describe('TimeRecord', () => {
       record = TimeRecord.start(記録ID, 開始時刻)
     })
 
+    it('記録中の経過時間は開始から指定した日時点までの通算時間を返します', () => {
+      const 翌日の基準時刻 = 開始時刻.add({ hours: 26, minutes: 15 })
+
+      record.durationAt(翌日の基準時刻).should.deep.equal(Temporal.Duration.from({ hours: 26, minutes: 15 }))
+    })
+
     it('指定した識別子と日時点で終了していない記録を開始します', () => {
       record.should.toStrictEqual(new TimeRecord(記録ID, 開始時刻, null))
     })
@@ -38,6 +44,10 @@ describe('TimeRecord', () => {
 
     beforeEach(() => {
       record = new TimeRecord(記録ID, 開始時刻, 終了時刻)
+    })
+
+    it('終了済みの経過時間は指定した日時点にかかわらず開始から終了までです', () => {
+      record.durationAt(次の終了時刻).should.deep.equal(Temporal.Duration.from({ hours: 1, minutes: 30 }))
     })
 
     it('既存の識別子と開始時刻と終了時刻から記録を復元できます', () => {

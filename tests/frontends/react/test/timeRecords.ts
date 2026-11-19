@@ -1,10 +1,12 @@
 import { Temporal } from 'temporal-polyfill'
 import { TimeRecord } from 'kizamu-domain-typescript'
-import type { RecordTimestamp, TimeRecordPresentation } from '../../../../src/frontends/react/src/presentation/timeRecordPresentation'
+import type { TimeRecordPresentation } from '../../../../src/frontends/react/src/presentation/timeRecordPresentation'
 
-export function timestamp(isoText: string): RecordTimestamp {
+export function timestamp(isoText: string) {
   return { instant: Temporal.Instant.from(isoText), isoText }
 }
+
+type RecordTimestamp = ReturnType<typeof timestamp>
 
 export function presentedRecord(id: string, startedAt: RecordTimestamp, endedAt: RecordTimestamp | null = null): TimeRecordPresentation {
   return {

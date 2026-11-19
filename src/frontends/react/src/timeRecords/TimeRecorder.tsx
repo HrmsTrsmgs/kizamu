@@ -4,7 +4,6 @@ import type { TimeRecordService } from '../presentation/timeRecordService'
 import { useTimeRecorder } from '../presentation/useTimeRecorder'
 import type { TimeRecorderControls } from '../presentation/timeRecorderOperationState'
 import type { TimeRecorderState } from '../presentation/timeRecorderState'
-import { getTimeRecordTimestamps } from '../presentation/timeRecordPresentation'
 import TimeRecordTimes from './TimeRecordTimes'
 
 type TimeRecorderProps = {
@@ -48,7 +47,7 @@ export function TimeRecorderView(props: TimeRecorderViewProps) {
 }
 
 type RecorderPanelProps = Omit<TimeRecorderViewProps, 'state'> & {
-  state: Pick<TimeRecorderState, 'selectedProject' | 'timeRecordId' | 'startedAt' | 'endedAt'>
+  state: Pick<TimeRecorderState, 'selectedProject' | 'timeRecordId' | 'displayedRecord'>
 }
 
 function RecorderPanel({ state, controls, startTimeRecord, endTimeRecord, reloadTimeRecords }: RecorderPanelProps) {
@@ -79,12 +78,8 @@ function RecorderPanel({ state, controls, startTimeRecord, endTimeRecord, reload
           </>
         )}
         {controls.notice === 'operationFailed' && <p role="alert">記録操作に失敗しました。</p>}
-        {state.startedAt !== null && (
-          <TimeRecordTimes
-            startedAt={state.startedAt}
-            endedAt={state.endedAt}
-            labelled
-          />
+        {state.displayedRecord !== null && (
+          <TimeRecordTimes record={state.displayedRecord.record} labelled />
         )}
       </div>
     </section>
@@ -103,7 +98,7 @@ function TimeRecordList({ records }: Pick<TimeRecorderState, 'records'>) {
         {records.map(record => (
           <li key={record.record.id}>
             <span className={`record-status ${record.record.endedAt === null ? 'is-active' : ''}`} aria-hidden="true" />
-            <TimeRecordTimes {...getTimeRecordTimestamps(record)} />
+            <TimeRecordTimes record={record.record} />
           </li>
         ))}
       </ul>
