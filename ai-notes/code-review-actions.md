@@ -58,7 +58,7 @@ Blazorの表示条件は `IsAuthenticated || timeRecorder is not null`、React�
 - **修正**　注入値は認証状態の初期化時に一度だけ読む。以後の表示、ログイン成功、ログアウトが同一の状態を参照・更新するようにする。Blazorの注入済み記録ViewModelの初回表示も維持する。既知の作業記録の重複起票は不要。
 - **完了条件**　初期認証済みで開き、ログアウトすると記録一覧が消え、ログイン入口が表示される。通常の認証経路でもログアウト・再ログインでき、旧プロジェクトを引き継がないことを既存テストと併せて確認する。 [App.razor 68行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L68) · [App.tsx 21行](../src/frontends/react/src/App.tsx#L21) · [AppTests.cs 83行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L83) · [App.test.tsx 79行](../tests/frontends/react/App.test.tsx#L79)
 
-修正04の基準は `8e22096`。BlazorとReactの画面テストで、初期認証済みで開くとログアウト後も一覧が残る問題を再現した。ログアウトで初期認証状態を解除するよう変更し、一覧が消えてGoogleログインボタンが戻ることを確認した。.NET 329件・TypeScript 242件の全テストと両方のビルド・静的検査が成功した。次はRefactorの要否を確認し、修正05へ進む。
+修正04の基準は `8e22096`。BlazorとReactの画面テストで、初期認証済みで開くとログアウト後も一覧が残る問題を再現した。ログアウトで初期認証状態を解除するよう変更し、一覧が消えてGoogleログインボタンが戻ることを確認した。.NET 329件・TypeScript 242件の全テストと両方のビルド・静的検査が成功した。Greenは `0b30b39` に記録済み。Refactorを確認し、追加変更なし。
 
 ### 05　Googleログインボタンの再描画でBlazorのコールバック参照を蓄積しない
 
@@ -66,6 +66,8 @@ Blazorの表示条件は `IsAuthenticated || timeRecorder is not null`、React�
 
 - **修正**　同じ `GoogleSignIn` の存続中はJSへ渡す参照を再利用し、受け取った通知先だけを差し替える。破棄時に参照を解放し、通知先もクリアする。
 - **完了条件**　実際の `GoogleSignIn` に記録用のJSランタイムを渡し、二度のボタン表示で同一の参照を受け取ること、二回目以降の通知は最新のコールバックに一度だけ届くこと、破棄後に古い通知先を呼ばないことを確認する。 [GoogleSignIn.cs 13行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/GoogleSignIn.cs#L13) · [App.razor 71行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L71) · [GoogleSignInTests.cs 14行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/GoogleSignInTests.cs#L14)
+
+修正05の基準は `0b30b39`。GoogleSignInの再描画で参照が増えることと、破棄後に旧通知先が呼ばれることを再現した。同一インスタンスで参照を再利用し、破棄時に通知先を解除するよう変更した。.NETの全333テスト、ビルド、静的検査が成功した。次はRefactorの要否を確認し、修正06へ進む。
 
 ### 06　壊れた記録応答をDomainへ渡す前に検出する
 
