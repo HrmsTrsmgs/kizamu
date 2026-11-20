@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using AwesomeAssertions;
+using Google.Apis.Auth;
 using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
 
 namespace Kizamu.Backend.AspNetCore.Infrastructure.Tests.Authentication;
@@ -65,6 +66,26 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
         (await tested.VerifyAsync(CreateToken(expired: true))).Should().BeNull();
     }
 
+    [Theory]
+    [InlineData(-1, "google-user")]
+    [InlineData(0, null)]
+    [InlineData(1, null)]
+    public async Task GoogleのIDトークンは有効期限に達するまで本人識別子を取得できます(
+        long ticksFromExpiration,
+        string? expectedSubject)
+    {
+        var 有効期限 = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var verifier = new GoogleIdTokenVerifier(
+            verifySignedToken: _ => Task.FromResult(new JsonWebToken.Payload
+            {
+                Subject = "google-user",
+                ExpirationTimeSeconds = 有効期限.ToUnixTimeSeconds()
+            }),
+            timeProvider: new FixedTimeProvider(有効期限.AddTicks(ticksFromExpiration)));
+
+        (await verifier.VerifyAsync("verified-token-placeholder")).Should().Be(expectedSubject);
+    }
+
     [Fact]
     public async Task GoogleのIDトークンにsubがなければ本人識別子を取得できません()
     {
@@ -105,6 +126,11 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     static string Encode(ReadOnlySpan<byte> bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     public void Dispose() => publicKeyClient.Dispose();
+
+    sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
 
     // テスト間で同じ公開鍵を使い、検証ライブラリの公開鍵キャッシュとも両立させます。
     public sealed class SigningKey : IDisposable
