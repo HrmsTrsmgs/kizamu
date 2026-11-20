@@ -77,6 +77,7 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
   }
 
   function startTimeRecord() {
+    if (state.timeRecordId !== null) return Promise.resolve()
     const project = state.selectedProject
     return changeTimeRecord(
       () => timeRecords.startTimeRecord(),

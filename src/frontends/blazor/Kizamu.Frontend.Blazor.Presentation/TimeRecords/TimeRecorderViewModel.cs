@@ -165,11 +165,11 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         }
     }
 
-    /// <summary>記録を開始し、一覧と操作欄へ確定した結果を反映します。</summary>
+    /// <summary>未記録の対象で記録を開始し、一覧と操作欄へ確定した結果を反映します。既に記録中の場合は何もしません。</summary>
     /// <returns>開始と画面状態の更新の完了。</returns>
     public Task StartTimeRecordAsync()
     {
-        if (!CanOperate) return Task.CompletedTask;
+        if (!CanOperate || IsRecording) return Task.CompletedTask;
         var project = selectedProject;
         return RunRecordOperationAsync(service.StartTimeRecordAsync, record =>
         {

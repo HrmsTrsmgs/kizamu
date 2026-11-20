@@ -418,6 +418,21 @@ describe('useTimeRecorder', () => {
     })
   })
 
+  it.each([
+    ['プロジェクト未指定', undefined],
+    ['プロジェクト指定', new Project('プロジェクトA')],
+  ])('%sで記録中にもう一度開始しても、追加の開始要求を送らず最初の記録だけが残ります', async (_, 対象) => {
+    const { result } = renderRecorder()
+    await act(async () => { result.current.selectProject(対象) })
+    await act(() => result.current.startTimeRecord())
+    startTimeRecord.mockResolvedValueOnce(presentedRecord(次の記録ID, 終了時刻))
+
+    await act(() => result.current.startTimeRecord())
+
+    startTimeRecord.should.have.callCount(1)
+    result.current.state.records.should.toStrictEqual([記録])
+  })
+
   it('記録の開始応答を待つ間にプロジェクトを切り替えても、応答の記録は開始元のプロジェクトの終了対象になります', async () => {
     const プロジェクトA = new Project('プロジェクトA')
     const 応答 = deferred<typeof 記録>()

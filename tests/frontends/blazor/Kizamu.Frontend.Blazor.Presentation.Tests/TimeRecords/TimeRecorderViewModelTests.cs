@@ -136,6 +136,23 @@ public sealed class TimeRecorderViewModelTests
         tested.HasOperationFailed.Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task 同じ対象で記録中にもう一度開始しても追加の開始要求を送らず最初の記録だけが残ります(bool プロジェクトを指定する)
+    {
+        tested.SelectProject(プロジェクトを指定する ? プロジェクトA : null);
+        await tested.LoadAsync();
+        var 最初の記録 = service.StartedRecord;
+        await tested.StartTimeRecordAsync();
+        service.StartedRecord = new(別の記録ID, 終了時刻, null);
+
+        await tested.StartTimeRecordAsync();
+
+        service.StartCount.Should().Be(1);
+        tested.Records.Should().Equal(最初の記録);
+    }
+
     [Fact]
     public async Task 異なるプロジェクトで順に記録を開始すると両方の記録が開始順に一覧に残ります()
     {

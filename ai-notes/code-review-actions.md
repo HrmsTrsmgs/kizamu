@@ -371,7 +371,7 @@ TS Domainの不変性、.NETの値等価、通信でのクラス復元、参照�
 ### 確定仕様との差
 
 - **修正済み。終了の失敗後の再取得で、別タブの終了対象を更新する。** 進行中のAとBがあり、Bの終了応答を待つ間にAに切り替える。従来は応答が失敗し、再取得でBの終了を確認しても、Bに戻ると終了を再送できた。D009では再終了が終了時刻を更新するため、意図せず時刻を変えられる。D012に従い、再取得した一覧で終了済みと確認できた別タブの対象を解除した。進行中の既知対象と、所属不明の記録に対する既存の割当は維持する。 [D012](../docs/decisions.md#d012記録操作の結果が未確認なら一覧の再取得で復旧する)
-- **同じ対象に開始要求を繰り返せる。** ViewModelとhookは操作中や未確認の状態を抑止する一方、開始が成功した後の同じ対象には再度送信できる。画面は開始ボタンを切り替える。操作の境界でも既に進行中なら二件目は作れないことを、同じタブへの連続呼び出しで検証する。抑止結果を呼び出し側にどう伝えるか、初回一覧取得と並行する開始の扱いは別途決める。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L150) · [React](../src/frontends/react/src/presentation/useTimeRecorder.ts#L79) · [MVPの同時記録の条件](../docs/roadmap.md#ステップ1-プロジェクト単位の複数同時記録)
+- **修正済み。同じ対象で記録中なら開始要求を送らない。** BlazorのViewModelとReactのhookは、選択中のプロジェクトまたは未指定の対象が記録中と分かっている場合、開始要求を送らず完了する。初回一覧取得中の扱いは別途決める。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L170) · [React](../src/frontends/react/src/presentation/useTimeRecorder.ts#L79) · [MVPの同時記録の条件](../docs/roadmap.md#ステップ1-プロジェクト単位の複数同時記録)
 - **終了の成功応答が操作の結果を保証しない。** 両画面の通信サービスは、2xxなら別IDの記録や終了時刻が `null` の記録も返す。主なサーバー経路は正しい応答を返す。通信境界のテストに、別ID、終了時刻なし、正常な終了を与え、受理するのは指定IDの終了済み記録だけにする。Reactでは復元前に時刻のJSON型も確認する。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordApi.cs#L33) · [React](../src/frontends/react/src/infrastructure/timeRecordService.ts#L27)
 - **修正済み。保存APIの差し替えで対象の不在を通知する。** ASP.NET Coreの `Update` とNodeの `replace` は、未保存IDの更新時に既存の専用例外を投げる。保存テストで、失敗時に既存記録と保存順が保たれ、新規追加もないことを確かめた。 [C#](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/ITimeRecordState.cs#L33) · [Node](../src/backends/node/application/timeRecords.ts#L4)
 - **認証結果の境界条件が実装によって異なる。** 採用済みライブラリの期限判定の猶予が両バックエンドで異なり、現在の期限テストは十分に経過した例を使う。また、本人識別子の形式や公開鍵取得に失敗した場合の契約を揃える余地がある。D014の期限・本人識別の契約を基準に、時計の境界値と検証器の失敗をテストする。 [D014](../docs/decisions.md#d014ベータ版はgoogleのidトークンで本人を識別する) · [Node検証器](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L14)
@@ -390,6 +390,10 @@ TS Domainの不変性、.NETの値等価、通信でのクラス復元、参照�
 ### 保存APIの差し替え
 
 2026-11-20、基準は `5c24bd1`。両保存実装の公開操作に、対象不在の例外と失敗後の一覧を確認するテストを追加。実装前に双方が例外を投げず失敗することを確認した。修正後はASP.NET Core側85件、npm側231件、両ビルド、format、Lint、差分検査が成功。 [ASP.NET Coreのテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/TimeRecords/InMemoryTimeRecordStateTests.cs#L69) · [Nodeのテスト](../tests/backends/node/infrastructure/timeRecordInfrastructure.test.ts#L37)
+
+### 同じ対象への開始要求
+
+2026-11-20、基準は `3b62174`。プロジェクト指定・未指定で、開始が成功した後に同じ対象から再度開始するケースを両実装に追加した。Redは全4件で、開始要求1回を期待して実測2回。修正後は元の記録だけが残り、開始要求は1回。既存の抑止と同じく開始操作は要求を送らず完了する。修正後は.NET全306件、npm全233件、両ビルド、npmのLintと変更C#のformatが成功。ソリューション全体のformatは既知のBL0016で失敗した。 [Blazorのテスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L142) · [Reactのテスト](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L421)
 
 ## TypeScriptの型と実行時検査
 
