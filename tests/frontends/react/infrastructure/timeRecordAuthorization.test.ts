@@ -20,7 +20,11 @@ describe('記録APIの認証', () => {
   ])('記録の%s要求では、指定したIDトークンをAuthorizationヘッダーにBearer形式で送ります', async (operation, path, method) => {
     fetchMock.mockImplementation(async () => Response.json(operation === '一覧'
       ? []
-      : { id: 記録ID, startedAt: '2026-08-01T09:00:00Z', endedAt: null }))
+      : {
+        id: 記録ID,
+        startedAt: '2026-08-01T09:00:00Z',
+        endedAt: operation === '終了' ? '2026-08-01T10:30:00Z' : null,
+      }))
     const tested = createTimeRecordService('id-token')
 
     if (operation === '一覧') await tested.getTimeRecords()

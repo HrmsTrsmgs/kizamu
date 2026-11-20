@@ -372,7 +372,7 @@ TS Domainの不変性、.NETの値等価、通信でのクラス復元、参照�
 
 - **修正済み。終了の失敗後の再取得で、別タブの終了対象を更新する。** 進行中のAとBがあり、Bの終了応答を待つ間にAに切り替える。従来は応答が失敗し、再取得でBの終了を確認しても、Bに戻ると終了を再送できた。D009では再終了が終了時刻を更新するため、意図せず時刻を変えられる。D012に従い、再取得した一覧で終了済みと確認できた別タブの対象を解除した。進行中の既知対象と、所属不明の記録に対する既存の割当は維持する。 [D012](../docs/decisions.md#d012記録操作の結果が未確認なら一覧の再取得で復旧する)
 - **修正済み。同じ対象で記録中なら開始要求を送らない。** BlazorのViewModelとReactのhookは、選択中のプロジェクトまたは未指定の対象が記録中と分かっている場合、開始要求を送らず完了する。初回一覧取得中の扱いは別途決める。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L170) · [React](../src/frontends/react/src/presentation/useTimeRecorder.ts#L79) · [MVPの同時記録の条件](../docs/roadmap.md#ステップ1-プロジェクト単位の複数同時記録)
-- **終了の成功応答が操作の結果を保証しない。** 両画面の通信サービスは、2xxなら別IDの記録や終了時刻が `null` の記録も返す。主なサーバー経路は正しい応答を返す。通信境界のテストに、別ID、終了時刻なし、正常な終了を与え、受理するのは指定IDの終了済み記録だけにする。Reactでは復元前に時刻のJSON型も確認する。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordApi.cs#L33) · [React](../src/frontends/react/src/infrastructure/timeRecordService.ts#L27)
+- **修正済み。終了応答のIDと終了時刻を通信境界で検証する。** BlazorとReactは、指定IDの終了済み記録を受け取ったときだけ終了結果を返し、別IDや終了時刻の `null`・欠落は呼び出し元にエラーで伝える。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordApi.cs#L33) · [React](../src/frontends/react/src/infrastructure/timeRecordService.ts#L27)
 - **修正済み。保存APIの差し替えで対象の不在を通知する。** ASP.NET Coreの `Update` とNodeの `replace` は、未保存IDの更新時に既存の専用例外を投げる。保存テストで、失敗時に既存記録と保存順が保たれ、新規追加もないことを確かめた。 [C#](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/ITimeRecordState.cs#L33) · [Node](../src/backends/node/application/timeRecords.ts#L4)
 - **認証結果の境界条件が実装によって異なる。** 採用済みライブラリの期限判定の猶予が両バックエンドで異なり、現在の期限テストは十分に経過した例を使う。また、本人識別子の形式や公開鍵取得に失敗した場合の契約を揃える余地がある。D014の期限・本人識別の契約を基準に、時計の境界値と検証器の失敗をテストする。 [D014](../docs/decisions.md#d014ベータ版はgoogleのidトークンで本人を識別する) · [Node検証器](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L14)
 - **起動確認が待機せず失敗する条件がある。** 項目30を、204のあと待機を挟めば200を返す代役で確認した。現行は待機0回で60回照会し失敗を返す。項目31の起動失敗時の診断表示も確認した。修正箇所とテスト案は項目30・31に記載済み。 [Wait-HealthEndpoint.ps1](../scripts/Wait-HealthEndpoint.ps1#L7)
@@ -394,6 +394,12 @@ TS Domainの不変性、.NETの値等価、通信でのクラス復元、参照�
 ### 同じ対象への開始要求
 
 2026-11-20、基準は `3b62174`。プロジェクト指定・未指定で、開始が成功した後に同じ対象から再度開始するケースを両実装に追加した。Redは全4件で、開始要求1回を期待して実測2回。修正後は元の記録だけが残り、開始要求は1回。既存の抑止と同じく開始操作は要求を送らず完了する。修正後は.NET全306件、npm全233件、両ビルド、npmのLintと変更C#のformatが成功。ソリューション全体のformatは既知のBL0016で失敗した。 [Blazorのテスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L142) · [Reactのテスト](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L421)
+
+### 記録終了の成功応答
+
+2026-11-20、基準は `f96272c`。BlazorとReactの通信境界で、指定したIDの記録であり終了時刻がある場合に終了結果を返す。Redでは別IDと終了時刻の `null` が両方で受理され、Blazorでは終了時刻の欠落も受理された。Reactは現行のJSON型検査で欠落を拒否していた。認証ヘッダーのテストでは終了操作の代役だけ有効な終了時刻を返すようにし、ヘッダーの既存アサーションを維持した。
+
+再実行した.NETのソリューション全体で309件、npmで236件が成功した。両ビルド、npmのLint、変更C#のformat、差分検査が成功。.NET全体のformatは既知の `GoogleSignIn.cs` のBL0016で終了コード2。終了応答の修正差分は未コミットでレビュー待ち。
 
 ## TypeScriptの型と実行時検査
 

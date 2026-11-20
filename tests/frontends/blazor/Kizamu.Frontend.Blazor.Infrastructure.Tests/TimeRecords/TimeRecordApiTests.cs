@@ -106,6 +106,36 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
+    public async Task 記録終了APIが指定と異なる記録IDを返すと例外が発生します()
+    {
+        handler.RespondWithJson(終了した記録 with { Id = 別の記録ID });
+
+        var 操作 = () => tested.EndTimeRecordAsync(記録ID);
+
+        await 操作.Should().ThrowAsync<Exception>();
+    }
+
+    [Fact]
+    public async Task 記録終了APIが終了時刻にnullを返すと例外が発生します()
+    {
+        handler.RespondWithJson(開始した記録);
+
+        var 操作 = () => tested.EndTimeRecordAsync(記録ID);
+
+        await 操作.Should().ThrowAsync<Exception>();
+    }
+
+    [Fact]
+    public async Task 記録終了APIの応答に終了時刻がないと例外が発生します()
+    {
+        handler.RespondWithJson(new { id = 記録ID, startedAt = 開始時刻 });
+
+        var 操作 = () => tested.EndTimeRecordAsync(記録ID);
+
+        await 操作.Should().ThrowAsync<Exception>();
+    }
+
+    [Fact]
     public async Task 作業記録一覧APIの応答がHTTPエラーなら本文が正常でもステータスコード付きの例外が発生します()
     {
         handler.RespondWithJson<TimeRecordResponse[]>([開始した記録], HttpStatusCode.InternalServerError);

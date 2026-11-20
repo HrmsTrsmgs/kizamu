@@ -21,7 +21,7 @@ public sealed class TimeRecordAuthorizationTests
             authorization = request.Headers.Authorization?.ToString();
             object body = operation == "list"
                 ? Array.Empty<object>()
-                : new { id = Guid.Empty, startedAt = "2026-08-01T09:00:00Z", endedAt = (string?)null };
+                : new { id = Guid.Empty, startedAt = "2026-08-01T09:00:00Z", endedAt = operation == "end" ? "2026-08-01T10:30:00Z" : null };
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(body) });
         };
         using var client = new HttpClient(handler) { BaseAddress = new("http://localhost/") };

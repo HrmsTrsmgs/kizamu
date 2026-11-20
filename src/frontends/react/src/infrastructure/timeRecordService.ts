@@ -31,8 +31,12 @@ export function createTimeRecordService(token?: string): TimeRecordService {
     startTimeRecord() {
       return postTimeRecord('/api/time-records/start', headers)
     },
-    endTimeRecord(id) {
-      return postTimeRecord(`/api/time-records/${id}/end`, headers)
+    async endTimeRecord(id) {
+      const record = await postTimeRecord(`/api/time-records/${id}/end`, headers)
+      if (record.record.id !== id || record.record.endedAt === null) {
+        throw new Error()
+      }
+      return record
     },
   }
 }

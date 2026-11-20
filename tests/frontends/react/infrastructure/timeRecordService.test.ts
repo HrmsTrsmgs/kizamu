@@ -102,6 +102,23 @@ describe('timeRecordService', () => {
     })
   })
 
+  it('終了要求が成功しても応答の記録IDが指定と異なる場合は、呼び出し元にエラーを返します', async () => {
+    fetchMock.mockImplementation(async () => Response.json({ ...終了済みの応答, id: 次の記録ID }))
+
+    await tested.endTimeRecord(記録ID).should.rejects.toThrow()
+  })
+
+  it.each([
+    ['欠落している', {}],
+    ['nullである', { endedAt: null }],
+  ])('終了要求が成功しても応答の終了時刻が%s場合は、呼び出し元にエラーを返します', async (_, 応答の終了時刻) => {
+    fetchMock.mockImplementation(async () => Response.json(
+      { id: 記録ID, startedAt: 開始時刻, ...応答の終了時刻 },
+    ))
+
+    await tested.endTimeRecord(記録ID).should.rejects.toThrow()
+  })
+
   it('終了要求が成功しても応答の終了時刻がISO文字列を1件含む配列なら、呼び出し元にエラーを返します', async () => {
     fetchMock.mockImplementation(async () => Response.json({ ...終了済みの応答, endedAt: [終了時刻] }))
 
