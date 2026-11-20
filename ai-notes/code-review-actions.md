@@ -128,7 +128,9 @@ ASP.NET側のテストはデシリアライズしたnullableプロパティを�
 
 Nodeの「開始するたびに…現在時刻を開始時刻とする」テストは二回とも時計が同じ。二件目で最初の時刻を再利用しても通る。
 
-`first = tested.start()` と二回目の `start()` の間で既存の `now` を10:30に進める。元の09:00と進めた10:30、別々のID、どちらも未終了、をそれぞれの期待 `TimeRecord` に明記する。 [timeRecords.test.ts 37行](../tests/backends/node/application/timeRecords.test.ts#L37)
+`start()` の二回の要求の間で `now` を進め、それぞれの開始時刻と発行元が渡した識別子を確認する。開始直後の終了時刻はDomainの直接テストで保証する。 [timeRecords.test.ts 38行](../tests/backends/node/application/timeRecords.test.ts#L38)
+
+修正12の基準は `21bf4a6`。同じApplicationに二回開始を要求し、時計を進める前後の時刻と発行元の識別子を確認する形に整理した。検証済みの差分は下記の外部仕様から見たテスト整理に含めてレビュー待ち。
 
 ### 13　Nodeの起動テストでURLの行末を待つ
 
@@ -196,7 +198,7 @@ TSの開始・復元を検証するケースは操作自体が `beforeEach` に�
 
 開始失敗と一覧失敗を画面から重ねて、復旧後の可否と再失敗を繰り返している。hookと操作状態Reducerに同じ遷移の直接テストがある。
 
-画面には再取得クリックが一覧取得につながって通知が変わる代表例を一件残す。239・245行付近の各期待値を、hookの226・234・243行付近（一覧・終了要求・再失敗）とViewへの直接入力（警告・操作ボタン・再取得可能）に対応づけてから重複経路を除く。画面から外す期待値のうち、手動再取得の応答が空なら次の開始要求が一回届くこと、再失敗時は初回を含め一覧要求が計三回であることを、該当するhookテストに明記する。保留中のボタン無効化はViewのテストに残す。 [TimeRecorder.test.tsx 217行](../tests/frontends/react/timeRecords/TimeRecorder.test.tsx#L217) · [timeRecorderOperationState.test.ts 54行](../tests/frontends/react/presentation/timeRecorderOperationState.test.ts#L54) · [useTimeRecorder.test.ts 226行](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L226)
+画面には再取得クリックが一覧取得につながって通知が変わる代表例を一件残す。239・245行付近の各期待値を、hookの226・234・243行付近（一覧・終了要求・再失敗）とViewへの直接入力（警告・操作ボタン・再取得可能）に対応づけてから重複経路を除く。画面から外す期待値のうち、手動再取得の応答が空なら次の開始要求が一回届くことを、該当するhookテストに明記する。再失敗時に初回を含め一覧要求が計三回であることは現行hookの251行で確認済み。保留中のボタン無効化はViewのテストに残す。 [TimeRecorder.test.tsx 217行](../tests/frontends/react/timeRecords/TimeRecorder.test.tsx#L217) · [timeRecorderOperationState.test.ts 54行](../tests/frontends/react/presentation/timeRecorderOperationState.test.ts#L54) · [useTimeRecorder.test.ts 226行](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L226)
 
 ### 24　認証ヘッダーのテストで、操作の選択と通信の共通準備を分ける
 
@@ -261,6 +263,75 @@ HTTP 200なら即成功、プロセス終了なら即失敗とし、そのどち
 | 新しく開始した記録から終了する<br>[TimeRecorderViewModelTests.cs 831行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L831) | 一覧応答の先頭に別の未終了記録があっても一覧取得中に開始した記録のIDで終了を要求します | 終了要求は一回。複数件の終了順を検証する名前を避ける。 |
 | 未認証で開始した後の一覧<br>[TimeRecordEndpointTests.cs 74行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L74) · [timeRecordEndpoints.test.ts 62行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L62) | 未認証で記録の開始を要求した後も認証済み利用者の一覧は空です | 開始を要求した主体と、取得した一覧の所有者が異なる。読取時のテスト用利用者を明示する。 |
 | 未認証で終了した後の一覧<br>[TimeRecordEndpointTests.cs 95行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L95) · [timeRecordEndpoints.test.ts 83行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L83) | 未認証で終了を要求しても所有者の一覧では記録の終了時刻は未設定のままです | Nodeのケースが記録全体を比較する場合は「所有者の一覧には開始時の記録がそのまま残ります」とし、既存の全体比較を維持する。 |
+
+## 外部仕様から見たテストの重複と結合
+
+2026-11-20に `21bf4a6` と作業中の修正12を対象に、両バックエンド、両フロントエンド、C#とTypeScriptのDomainのテストを照合した。項目ごとに観測した重複と、反映後の保証を記録した。リンクは反映後のテストを指す。
+
+業務規則はDomainの公開操作で、対象選択・時計・保存・結果の変換はApplicationの公開操作で検証する。画面状態と操作の調整はViewModel／Reducer／hookで観測する。HTTPと画面では、経路の接続、利用者に返す応答、表示・入力など、その境界で初めて起こり得る誤りを検証する。
+
+### 終了・再終了で選んだ記録が返り、保存される
+
+* C#のApplicationでは、単一レコードの終了結果・保存結果と、二件から選ぶ場合の同じ結果が重なる。開始時刻の異なる二件を保存し、先に保存した方をIDで選ぶ。返却はID・開始時刻・要求時刻を照合し、保存は選んだ記録の更新と対象外の記録の保持を照合する。返却と保存は別々のテストにし、記録中と終了済みの両方、異なる要求時刻をケースに残す。未知IDについては既存の記録を保持するテストを残す。[TimeRecordEndOperationTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs#L28)
+* C#のDomainに、終了済み記録の `End` が新しい終了時刻を持つ記録を返し、元の終了時刻を保つケースを置く。TypeScriptには両方のテストがある。NodeのApplicationの初回終了・再終了も、事前に二件を保存し、返却と保存をそれぞれ検証する形にそろえる。期待する更新には、対象レコードにテストで指定した要求時刻を渡したDomainの結果を使える。実際に読み出し・差し替えを行う経路は両状態で保持する。[C# Domain](../tests/domains/dotnet/Kizamu.Domain.Tests/TimeRecordTests.cs#L114) · [TypeScript Domain](../tests/domains/typescript/timeRecord.test.ts#L59) · [Node Application](../tests/backends/node/application/timeRecords.test.ts#L71)
+
+### 開始のたびに時計を読み、開始した記録を保存する
+
+* C#の空でないIDの生成と、両言語の開始直後の終了時刻未設定はDomainに直接のテストがある。Applicationでは時計を進めながら同じ対象に二回要求し、それぞれ時計の値を使うことを確認する。C#の開始結果のID・時刻が保存した記録と対応し、保存時に未終了状態が反映される接続は代表例で確認する。Nodeでは発行元が返した異なるIDを使う確認も残す。項目12の全フィールド比較を時計とIDの保証へ絞り、一覧から開始した記録を取得できるテストを残した。[C#開始操作](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordStartOperationTests.cs#L19) · [C# Domain](../tests/domains/dotnet/Kizamu.Domain.Tests/TimeRecordTests.cs#L64) · [Node開始操作](../tests/backends/node/application/timeRecords.test.ts#L38)
+
+* NodeのHTTPでも二回の開始要求を送るテストが二件ある。異なる二件を開始順に返す一覧テストで、二つの開始応答のIDが異なることも確認できる。発行元の単体テストと別に、実際のHTTP構成で二回の開始に別々のIDを渡す代表経路を維持する。[Node API](../tests/backends/node/api/timeRecordEndpoints.test.ts#L114)
+
+### 拒否した要求の応答と保存結果を同じ要求で観測する
+
+* 両APIに、同じ初期状態・同じPOSTを、ステータスと状態の確認でそれぞれ送るケースがある。開始と終了は独立したルートとして各テストを残し、各ケースでPOSTを一回送り、ステータスと所有者の再取得結果を確認する。403は既存の `Sec-Fetch-Site` 5条件をすべて残す。認証情報なしの401、他の利用者による終了の404も同様に、開始なら空の一覧、終了なら保存した記録を読み直し、現行の未終了または変更前との一致を照合する。項目32の未認証終了の命名も同じ修正に含める。[ASP.NET Core](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L185) · [Node](../tests/backends/node/api/timeRecordEndpoints.test.ts#L135)
+
+### HTTPで値の形式と日時点を重ねて比較する箇所を整理する
+
+* Nodeの開始・終了応答は、同じプロパティを固定のISO文字列と比較し、`Date` に変換した日時点とも比較する。ISO文字列の完全一致で両方の意図を満たすので、文字列の期待値を残す。C#の項目10が保証するJSONの `endedAt` キーの存在とnullは、DTOの値だけを検証するテストでは観測できないため、キーを直接確認するテストを使う。HTTPの値そのものを確認する代表経路は残す。[Node終了](../tests/backends/node/api/timeRecordEndpoints.test.ts#L104) · [Node開始](../tests/backends/node/api/timeRecordEndpoints.test.ts#L173) · [ASP.NET Core JSON](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L140)
+
+### 保存一覧のコピーが最初の記録を保持する
+
+* C#のInfrastructureで、一覧をコピーして次の記録を追加する準備が二件で共通している。コピーに一件だけ残ることと、その一件が最初の記録と同じインスタンスであることを、同じコピーの観測で表す。元の一覧への追加の反映、およびApplicationの列挙開始時の取得と列挙中の固定は、それぞれ異なる呼び出しの保証なので維持する。[InMemoryTimeRecordStateTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/TimeRecords/InMemoryTimeRecordStateTests.cs#L68) · [TimeRecordReaderTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordReaderTests.cs#L40)
+
+### Nodeの起動確認では出力されたURLへ接続する
+
+* `/api/health` のJSON本文は、Content-Typeも確認しているエンドポイントテストで保証する。項目13の実プロセステストでは、配布用の入口から空きポートで起動し、標準出力に出たURLへのGETが200となるところまで見る。これで起動と実HTTPの接続も確認できる。[エンドポイントテスト](../tests/backends/node/healthEndpoint.test.ts#L4) · [起動テスト](../tests/backends/node/serverStartup.test.ts#L6)
+
+### タブ選択の伝達と、選択後の記録状態を別の境界で確認する
+
+* BlazorのAppで開始から終了ボタン・一覧件数まで再現するケースは、TimeRecorderの接続とViewModelの状態テストに対応する。Appに残すのはタブ選択が記録欄の対象切替に届く代表例と、タブの選択表示・見出し。記録中か、他のタブの記録が変化するかはViewModelへ集約する。Reactも、Aへの切替で同じ見出しを確認する単独ケースを、項目03の未指定→A→未指定のテストに寄せ、Aを選択した時点で両タブの `aria-selected` と見出しを確認する。Appから記録欄へ接続する代表経路を残す。[BlazorのApp](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L202) · [ReactのApp](../tests/frontends/react/App.test.tsx#L130) · [Reactの状態](../tests/frontends/react/presentation/timeRecorderState.test.ts#L25)
+
+### 記録の表示に必要な入力を直接与える
+
+* 項目14・15・17・28と合わせる。開始・終了クリックは、それぞれ対応する操作が呼ばれ、返った記録が代表的な表示に反映される例を残す。終了クリックの前提は進行中の記録をサービスまたはViewModelの代役から渡す。再開始で終了欄が消えることは、終了済みから記録中のデータへ同じ画面を再描画して確認する。操作欄と一覧への配置は各領域の代表値で確認し、親画面のテストから子と重なる日時の書式・HTML属性の詳細を外す。[Reactの画面](../tests/frontends/react/timeRecords/TimeRecorder.test.tsx#L149) · [Blazorの画面](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecorderTests.cs#L77)
+* `<time>` の値・名前・各時刻への割り当ては `TimeRecordTimes` の画面で確認する。Reactの小数秒と日付境界は `formatHtmlDateTime` の直接テストに集約する。BlazorのHTML日時の小数秒は子コンポーネントで確認し、日本時間・経過時間の書式の詳細は既存のFormatterテストで確認する。Blazorの終了済み表示で時計を進めた後だけを読むケースは、Domainによる期間の確定、子による終了済みの時計非参照と終了時のタイマー停止の確認に対応する。Reactでは固定60秒後の更新と分境界前後の更新が重なるので、より具体的な後者を残す。[Blazorの時刻表示](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecordTimesTests.cs#L64) · [Reactの時刻表示](../tests/frontends/react/timeRecords/TimeRecordTimes.test.tsx#L32) · [Reactの時計と書式](../tests/frontends/react/presentation/useTimeRecordTimes.test.ts#L70)
+
+### 再取得のクリック、未確認表示、状態復旧を独立して観測する
+
+* 項目16・23に集約する。Blazorの同じ再取得クリックの二件を、委譲された関数の実行前後の一覧取得回数と、開始・終了要求が行われないことを一度に確認する接続テストにする。警告と再取得可否の表示は、未確認状態を持つ代役でそれぞれ一例確認する。開始・終了ボタンの無効化は両方のボタンを確認する。Reactも画面には再取得の代表的な接続を残し、空一覧からの再開と再失敗はhook・Reducerで確認する。再失敗までの一覧要求三回は現行hookで確認済み。空一覧で次の開始が一度届く確認は、画面から外す前にhookへ移す。再取得中の排他ケースは、未確認状態の時点で開始・終了が既に抑止されるため、保留中の再取得を連打しても通信が増えないことを直接観測する。開始・終了に対する排他を検証する場合は、他の抑止条件がない前提で行う。[Blazor再取得](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecorderTests.cs#L173) · [React再取得](../tests/frontends/react/timeRecords/TimeRecorder.test.tsx#L177) · [React hook](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L219)
+
+### 古い一覧の到着で何が変わるかを直接確認する
+
+* 項目21に集約する。Blazorでは古い応答を受けた直後の未確認状態を、追加の開始・終了操作の前に確認する。該当操作が抑止されることは直後の専用テストが保証する。Reactでも応答が届くテストの本文に保留応答の解決を置く。古い応答の後に終了するケースは、正しい終了対象IDが要求されたことを中心に確認する。一般的な終了後の状態はhookとReducerの終了テストに対応する。[BlazorのViewModel](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L494) · [Reactのhook](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L483)
+
+### 通信から復元した記録のクラスとDomainの終了動作を確認する
+
+* 項目22に集約する。Reactの通信テストでは、期待する `TimeRecord` の一覧との `toStrictEqual` でクラス・値・順序を保証する。通信した後に `.end()` を呼び、元の記録・ID・開始時刻・新しい終了時刻を改めて照合するケースはDomainの直接テストで対応できる。[通信による復元](../tests/frontends/react/infrastructure/timeRecordService.test.ts#L33) · [Domainの終了](../tests/domains/typescript/timeRecord.test.ts#L28)
+
+### Appにはログアウトと正常性表示の接続を残す
+
+* Reactでログアウト後に一覧が消えるテストは、一覧が表示された認証済み状態で十分。前提の開始操作は、再ログイン後に前の記録中状態が消えることを検証するケースで使う。Blazorのセッション切替も初回のサービスに記録中の応答、次回に空の応答を直接与えられる。SDKコールバックと代替ボタン、初期注入された認証状態と通常ログインはそれぞれ入口が異なるため、項目04・27の代表経路を維持する。[Reactのログアウト](../tests/frontends/react/App.test.tsx#L46) · [Blazorのセッション切替](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L108)
+* BlazorのAppでは正常性表示がフッターに配置されることを観測する。確認中から正常／失敗に変わる日本語の表示は `HealthStatus` のテストで保証する。[Appのフッター](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L146) · [HealthStatusのテスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/Health/HealthStatusTests.cs#L20)
+
+**反映結果（2026-11-20）**
+
+基準は `21bf4a6`。12項目をテストへ反映し、差分は未ステージでレビュー待ち。Kizamu.Blazor.slnxの全300テスト、非増分ビルド（警告・エラー0）、format検査が成功。SARIF 16件の診断は0件。ルートのTypeScript全221テスト（Domain 17、React 157、Node 47）、ビルド、lintも成功。次の既存項目は13の起動URLを行末まで待つ保証。
+
+変更したテストは次の18ファイル。
+
+* バックエンドとDomain　[TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs) · [TimeRecordEndOperationTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs) · [TimeRecordStartOperationTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordStartOperationTests.cs) · [InMemoryTimeRecordStateTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/TimeRecords/InMemoryTimeRecordStateTests.cs) · [timeRecordEndpoints.test.ts](../tests/backends/node/api/timeRecordEndpoints.test.ts) · [timeRecords.test.ts](../tests/backends/node/application/timeRecords.test.ts) · [serverStartup.test.ts](../tests/backends/node/serverStartup.test.ts) · [TimeRecordTests.cs](../tests/domains/dotnet/Kizamu.Domain.Tests/TimeRecordTests.cs)
+* Blazor　[AppTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs) · [TimeRecordTimesTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecordTimesTests.cs) · [TimeRecorderTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecorderTests.cs) · [TimeRecorderViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs)
+* React　[App.test.tsx](../tests/frontends/react/App.test.tsx) · [timeRecordService.test.ts](../tests/frontends/react/infrastructure/timeRecordService.test.ts) · [useTimeRecordTimes.test.ts](../tests/frontends/react/presentation/useTimeRecordTimes.test.ts) · [useTimeRecorder.test.ts](../tests/frontends/react/presentation/useTimeRecorder.test.ts) · [TimeRecordTimes.test.tsx](../tests/frontends/react/timeRecords/TimeRecordTimes.test.tsx) · [TimeRecorder.test.tsx](../tests/frontends/react/timeRecords/TimeRecorder.test.tsx)
 
 ## 仕様の決定が必要な差
 

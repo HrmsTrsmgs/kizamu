@@ -84,14 +84,6 @@ public sealed class TimeRecordTimesTests : IDisposable
     }
 
     [Fact]
-    public async Task 終了済みの作業時間は現在時刻が進んでも変わりません()
-    {
-        await 終了済みの表示.InvokeAsync(() => clock.Advance(TimeSpan.FromHours(1)));
-
-        終了済みの表示.Find(".time-record-duration-value").TextContent.Should().Be("1時間30分");
-    }
-
-    [Fact]
     public async Task 記録を終了すると定期的な再描画を停止します()
     {
         var tested = 記録中の表示;

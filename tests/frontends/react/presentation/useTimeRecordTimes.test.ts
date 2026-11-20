@@ -67,14 +67,6 @@ describe('useTimeRecordTimes', () => {
       view = 記録中の時刻を表示する()
     })
 
-    it('記録中に時間が経過すると作業時間を更新します', async () => {
-      view.result.current.durationText.should.equal('1時間30分')
-
-      await act(() => vi.advanceTimersByTimeAsync(60_000))
-
-      view.result.current.durationText.should.equal('1時間31分')
-    })
-
     it('終了済みの記録の作業時間は時計が進んでも変わりません', async () => {
       view.rerender(記録.end(終了時刻.instant))
 

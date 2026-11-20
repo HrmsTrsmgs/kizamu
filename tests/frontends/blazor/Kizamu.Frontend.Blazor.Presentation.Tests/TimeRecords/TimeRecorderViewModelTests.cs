@@ -493,24 +493,14 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 記録の開始と一覧の再取得に失敗した後で古い初回一覧が届いても記録の最新状態は未確認のままです()
     {
-        await 開始失敗後に古い初回一覧を受け取る();
+        var 初期一覧の応答 = service.DelayListResponse();
+        var 初期一覧の読み込み = tested.LoadAsync();
+        await 開始失敗後の再取得にも失敗させる();
 
-        await tested.StartTimeRecordAsync();
-        await tested.EndTimeRecordAsync();
+        初期一覧の応答.SetResult([]);
+        await 初期一覧の読み込み;
 
         tested.IsStateUnconfirmed.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task 記録の開始と一覧の再取得に失敗した後で古い初回一覧が届いても追加の開始や終了は要求しません()
-    {
-        await 開始失敗後に古い初回一覧を受け取る();
-
-        await tested.StartTimeRecordAsync();
-        await tested.EndTimeRecordAsync();
-
-        service.StartCount.Should().Be(1);
-        service.EndedIds.Should().BeEmpty();
     }
 
     [Fact]
@@ -1072,19 +1062,6 @@ public sealed class TimeRecorderViewModelTests
 
         一覧取得を失敗させる(再取得失敗);
         return 終了操作 ? tested.EndTimeRecordAsync : tested.StartTimeRecordAsync;
-    }
-
-    async Task 開始失敗後に古い初回一覧を受け取る()
-    {
-        var 初期一覧の応答 = service.DelayListResponse();
-        var 初期一覧の読み込み = tested.LoadAsync();
-        service.StartResponse = Task.FromException<TimeRecord>(new HttpRequestException());
-        一覧取得を失敗させる(new HttpRequestException());
-
-        await Assert.ThrowsAsync<HttpRequestException>(() => tested.StartTimeRecordAsync());
-        初期一覧の応答.SetResult([]);
-        await 初期一覧の読み込み;
-        service.StartResponse = null;
     }
 
     async Task 手動再取得で返す記録を用意する(bool 記録中)

@@ -108,19 +108,6 @@ describe('timeRecordService', () => {
     await tested.endTimeRecord(記録ID).should.rejects.toThrow()
   })
 
-  it('一覧から復元した記録を終了すると、元の記録は記録中のまま、指定時刻で終了した新しい記録が得られます', async () => {
-    fetchMock.mockImplementation(async () => Response.json([記録中の応答]))
-    const [{ record }] = await tested.getTimeRecords()
-
-    const endedRecord = record.end(timestamp(終了時刻).instant)
-
-    endedRecord.id.should.equal(記録ID)
-    endedRecord.startedAt.should.deep.equal(timestamp(開始時刻).instant)
-    endedRecord.should.have.property('endedAt').that.deep.equal(timestamp(終了時刻).instant)
-    endedRecord.should.not.equal(record)
-    record.should.have.property('endedAt', null)
-  })
-
   describe('時差と小数秒を含む記録開始応答', () => {
     const 開始時刻の別表記 = '2026-08-01T18:00:00.0000000+09:00'
 

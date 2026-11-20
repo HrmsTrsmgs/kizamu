@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 import TimeRecordTimes from '../../../../src/frontends/react/src/timeRecords/TimeRecordTimes'
 import { formatHtmlDateTime } from '../../../../src/frontends/react/src/timeRecords/htmlDateTime'
 import { presentedRecord, timestamp } from '../test/timeRecords'
@@ -14,10 +14,8 @@ describe('TimeRecordTimes', () => {
     })
 
     it('開始と終了のdatetime属性に元の日時点をHTMLの日時形式で設定します', () => {
-      screen.getByLabelText('開始時刻').should.toHaveAttribute('datetime', expect.stringMatching(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/))
-      Date.parse(screen.getByLabelText('開始時刻').getAttribute('datetime') ?? '').should.equal(Date.parse(開始時刻))
-      screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', expect.stringMatching(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/))
-      Date.parse(screen.getByLabelText('終了時刻').getAttribute('datetime') ?? '').should.equal(Date.parse(終了時刻))
+      screen.getByLabelText('開始時刻').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
+      screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
     })
 
     it('開始と終了を日本時間の分単位で表示します', () => {
@@ -29,21 +27,13 @@ describe('TimeRecordTimes', () => {
       screen.getByText('1時間30分').should.toBeInTheDocument()
     })
   })
-
-  it('開始・終了時刻のdatetime属性では、小数秒を3桁で切り捨てるため、秒や日付は繰り上がりません', () => {
-    const 開始時刻 = '2026-08-01T23:59:59.9999999Z'
-    const 終了時刻 = '2026-08-02T00:00:59.9999999Z'
-
-    render(<TimeRecordTimes record={presentedRecord('記録', timestamp(開始時刻), timestamp(終了時刻)).record} labelled />)
-
-    screen.getByLabelText('開始時刻').should.toHaveAttribute('datetime', '2026-08-01T23:59:59.999Z')
-    screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', '2026-08-02T00:00:59.999Z')
-  })
 })
 
 describe('formatHtmlDateTime', () => {
-  it('日付が変わる直前の時刻をHTML形式にすると、小数秒を3桁で切り捨てて同じ日付のまま返します', () => {
-    formatHtmlDateTime(timestamp('2026-08-01T23:59:59.9999999Z').instant)
-      .should.equal('2026-08-01T23:59:59.999Z')
+  it.each([
+    { isoText: '2026-08-01T23:59:59.9999999Z', expected: '2026-08-01T23:59:59.999Z' },
+    { isoText: '2026-08-02T00:00:59.9999999Z', expected: '2026-08-02T00:00:59.999Z' },
+  ])('$isoText をHTML形式にすると、秒や日付を繰り上げずに小数秒を3桁で切り捨てます', ({ isoText, expected }) => {
+    formatHtmlDateTime(timestamp(isoText).instant).should.equal(expected)
   })
 })
