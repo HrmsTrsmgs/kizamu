@@ -437,6 +437,33 @@ describe('useTimeRecorder', () => {
     result.current.state.should.have.property('timeRecordId', 記録ID)
   })
 
+  it('Aで記録を開始して未開始のBを選んだ後に空の初回一覧が届いても、Aに戻ってその記録だけを終了できます', async () => {
+    const プロジェクトA = new Project('プロジェクトA')
+    const プロジェクトB = new Project('プロジェクトB')
+    const 応答 = deferred<(typeof 記録)[]>()
+    getTimeRecords.mockReturnValueOnce(応答.promise)
+    const { result } = renderRecorder()
+
+    act(() => result.current.selectProject(プロジェクトA))
+    await act(() => result.current.startTimeRecord())
+    act(() => result.current.selectProject(プロジェクトB))
+
+    await act(async () => {
+      応答.resolve([])
+      await 応答.promise
+    })
+
+    result.current.state.should.have.property('timeRecordId', null)
+    await act(() => result.current.endTimeRecord())
+    endTimeRecord.should.have.callCount(0)
+
+    act(() => result.current.selectProject(プロジェクトA))
+    await act(() => result.current.endTimeRecord())
+
+    endTimeRecord.should.have.been.calledOnceWith(記録ID)
+    result.current.state.records.should.toStrictEqual([終了済み記録])
+  })
+
   describe('記録開始の後に古い初期一覧が届くとき', () => {
     const 過去の記録 = presentedRecord(次の記録ID, 開始時刻, 終了時刻)
     let recorder: ReturnType<typeof renderRecorder>

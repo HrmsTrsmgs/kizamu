@@ -77,7 +77,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     /// <param name="project">対象プロジェクト。未指定の場合はnull。</param>
     public void SelectProject(Project? project) => selectedProject = project;
 
-    /// <summary>一覧取得中の操作結果に、応答時の終了対象と同じIDの未終了記録があればその対象を保ちます。それ以外は一覧で最初の未終了記録を選びます。</summary>
+    /// <summary>一覧取得中の操作結果に、応答時の終了対象と同じIDの未終了記録があればその対象を保ちます。それ以外は、別の対象に紐付いた記録を除き、一覧で最初の未終了記録を選びます。</summary>
     /// <returns>読み込みと画面状態の更新の完了。</returns>
     public async Task LoadAsync()
     {
@@ -121,13 +121,14 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         return [.. recordsFromResponse, .. recordsMissingFromResponse];
     }
 
-    /// <summary>一覧取得中に操作した終了対象を優先し、それ以外は一覧の先頭の記録中項目を選びます。</summary>
+    /// <summary>一覧取得中に操作した終了対象を優先し、それ以外は、選択中の対象に割り当てられる最初の未終了記録を選びます。</summary>
     Guid? FindCurrentIdAfterLoad(IReadOnlyList<TimeRecord> updatesDuringLoad)
     {
         var currentId = CurrentId;
         return updatesDuringLoad.Any(record => record.Id == currentId && record.EndedAt is null)
             ? currentId
-            : records.FirstOrDefault(record => record.EndedAt is null)?.Id;
+            : records.FirstOrDefault(record => record.EndedAt is null
+                && (record.Id == currentId || (record.Id != unspecifiedCurrentId && !projectCurrentIds.ContainsValue(record.Id))))?.Id;
     }
 
     /// <summary>操作の成否を一覧で確認し、再取得できなければ未確認状態として操作を止めます。</summary>

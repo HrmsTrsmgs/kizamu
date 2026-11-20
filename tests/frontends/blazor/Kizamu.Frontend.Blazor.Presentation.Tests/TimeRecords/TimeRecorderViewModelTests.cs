@@ -855,6 +855,29 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task Aで記録を開始して未開始のBを選んだ後に空の初回一覧が届いてもAに戻ってその記録だけを終了できます()
+    {
+        var 応答 = service.DelayListResponse();
+        var 読み込み = tested.LoadAsync();
+        tested.SelectProject(プロジェクトA);
+        await tested.StartTimeRecordAsync();
+        tested.SelectProject(プロジェクトB);
+
+        応答.SetResult([]);
+        await 読み込み;
+
+        tested.IsRecording.Should().BeFalse();
+        await tested.EndTimeRecordAsync();
+        service.EndedIds.Should().BeEmpty();
+
+        tested.SelectProject(プロジェクトA);
+        await tested.EndTimeRecordAsync();
+
+        service.EndedIds.Should().Equal(記録ID);
+        tested.Records.Should().Equal(service.EndedRecord);
+    }
+
+    [Fact]
     public async Task 一覧の取得中に記録を開始すると応答の先頭に別の未終了の記録があっても新しく開始した記録から終了します()
     {
         var 応答 = service.DelayListResponse();

@@ -42,7 +42,7 @@ export function timeRecorderReducer(
       return {
         ...state,
         records,
-        timeRecordId: getEndTargetAfterLoad(state.timeRecordId, records, updates),
+        timeRecordId: getEndTargetAfterLoad(state, records, updates),
       }
     }
     case 'recordStarted':
@@ -94,12 +94,16 @@ function mergeLoadedRecords(
 }
 
 function getEndTargetAfterLoad(
-  previousId: string | null,
+  state: TimeRecorderState,
   records: readonly TimeRecordPresentation[],
   updates: readonly TimeRecordPresentation[],
 ): string | null {
+  const previousId = state.timeRecordId
   if (previousId !== null && updates.some(({ record }) => record.id === previousId && record.endedAt === null)) {
     return previousId
   }
-  return records.find(({ record }) => record.endedAt === null)?.record.id ?? null
+  const otherProjectIds = Array.from(state.projectTimeRecordIds ?? [])
+    .filter(([project]) => project !== state.selectedProject)
+    .map(([, id]) => id)
+  return records.find(({ record }) => record.endedAt === null && !otherProjectIds.includes(record.id))?.record.id ?? null
 }

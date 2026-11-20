@@ -40,6 +40,8 @@ AとBを記録中にしてAの終了応答を保留し、Bへ切り替えてか�
 - **修正**　一覧へ確定済みの操作を合成する処理と、選択中の終了対象を復元する処理を分ける。終了対象候補から、クライアントが他プロジェクトの進行中IDとして保持するものを除く。未指定も一つのプロジェクトとして扱う。所属情報のないサーバー記録に対する既存の先頭未終了フォールバックは維持する。
 - **完了条件**　両実装で上記の順序を再現し、Bは開始可能、Bから終了要求は0回、Aへ戻るとAを終了可能、共有一覧にはAが一件と確認する。既存の復旧テストにある「操作中の対象を優先」「該当がなければ先頭の未終了」も実行する。 [TimeRecorderViewModel.cs 84行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L84) · [timeRecorderState.ts 39行](../src/frontends/react/src/presentation/timeRecorderState.ts#L39) · [pendingTimeRecordLoads.ts 1行](../src/frontends/react/src/presentation/pendingTimeRecordLoads.ts#L1) · [TimeRecorderViewModelTests.cs 813行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L813) · [timeRecorderState.test.ts 206行](../tests/frontends/react/presentation/timeRecorderState.test.ts#L206)
 
+修正02の基準は `b4f7911`。BlazorとReactで再現テストが期待どおり失敗することを確認し、別プロジェクトに割当済みの記録を終了対象の候補から外した。.NET 327件・TypeScript 240件の全テストと、両方のビルド・静的検査が成功した。次はRefactorの要否を確認し、修正03へ進む。
+
 ### 03　「未指定」を選び直せるタブにする
 
 両画面とも「未指定」は `span` で、登録プロジェクトを選ぶと画面から未指定へ戻れない。未指定で開始した記録があっても、タブを選んで終了できない。内側にはプロジェクトごとの終了対象を保持するテストがある。
