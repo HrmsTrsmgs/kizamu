@@ -7,6 +7,7 @@
 Nodeの業務APIはFastifyを使い、HTTP契約はVitestとFastifyの `inject` で検証する。対象パッケージは `kizamu-backend-node` と `kizamu-backend-node-tests`。ルートのlint・test・buildにはReactとNodeの両方を含める。Nodeへ画面配信やフロント側のAPI中継を持ち込まない。
 
 * UIの標準表示言語と利用者向け文言は日本語とする。VitestとReact Testing Libraryを使う。
+* テスト名はKizamuの[テスト名の方針](../testing-style.md#テスト名)に従う。
 * アサーションは「対象 → should → 期待すること」の順に記述する。具体的な初期化・nullable・クラスの比較は [テスト記述](../testing-style.md#検証対象を直接アサーションへ渡す)、共通準備は同文書の「テストの準備と補助メソッド」に従う。DOM・モック専用の検証やクラス復元の厳密比較を記法統一のために弱めない。
 * npm workspacesとlockfileをルートで管理する。通常は `npm ci`、変更後は対象テストと `npm run lint`、`npm test`、`npm run build` を実行する。
 * Vite proxy、Visual Studioの起動統合、画面配信と業務APIの責務は [固有指示](kizamu.md#開発環境と文書) に従う。CLIの成功とIDEの実機確認を区別する。
