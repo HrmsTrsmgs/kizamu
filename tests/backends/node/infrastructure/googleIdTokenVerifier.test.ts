@@ -1,4 +1,5 @@
 import { generateKeyPairSync, sign, type KeyObject } from 'node:crypto'
+import { LoginTicket, OAuth2Client } from 'google-auth-library'
 import { beforeEach, test, vi } from 'vitest'
 import { GoogleIdTokenVerifier } from '../../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
 
@@ -21,6 +22,32 @@ for (const issuer of ['https://accounts.google.com', 'accounts.google.com']) {
     ;({ subject: await tested.verify(createToken({ issuer, email: 'after@example.test' })) }).should.deep.equal({ subject: 'google-user' })
   })
 }
+
+test.each([
+  ['有効期限の1ミリ秒前に検証すると、本人識別子を返します', -1, 'google-user'],
+  ['有効期限に達した時点で検証すると、本人識別子はnullです', 0, null],
+  ['有効期限の1ミリ秒後に検証すると、本人識別子はnullです', 1, null],
+])('Google IDトークンを%s', async (_, 期限との差, 本人識別子) => {
+  const 有効期限 = new Date('2026-01-01T01:00:00Z')
+  const 期限のUnix秒 = 有効期限.getTime() / 1000
+  const verifyToken = vi.spyOn(OAuth2Client.prototype, 'verifySignedJwtWithCertsAsync').mockResolvedValue(new LoginTicket(undefined, {
+    aud: 'kizamu-client',
+    iss: 'https://accounts.google.com',
+    sub: 'google-user',
+    iat: 期限のUnix秒 - 3600,
+    exp: 期限のUnix秒,
+  }))
+
+  vi.useFakeTimers({ toFake: ['Date'] })
+  try {
+    vi.setSystemTime(有効期限.getTime() + 期限との差)
+
+    ;({ subject: await tested.verify('dummy-id-token') }).should.deep.equal({ subject: 本人識別子 })
+  } finally {
+    vi.useRealTimers()
+    verifyToken.mockRestore()
+  }
+})
 
 test('公開鍵の有効期間内は再利用し、期限後は再取得してGoogle IDトークンを検証します', async () => {
   vi.useFakeTimers()

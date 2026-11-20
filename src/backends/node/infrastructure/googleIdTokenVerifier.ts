@@ -18,7 +18,10 @@ export class GoogleIdTokenVerifier {
       const ticket = await this.#client.verifySignedJwtWithCertsAsync(
         idToken, certs, this.#clientId, ['https://accounts.google.com', 'accounts.google.com'],
       )
-      const subject = ticket.getPayload()?.sub
+      const payload = ticket.getPayload()
+      if (!payload || Date.now() >= payload.exp * 1000) return null
+
+      const subject = payload.sub
       return typeof subject === 'string' && subject.length > 0 ? subject : null
     } catch {
       return null
