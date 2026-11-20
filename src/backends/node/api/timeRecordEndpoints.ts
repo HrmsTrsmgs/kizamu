@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import type { TimeRecord } from 'kizamu-domain-typescript'
 import type { GoogleIdTokenVerifier } from '../infrastructure/googleIdTokenVerifier.js'
+import { TimeRecordNotFoundError } from '../application/timeRecords.js'
 import type { TimeRecords } from '../application/timeRecords.js'
 
 export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: TimeRecords, verifier: GoogleIdTokenVerifier): void {
@@ -20,8 +21,12 @@ export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: T
       const owner = await getOwner(request.headers.authorization, verifier)
       if (owner === null) return reply.code(401).send()
       if (owners.get(request.params.id) !== owner) return reply.code(404).send()
-      const record = timeRecords.end(request.params.id)
-      if (record !== undefined) return toResponse(record)
+      try {
+        return toResponse(timeRecords.end(request.params.id))
+      } catch (error) {
+        if (error instanceof TimeRecordNotFoundError) return reply.code(404).send()
+        throw error
+      }
     })
   })
   app.get('/api/time-records', async (request, reply) => {

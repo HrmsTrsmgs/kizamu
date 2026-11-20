@@ -3,7 +3,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Kizamu.Backend.AspNetCore.Application.TimeRecords;
 using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
+using Kizamu.Backend.AspNetCore.Infrastructure.TimeRecords;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Net;
 using System.Net.Http.Json;
@@ -109,6 +111,22 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await 記録一覧を取得する("first-user")).Should().Equal(startedRecord);
+    }
+
+    [Fact]
+    public async Task 所有者が保存先にない記録の終了を要求すると404が返ります()
+    {
+        await using var factoryWithEmptyEndState = configuredFactory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.Replace(
+                ServiceDescriptor.Singleton(new TimeRecordEndOperation(timeProvider, new InMemoryTimeRecordState())))));
+        using var apiClient = factoryWithEmptyEndState.CreateClient();
+        var startedRecord = await 開始済みの記録を用意する(apiClient, 早い時刻);
+        timeProvider.SetUtcNow(遅い時刻);
+        using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
+
+        using var response = await apiClient.SendAsync(request, CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -273,11 +291,15 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         return request;
     }
 
-    async Task<TimeRecordResponse> 開始済みの記録を用意する(DateTimeOffset startedAt, string user = "google-user")
+    Task<TimeRecordResponse> 開始済みの記録を用意する(DateTimeOffset startedAt, string user = "google-user") =>
+        開始済みの記録を用意する(client, startedAt, user);
+
+    async Task<TimeRecordResponse> 開始済みの記録を用意する(
+        HttpClient apiClient, DateTimeOffset startedAt, string user = "google-user")
     {
         timeProvider.SetUtcNow(startedAt);
         using var request = 同一オリジンのPOST要求を用意する("/api/time-records/start", user);
-        using var response = await client.SendAsync(request, CancellationToken);
+        using var response = await apiClient.SendAsync(request, CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<TimeRecordResponse>(CancellationToken);
         body.Should().NotBeNull();

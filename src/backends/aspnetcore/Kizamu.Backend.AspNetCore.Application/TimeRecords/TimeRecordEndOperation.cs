@@ -14,14 +14,15 @@ public sealed class TimeRecordEndOperation(
     /// </summary>
     /// <param name="id">作業記録の識別子。</param>
     /// <returns>終了した作業記録。</returns>
+    /// <exception cref="TimeRecordNotFoundException">指定した作業記録が保存先に存在しない場合。</exception>
     public EndTimeRecordResult Execute(Guid id)
     {
         var endedAt = timeProvider.GetUtcNow();
-        var timeRecord = timeRecordState.Find(id);
-        if (timeRecord is not null)
-            timeRecordState.Update(timeRecord.End(endedAt));
+        var timeRecord = timeRecordState.Find(id) ?? throw new TimeRecordNotFoundException();
 
-        return new(id, timeRecord?.StartedAt ?? default, endedAt);
+        var endedTimeRecord = timeRecord.End(endedAt);
+        timeRecordState.Update(endedTimeRecord);
+        return new(endedTimeRecord.Id, endedTimeRecord.StartedAt, endedAt);
     }
 }
 

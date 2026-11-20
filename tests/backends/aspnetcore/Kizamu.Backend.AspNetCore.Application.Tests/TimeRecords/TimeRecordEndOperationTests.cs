@@ -49,13 +49,21 @@ public sealed class TimeRecordEndOperationTests
     }
 
     [Fact]
+    public void 保存先にない記録の終了を要求するとTimeRecordNotFoundExceptionが投げられます()
+    {
+        var end = () => tested.Execute(Guid.NewGuid());
+
+        end.Should().ThrowExactly<TimeRecordNotFoundException>();
+    }
+
+    [Fact]
     public void 存在しない識別子で終了を要求しても保存済みの記録は変わりません()
     {
         var timeRecord = TimeRecord.Start(早い時刻);
         state.Add(timeRecord);
         timeProvider.SetUtcNow(遅い時刻);
 
-        // 対象が異なる場合の戻り値や例外は未確定のため、記録への影響だけを確認する。
+        // 終了要求の結果と独立して、保存済みの記録への影響を確認する。
         Record.Exception(() => tested.Execute(Guid.NewGuid()));
 
         state.Find(timeRecord.Id).Should().Be(timeRecord);

@@ -1,7 +1,7 @@
 import { beforeEach, describe, test } from 'vitest'
 import { Temporal } from 'temporal-polyfill'
 import { TimeRecord } from 'kizamu-domain-typescript'
-import { TimeRecords } from '../../../../src/backends/node/application/timeRecords.js'
+import { TimeRecordNotFoundError, TimeRecords } from '../../../../src/backends/node/application/timeRecords.js'
 import type { TimeRecordState } from '../../../../src/backends/node/application/timeRecords.js'
 
 const 開始時刻 = Temporal.Instant.from('2026-08-01T09:00:00Z')
@@ -51,6 +51,12 @@ test('二件の記録を開始すると、一覧には開始した記録が保�
   const second = tested.start()
 
   tested.list().should.toStrictEqual([first, second])
+})
+
+test('保存先にない記録の終了を要求するとTimeRecordNotFoundErrorが投げられます', () => {
+  const end = () => tested.end('missing-id')
+
+  end.should.throw(TimeRecordNotFoundError)
 })
 
 describe.each([

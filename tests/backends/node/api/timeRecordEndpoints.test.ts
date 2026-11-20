@@ -1,7 +1,12 @@
 import { generateKeyPairSync, sign } from 'node:crypto'
 import { GoogleIdTokenVerifier } from '../../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
 import { afterEach, beforeEach, describe, test, vi } from 'vitest'
+import Fastify from 'fastify'
 import { createApp } from '../../../../src/backends/node/app.js'
+import { registerTimeRecordEndpoints } from '../../../../src/backends/node/api/timeRecordEndpoints.js'
+import { TimeRecords } from '../../../../src/backends/node/application/timeRecords.js'
+import { timeRecordSources } from '../../../../src/backends/node/infrastructure/timeRecordSources.js'
+import { InMemoryTimeRecordState } from '../../../../src/backends/node/infrastructure/timeRecordState.js'
 
 interface TimeRecordResponse {
   id: string
@@ -159,6 +164,26 @@ describe('別の利用者が開始した記録があるとき', () => {
     const records = await readTimeRecords(app, 'first-user')
     records.should.deep.equal([startedRecord])
   })
+})
+
+test('所有者が保存先にない記録の終了を要求すると404が返ります', async () => {
+  const state = new InMemoryTimeRecordState()
+  const endpointApp = Fastify()
+  registerTimeRecordEndpoints(
+    endpointApp, new TimeRecords(state, timeRecordSources), new GoogleIdTokenVerifier('kizamu-client', publicKeyFetch),
+  )
+
+  try {
+    const startedRecord = await prepareStartedRecord(endpointApp)
+    vi.setSystemTime(終了時刻)
+    vi.spyOn(state, 'find').mockReturnValue(undefined)
+
+    const response = await postFromSameOrigin(endpointApp, `/api/time-records/${startedRecord.id}/end`)
+
+    response.statusCode.should.equal(404)
+  } finally {
+    await endpointApp.close()
+  }
 })
 
 test('二人がそれぞれ記録を開始すると、各利用者の一覧には本人の記録だけが含まれます', async () => {
