@@ -38,7 +38,13 @@ public sealed class GoogleSignInTests : IDisposable
     {
         await tested.InvokeAsync(() => google.OnCredential?.Invoke("google-id-token"));
 
-        tested.WaitForAssertion(() => tested.FindAll(".recorder-panel button").Select(it => it.TextContent).Should().Contain("記録を開始"));
+        tested.WaitForAssertion(() =>
+        {
+            var ボタンの表示名 =
+                from button in tested.FindAll(".recorder-panel button")
+                select button.TextContent;
+            ボタンの表示名.Should().Contain("記録を開始");
+        });
     }
 
     [Fact]

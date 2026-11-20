@@ -33,7 +33,7 @@ public sealed class AppTests : IDisposable
     [Fact]
     public void 未ログイン時はGoogleのログインボタンを表示します()
     {
-        未ログインの画面.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
+        ボタンの表示名(未ログインの画面).Should().Contain("Googleでログイン");
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class AppTests : IDisposable
     {
         ログインする(ログイン操作用の画面);
 
-        ログイン操作用の画面.FindAll("button").Select(it => it.TextContent).Should().NotContain("Googleでログイン");
+        ボタンの表示名(ログイン操作用の画面).Should().NotContain("Googleでログイン");
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class AppTests : IDisposable
 
         ログアウトする(ログイン操作用の画面);
 
-        ログイン操作用の画面.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
+        ボタンの表示名(ログイン操作用の画面).Should().Contain("Googleでログイン");
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class AppTests : IDisposable
         ログアウトする(tested);
 
         tested.FindAll("ul[aria-label='作業記録一覧']").Should().BeEmpty();
-        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
+        ボタンの表示名(tested).Should().Contain("Googleでログイン");
     }
 
     [Fact]
@@ -195,7 +195,10 @@ public sealed class AppTests : IDisposable
 
         ログイン済みの画面.FindAll("[role=dialog] button").Single(it => it.TextContent == "登録").Click();
 
-        ログイン済みの画面.FindAll("[role=tab]").Select(it => it.TextContent).Should().Contain("プロジェクトA");
+        var タブの表示名 =
+            from tab in ログイン済みの画面.FindAll("[role=tab]")
+            select tab.TextContent;
+        タブの表示名.Should().Contain("プロジェクトA");
     }
 
     [Fact]
@@ -226,6 +229,10 @@ public sealed class AppTests : IDisposable
         context.Render<Client.App>(parameters => parameters
             .Add(it => it.SignInWithGoogle, () => Task.FromResult("google-id-token"))
             .Add(it => it.CreateTimeRecords, 記録サービスを作る ?? (_ => new StubTimeRecordService(未終了の記録, 未終了の記録))));
+
+    static IEnumerable<string> ボタンの表示名(IRenderedComponent<Client.App> tested) =>
+        from button in tested.FindAll("button")
+        select button.TextContent;
 
     static void ログインする(IRenderedComponent<Client.App> tested) =>
         tested.FindAll("button").Single(it => it.TextContent == "Googleでログイン").Click();

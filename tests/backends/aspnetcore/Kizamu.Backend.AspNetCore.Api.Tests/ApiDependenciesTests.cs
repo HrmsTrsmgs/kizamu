@@ -7,8 +7,12 @@ public sealed class ApiDependenciesTests
     [Fact]
     public void 業務APIが参照するKizamuの層はApplicationとInfrastructureだけです()
     {
-        typeof(Program).Assembly.GetReferencedAssemblies()
-            .Select(it => it.Name).Where(it => it is not null && it.StartsWith("Kizamu.", StringComparison.Ordinal))
-            .Should().BeEquivalentTo("Kizamu.Backend.AspNetCore.Application", "Kizamu.Backend.AspNetCore.Infrastructure");
+        var Kizamuの参照先 =
+            from reference in typeof(Program).Assembly.GetReferencedAssemblies()
+            select reference.Name into name
+            where name is not null && name.StartsWith("Kizamu.", StringComparison.Ordinal)
+            select name;
+
+        Kizamuの参照先.Should().BeEquivalentTo("Kizamu.Backend.AspNetCore.Application", "Kizamu.Backend.AspNetCore.Infrastructure");
     }
 }

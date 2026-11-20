@@ -19,11 +19,11 @@ public sealed partial class TimeRecordApi(HttpClient client, string? token = nul
         using var request = CreateRequest(HttpMethod.Get, "api/time-records");
         using var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
-        return
-        [
-            .. (await response.Content.ReadFromJsonAsync(TimeRecordJsonContext.Default.ImmutableArrayTimeRecordResponse))
-                .Select(it => it.ToDomain())
-        ];
+        var responseRecords = await response.Content.ReadFromJsonAsync(TimeRecordJsonContext.Default.ImmutableArrayTimeRecordResponse);
+        var records =
+            from record in responseRecords
+            select record.ToDomain();
+        return [.. records];
     }
 
     /// <summary>プロジェクト未指定の記録を開始します。</summary>

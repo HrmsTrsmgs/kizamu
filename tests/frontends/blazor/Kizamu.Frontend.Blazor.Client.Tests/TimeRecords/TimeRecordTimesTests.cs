@@ -24,7 +24,10 @@ public sealed class TimeRecordTimesTests : IDisposable
     {
         var 時刻要素 = 終了済みの表示.FindAll("time");
 
-        時刻要素.Select(it => it.TextContent).Should().Equal("2026/08/01 18:00", "2026/08/01 19:30");
+        var 表示時刻 =
+            from time in 時刻要素
+            select time.TextContent;
+        表示時刻.Should().Equal("2026/08/01 18:00", "2026/08/01 19:30");
     }
 
     [Fact]
@@ -33,7 +36,10 @@ public sealed class TimeRecordTimesTests : IDisposable
         var 時刻要素 = 終了済みの表示.FindAll("time");
 
         時刻要素.Should().HaveCount(2);
-        時刻要素.Select(it => it.GetAttribute("datetime")).Should().AllSatisfy(it =>
+        var 日時属性 =
+            from time in 時刻要素
+            select time.GetAttribute("datetime");
+        日時属性.Should().AllSatisfy(it =>
             it.Should().MatchRegex(@"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$"));
     }
 
@@ -56,7 +62,10 @@ public sealed class TimeRecordTimesTests : IDisposable
         var tested = context.Render<TimeRecordTimes>(it => it
             .Add(it => it.Record, new TimeRecord(Guid.Empty, 開始時刻, 終了時刻)));
 
-        tested.FindAll("time").Select(it => it.GetAttribute("datetime")).Should().Equal(
+        var 日時属性 =
+            from time in tested.FindAll("time")
+            select time.GetAttribute("datetime");
+        日時属性.Should().Equal(
             "2026-08-01T23:59:59.999+09:00", "2026-08-02T00:00:59.999+09:00");
     }
 
@@ -114,7 +123,10 @@ public sealed class TimeRecordTimesTests : IDisposable
             .Add(it => it.Record, new TimeRecord(Guid.Empty, 開始時刻, 終了時刻))
             .Add(it => it.Labelled, 操作欄));
 
-        tested.FindAll("time").Select(it => it.GetAttribute("aria-label")).Should().Equal(
+        var 時刻のアクセシブルな名前 =
+            from time in tested.FindAll("time")
+            select time.GetAttribute("aria-label");
+        時刻のアクセシブルな名前.Should().Equal(
             操作欄 ? "開始時刻" : null, 操作欄 ? "終了時刻" : null);
     }
 

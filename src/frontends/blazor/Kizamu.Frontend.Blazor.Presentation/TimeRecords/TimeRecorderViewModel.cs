@@ -125,14 +125,20 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
 
     void ClearEndedCurrentIds()
     {
-        var endedIds = records.Where(record => record.EndedAt is not null).Select(record => record.Id).ToHashSet();
+        var endedIds =
+            (from record in records
+             where record.EndedAt is not null
+             select record.Id).ToHashSet();
         if (unspecifiedCurrentId is { } id && endedIds.Contains(id)) unspecifiedCurrentId = null;
-        foreach (var project in projectCurrentIds.Keys.ToArray())
+
+        var endedProjects =
+            from project in projectCurrentIds.Keys.ToArray()
+            let currentId = projectCurrentIds[project]
+            where currentId.HasValue && endedIds.Contains(currentId.Value)
+            select project;
+        foreach (var project in endedProjects)
         {
-            if (projectCurrentIds[project] is { } projectId && endedIds.Contains(projectId))
-            {
-                projectCurrentIds[project] = null;
-            }
+            projectCurrentIds[project] = null;
         }
     }
     /// <summary>一覧取得中に操作した終了対象を優先し、それ以外は、選択中の対象に割り当てられる最初の未終了記録を選びます。</summary>

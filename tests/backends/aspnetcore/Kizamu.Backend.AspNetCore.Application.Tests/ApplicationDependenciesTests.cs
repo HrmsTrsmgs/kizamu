@@ -14,7 +14,12 @@ public sealed class ApplicationDependenciesTests
     [Fact]
     public void Applicationが参照するKizamuの層はDomainだけです()
     {
-        参照先.Where(it => it.StartsWith("Kizamu.", StringComparison.Ordinal)).Should().Equal("Kizamu.Domain");
+        var Kizamuの参照先 =
+            from name in 参照先
+            where name.StartsWith("Kizamu.", StringComparison.Ordinal)
+            select name;
+
+        Kizamuの参照先.Should().Equal("Kizamu.Domain");
     }
 
     [Fact]

@@ -141,7 +141,10 @@ public sealed class TimeRecorderViewModelTests
     {
         await プロジェクトAとBで記録を開始する();
 
-        tested.Records.Select(it => it.Id).Should().Equal(記録ID, 別の記録ID);
+        var 記録ID一覧 =
+            from record in tested.Records
+            select record.Id;
+        記録ID一覧.Should().Equal(記録ID, 別の記録ID);
     }
 
     [Fact]
@@ -842,7 +845,11 @@ public sealed class TimeRecorderViewModelTests
     {
         await 記録の更新と別の記録の開始後に古い一覧を受け取る();
 
-        tested.Records.Where(it => it.Id == 記録ID).Should().Equal(service.EndedRecord);
+        var 同じIDの記録 =
+            from record in tested.Records
+            where record.Id == 記録ID
+            select record;
+        同じIDの記録.Should().Equal(service.EndedRecord);
     }
 
     [Fact]
@@ -850,7 +857,10 @@ public sealed class TimeRecorderViewModelTests
     {
         await 記録の更新と別の記録の開始後に古い一覧を受け取る();
 
-        tested.Records.Select(it => it.Id).Should().Equal(記録ID, 別の記録ID);
+        var 記録ID一覧 =
+            from record in tested.Records
+            select record.Id;
+        記録ID一覧.Should().Equal(記録ID, 別の記録ID);
         tested.Records[^1].Should().Be(service.StartedRecord);
     }
 
