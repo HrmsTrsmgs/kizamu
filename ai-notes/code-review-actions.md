@@ -40,7 +40,7 @@ AとBを記録中にしてAの終了応答を保留し、Bへ切り替えてか�
 - **修正**　一覧へ確定済みの操作を合成する処理と、選択中の終了対象を復元する処理を分ける。終了対象候補から、クライアントが他プロジェクトの進行中IDとして保持するものを除く。未指定も一つのプロジェクトとして扱う。所属情報のないサーバー記録に対する既存の先頭未終了フォールバックは維持する。
 - **完了条件**　両実装で上記の順序を再現し、Bは開始可能、Bから終了要求は0回、Aへ戻るとAを終了可能、共有一覧にはAが一件と確認する。既存の復旧テストにある「操作中の対象を優先」「該当がなければ先頭の未終了」も実行する。 [TimeRecorderViewModel.cs 84行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L84) · [timeRecorderState.ts 39行](../src/frontends/react/src/presentation/timeRecorderState.ts#L39) · [pendingTimeRecordLoads.ts 1行](../src/frontends/react/src/presentation/pendingTimeRecordLoads.ts#L1) · [TimeRecorderViewModelTests.cs 813行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L813) · [timeRecorderState.test.ts 206行](../tests/frontends/react/presentation/timeRecorderState.test.ts#L206)
 
-修正02の基準は `b4f7911`。BlazorとReactで再現テストが期待どおり失敗することを確認し、別プロジェクトに割当済みの記録を終了対象の候補から外した。.NET 327件・TypeScript 240件の全テストと、両方のビルド・静的検査が成功した。次はRefactorの要否を確認し、修正03へ進む。
+修正02の基準は `b4f7911`。BlazorとReactで再現テストが期待どおり失敗することを確認し、別プロジェクトに割当済みの記録を終了対象の候補から外した。.NET 327件・TypeScript 240件の全テストと、両方のビルド・静的検査が成功した。Greenは `3ba1bae` に記録済み。Refactorを確認し、追加変更なし。
 
 ### 03　「未指定」を選び直せるタブにする
 
@@ -48,6 +48,8 @@ AとBを記録中にしてAの終了応答を保留し、Bへ切り替えてか�
 
 - **修正**　両画面の未指定を他のタブと同じく選べる `button`（`role="tab"`）にする。BlazorのタブViewModelは `SelectProject(Project?)` で `null` を受け、Reactは既存の `projectSelected` に `undefined` を渡す。
 - **完了条件**　画面ではA登録後に未指定が選択済みでAは未選択と確かめ、未指定→A→未指定の順に選び、各時点の両タブの選択表示と記録欄の見出しを確認する。BlazorのタブViewModelではA選択後に未指定へ戻せることを直接確認する。プロジェクト別の記録状態の全組合せは既存の内側のテストで確認する。 [App.razor 34行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L34) · [ProjectTabsViewModel.cs 17行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/Projects/ProjectTabsViewModel.cs#L17) · [App.tsx 55行](../src/frontends/react/src/App.tsx#L55) · [projectTabsState.ts 35行](../src/frontends/react/src/presentation/projectTabsState.ts#L35) · [AppTests.cs 199行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L199) · [App.test.tsx 122行](../tests/frontends/react/App.test.tsx#L122)
+
+修正03の基準は `3ba1bae`。BlazorとReactの画面テストで、Aを選んだ後に「未指定」のタブが見つからない失敗を再現した。「未指定」を選べるボタンに変更し、選択状態と記録の見出しが切り替わることを確認した。.NET 328件・TypeScript 241件の全テストと両方のビルド・静的検査が成功した。次はRefactorの要否を確認し、修正04へ進む。
 
 ### 04　認証状態を初期注入した場合にもログアウトを反映する
 

@@ -52,7 +52,13 @@ export default function App({ isAuthenticated = false, health, timeRecords, sign
             <button className="project-add-button" type="button" onClick={() => dispatch({ type: 'dialogOpened' })}>追加</button>
           </div>
           <div className="project-tabs" role="tablist" aria-label="プロジェクト">
-            <span className="project-default" aria-selected={state.selectedProject === undefined}>未指定</span>
+            <button
+              className="project-default project-tab"
+              role="tab"
+              aria-selected={state.selectedProject === undefined}
+              type="button"
+              onClick={() => dispatch({ type: 'projectSelected', project: undefined })}
+            >未指定</button>
             {state.projects.map((project, index) => (
               <button
                 className="project-tab"

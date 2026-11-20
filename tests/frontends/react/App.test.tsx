@@ -144,6 +144,22 @@ describe('ログイン済みのApp', () => {
       screen.getByRole('heading', { name: 'プロジェクトA', level: 2 }).should.toBeInTheDocument()
     })
 
+    it('登録済みプロジェクトの選択後に「未指定」タブを押すと選択表示と記録欄の見出しが未指定に戻ります', () => {
+      const tabs = within(screen.getByRole('tablist', { name: 'プロジェクト' }))
+      const project = tabs.getByRole('tab', { name: 'プロジェクトA' })
+      tabs.getByText('未指定').should.toHaveAttribute('aria-selected', 'true')
+
+      fireEvent.click(project)
+      screen.getByRole('heading', { name: 'プロジェクトA', level: 2 }).should.toBeInTheDocument()
+
+      const unspecified = tabs.getByRole('tab', { name: '未指定' })
+      fireEvent.click(unspecified)
+
+      unspecified.should.toHaveAttribute('aria-selected', 'true')
+      project.should.toHaveAttribute('aria-selected', 'false')
+      screen.getByRole('heading', { name: 'プロジェクト未指定', level: 2 }).should.toBeInTheDocument()
+    })
+
     it('別のプロジェクトから記録中のタブに戻ると、記録の終了ボタンが表示されます', async () => {
       プロジェクトを登録する('プロジェクトB')
       fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))

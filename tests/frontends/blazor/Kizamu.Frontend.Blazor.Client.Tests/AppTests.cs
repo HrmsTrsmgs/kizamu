@@ -207,6 +207,23 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
+    public void 登録済みプロジェクトの選択後に未指定タブを押すと選択表示と記録欄の見出しが未指定に戻ります()
+    {
+        プロジェクトを登録する("プロジェクトA");
+        var tested = ログイン済みの画面;
+        tested.Find("[role=tablist] [aria-selected=true]").TextContent.Should().Be("未指定");
+
+        プロジェクトを選ぶ(tested, "プロジェクトA");
+        tested.Find(".recorder-panel h2").TextContent.Should().Be("プロジェクトA");
+
+        プロジェクトを選ぶ(tested, "未指定");
+
+        tested.FindAll("[role=tab]").Single(it => it.TextContent == "未指定").GetAttribute("aria-selected").Should().Be("true");
+        tested.FindAll("[role=tab]").Single(it => it.TextContent == "プロジェクトA").GetAttribute("aria-selected").Should().Be("false");
+        tested.Find(".recorder-panel h2").TextContent.Should().Be("プロジェクト未指定");
+    }
+
+    [Fact]
     public void プロジェクトを指定せずに記録を開始すると終了操作を表示します()
     {
         ログイン済みの画面.FindAll("button").Single(it => it.TextContent == "記録を開始").Click();

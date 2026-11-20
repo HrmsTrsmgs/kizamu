@@ -14,7 +14,8 @@ public sealed class ProjectTabsViewModel
     public Project? SelectedProject { get; private set; }
 
     /// <summary>表示するプロジェクトを選択します。</summary>
-    public void SelectProject(Project project) => SelectedProject = project;
+    /// <param name="project">選択するプロジェクト。未指定の場合はnull。</param>
+    public void SelectProject(Project? project) => SelectedProject = project;
 
     /// <summary>登録ダイアログを表示するかどうかを取得します。</summary>
     public bool ShowProjectDialog { get; private set; }
