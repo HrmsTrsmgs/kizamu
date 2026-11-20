@@ -21,7 +21,7 @@ try {
         @{ Dir = $api; Dll = 'Kizamu.Backend.AspNetCore.Api.dll'; Port = 5213; Check = 'http://localhost:5213/api/health'; Name = 'api' },
         @{ Dir = $frontend; Dll = 'Kizamu.Frontend.Blazor.Server.dll'; Port = 5214; Check = 'http://localhost:5214/api/health'; Name = 'frontend' }
     )) {
-        $dll = Join-Path $item.Dir ("bin/Debug/net10.0/" + $item.Dll)
+        $dll = Join-Path $item.Dir ("bin/Debug/net11.0/" + $item.Dll)
         $process = Start-Process -FilePath 'dotnet' -ArgumentList "`"$dll`" --urls http://localhost:$($item.Port) --environment Development" -WorkingDirectory $item.Dir -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $logs "$($item.Name).out") -RedirectStandardError (Join-Path $logs "$($item.Name).err")
         $processes += $process
         $ready = Wait-HealthEndpoint -Process $process -Uri $item.Check

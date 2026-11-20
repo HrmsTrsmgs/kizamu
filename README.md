@@ -16,7 +16,7 @@ MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間�
 
 ## 技術構成
 
-- .NET 10 LTS / ASP.NET Core Minimal API / Blazor WebAssembly
+- .NET 11 / ASP.NET Core Minimal API / Blazor WebAssembly
 - YARP（Blazor配信サーバーから業務APIへのHTTP中継）
 - xUnit.net v3 / bUnit / AwesomeAssertions
 - React / TypeScript（strict）/ Vite
@@ -174,13 +174,13 @@ Pop-Location
 
 ## 必要な環境
 
-- .NET SDK 10.0.302 以降の .NET 10 SDK
+- .NET SDK 11.0.100 以降の .NET 11 SDK
 - Node.js 24.18.0（Node・React版の確認時）
 - npm 11.16.0（Node・React版の確認時）
 
 BlazorとASP.NET Coreだけを開発・起動する場合はNode.jsとnpmは不要です。
 
-標準のIDEはVisual Studio 2026（ASP.NETとWeb開発ワークロード）です。VS Codeでは `Kizamu.code-workspace` を開くとリポジトリ全体を扱えます。C#拡張向けに既定のソリューションを `Kizamu.slnx` に指定しています。IDE上の起動・テスト操作は今回のCLI検証とは別に確認が必要です。VS Code専用の起動・デバッグ設定はまだ用意していません。
+標準のIDEはVisual Studio 2026 18.12以降（ASP.NETとWeb開発ワークロード）です。VS Codeでは `Kizamu.code-workspace` を開くとリポジトリ全体を扱えます。C#拡張向けに既定のソリューションを `Kizamu.slnx` に指定しています。IDE上の起動・テスト操作は今回のCLI検証とは別に確認が必要です。VS Code専用の起動・デバッグ設定はまだ用意していません。
 
 ## Googleログインのローカル設定
 

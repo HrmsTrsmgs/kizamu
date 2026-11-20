@@ -23,7 +23,7 @@ $processes = @()
 $logs = Join-Path ([System.IO.Path]::GetTempPath()) ("kizamu-react-check-" + [guid]::NewGuid())
 New-Item -ItemType Directory -Path $logs | Out-Null
 try {
-    $dll = Join-Path $api 'bin/Debug/net10.0/Kizamu.Backend.AspNetCore.Api.dll'
+    $dll = Join-Path $api 'bin/Debug/net11.0/Kizamu.Backend.AspNetCore.Api.dll'
     foreach ($item in @(
         @{ File = 'dotnet'; Args = "`"$dll`" --urls http://localhost:5213 --environment Development"; Dir = $api; Check = 'http://localhost:5213/api/health'; Name = 'API' },
         @{ File = 'node'; Args = "`"$vite`" --strictPort"; Dir = $frontend; Check = 'http://localhost:5173/api/health'; Name = 'React' }
