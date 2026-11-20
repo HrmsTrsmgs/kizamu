@@ -87,7 +87,7 @@ Nodeは先頭の `Bearer ` を大小文字まで固定して照合し、ASP.NET 
 - **修正**　Nodeでは方式名だけを大小文字を区別せず判定し、資格情報そのものは元の文字列のまま既存の検証器に渡す。
 - **完了条件**　両APIでテスト用の有効な資格情報を用い、小文字の方式名による一覧取得が200となることを確認する。既存の未指定・別方式の拒否も実行する。 [timeRecordEndpoints.ts 35行](../src/backends/node/api/timeRecordEndpoints.ts#L35) · [TimeRecordAuthentication.cs 10行](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Endpoints/TimeRecords/TimeRecordAuthentication.cs#L10) · [timeRecordEndpoints.test.ts 40行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L40) · [TimeRecordEndpointTests.cs 47行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L47)
 
-修正07の基準は `fdb7fab`。小文字の認証方式名を使った一覧取得が401になることをテストで再現し、方式名を大小文字を区別せず判定するよう修正した。TypeScriptの全245テスト、lint、ビルドが成功した。委任ツールを使用できないため、この工程は同じ担当者がRed・Greenを実施した。次はRefactorの要否を確認し、修正08へ進む。
+修正07の基準は `fdb7fab`。小文字の認証方式名を使った一覧取得が401になることをテストで再現し、方式名を大小文字を区別せず判定するよう修正した。TypeScriptの全245テスト、lint、ビルドが成功した。委任ツールを使用できないため、この工程は同じ担当者がRed・Greenを実施した。Greenは `1672e12` に記録済み。Refactorを確認し、追加変更なし。
 
 ### 08　Nodeの公開鍵取得に有効期限を適用する
 
@@ -95,6 +95,8 @@ Nodeの検証器は有効な公開鍵を取得した直後でも、次の記録�
 
 - **修正**　既に導入している `google-auth-library` の `getFederatedSignonCertsAsync()` に公開鍵取得と有効期限処理を任せる。テストでは既存の偽通信をライブラリの通信境界へ移す。署名、発行元、利用先、期限、本人識別の判定条件と、鍵取得失敗を上位に伝える動作を保つ。
 - **完了条件**　固定時計とキャッシュ期限付きの偽応答で、有効期間内の連続二件は鍵取得一回、期限後の検証は再取得することを確認する。既存の正常・拒否ケースも通し、実Googleへの通信を必要としない。 [googleIdTokenVerifier.ts 18行](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L18) · [googleIdTokenVerifier.test.ts 5行](../tests/backends/node/infrastructure/googleIdTokenVerifier.test.ts#L5)
+
+修正08の基準は `0478118`。公開鍵の有効期間内でも毎回取得することを再現し、採用済みライブラリの公開鍵取得と有効期限キャッシュを利用するよう変更した。テスト用の鍵応答をPEM形式に合わせた。TypeScriptの全246テスト、lint、ビルドが成功した。次はRefactorの要否を確認し、修正09へ進む。
 
 ## テストが見逃している箇所
 

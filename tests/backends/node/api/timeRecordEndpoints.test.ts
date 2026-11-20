@@ -14,7 +14,7 @@ const 終了時刻 = new Date('2026-08-01T10:30:00.000Z')
 const 同一オリジンを示さないヘッダー値 = ['same-site', 'cross-site', 'none', 'unknown', undefined]
 const key = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const publicKeyFetch: typeof fetch = async () => Response.json({
-  keys: [{ ...key.publicKey.export({ format: 'jwk' }), kid: 'endpoint-test-key', alg: 'RS256', use: 'sig' }],
+  'endpoint-test-key': key.publicKey.export({ type: 'spki', format: 'pem' }).toString(),
 })
 function createTestApp() { return createApp(new GoogleIdTokenVerifier('kizamu-client', publicKeyFetch)) }
 function authorization(user = 'google-user') {
