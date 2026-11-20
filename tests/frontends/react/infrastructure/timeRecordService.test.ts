@@ -43,6 +43,12 @@ describe('timeRecordService', () => {
     ])
   })
 
+  it('一覧取得が成功しても応答がオブジェクトなら、呼び出し元にエラーを返します', async () => {
+    fetchMock.mockImplementation(async () => Response.json(記録中の応答))
+
+    await tested.getTimeRecords().should.rejects.toThrow()
+  })
+
   describe('記録開始APIが記録中の応答を返すとき', () => {
     beforeEach(() => {
       fetchMock.mockImplementation(async () => Response.json(記録中の応答))
@@ -73,6 +79,12 @@ describe('timeRecordService', () => {
     await tested.startTimeRecord().should.rejects.toThrow()
   })
 
+  it('開始要求が成功しても応答の開始時刻がISO文字列を1件含む配列なら、呼び出し元にエラーを返します', async () => {
+    fetchMock.mockImplementation(async () => Response.json({ ...記録中の応答, startedAt: [開始時刻] }))
+
+    await tested.startTimeRecord().should.rejects.toThrow()
+  })
+
   describe('記録終了APIが終了済みの応答を返すとき', () => {
     beforeEach(() => {
       fetchMock.mockImplementation(async () => Response.json(終了済みの応答))
@@ -88,6 +100,12 @@ describe('timeRecordService', () => {
       const endedRecord = await tested.endTimeRecord(記録ID)
       endedRecord.should.toStrictEqual(presentedRecord(記録ID, timestamp(開始時刻), timestamp(終了時刻)))
     })
+  })
+
+  it('終了要求が成功しても応答の終了時刻がISO文字列を1件含む配列なら、呼び出し元にエラーを返します', async () => {
+    fetchMock.mockImplementation(async () => Response.json({ ...終了済みの応答, endedAt: [終了時刻] }))
+
+    await tested.endTimeRecord(記録ID).should.rejects.toThrow()
   })
 
   it('一覧取得の応答がHTTPエラーなら、本文に記録の一覧があっても呼び出し元にエラーを返します', async () => {

@@ -21,7 +21,11 @@ export function createTimeRecordService(token?: string): TimeRecordService {
       if (!response.ok) {
         throw new Error()
       }
-      const records: TimeRecordResponse[] = await response.json()
+      const body: unknown = await response.json()
+      if (!Array.isArray(body) || !body.every(isTimeRecordResponse)) {
+        throw new Error()
+      }
+      const records: TimeRecordResponse[] = body
       return records.map(toTimeRecord)
     },
     startTimeRecord() {
@@ -38,13 +42,25 @@ async function postTimeRecord(path: string, headers: Record<string, string> | un
   if (!response.ok) {
     throw new Error()
   }
-  return toTimeRecord(await response.json())
+  const body: unknown = await response.json()
+  if (!isTimeRecordResponse(body)) {
+    throw new Error()
+  }
+  return toTimeRecord(body)
+}
+
+function isTimeRecordResponse(value: unknown): value is TimeRecordResponse {
+  return typeof value === 'object'
+    && value !== null
+    && 'id' in value
+    && typeof value.id === 'string'
+    && 'startedAt' in value
+    && typeof value.startedAt === 'string'
+    && 'endedAt' in value
+    && (typeof value.endedAt === 'string' || value.endedAt === null)
 }
 
 function toTimeRecord(response: TimeRecordResponse): TimeRecordPresentation {
-  if (typeof response.id !== 'string') {
-    throw new Error()
-  }
   return {
     record: new TimeRecord(
       response.id,

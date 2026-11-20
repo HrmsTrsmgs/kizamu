@@ -55,6 +55,8 @@ test.each([
   ['対象のクライアントが異なるトークン', () => createToken({ audience: 'another-client' })],
   ['有効期限が過ぎたトークン', () => createToken({ expired: true })],
   ['subがないトークン', () => createToken({ subject: null })],
+  ['subが空文字列のトークン', () => createToken({ subject: '' })],
+  ['subが数値のトークン', () => createToken({ subject: 123 })],
   ['JWT形式でない文字列', () => 'not-a-jwt'],
 ])('%sを検証すると、本人識別子はnullです', async (_, token) => {
   ({ subject: await tested.verify(token()) }).should.deep.equal({ subject: null })
@@ -68,7 +70,7 @@ function createToken({
   expired = false,
   signingKey = googleKey.privateKey,
 }: {
-  subject?: string | null
+  subject?: string | number | null
   issuer?: string
   audience?: string
   email?: string
