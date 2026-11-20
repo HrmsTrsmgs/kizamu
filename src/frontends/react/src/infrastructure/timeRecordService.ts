@@ -42,7 +42,7 @@ async function postTimeRecord(path: string, headers: Record<string, string> | un
 }
 
 function toTimeRecord(response: TimeRecordResponse): TimeRecordPresentation {
-  if (response.id === undefined) {
+  if (typeof response.id !== 'string') {
     throw new Error()
   }
   return {

@@ -67,7 +67,7 @@ Blazorの表示条件は `IsAuthenticated || timeRecorder is not null`、React�
 - **修正**　同じ `GoogleSignIn` の存続中はJSへ渡す参照を再利用し、受け取った通知先だけを差し替える。破棄時に参照を解放し、通知先もクリアする。
 - **完了条件**　実際の `GoogleSignIn` に記録用のJSランタイムを渡し、二度のボタン表示で同一の参照を受け取ること、二回目以降の通知は最新のコールバックに一度だけ届くこと、破棄後に古い通知先を呼ばないことを確認する。 [GoogleSignIn.cs 13行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/GoogleSignIn.cs#L13) · [App.razor 71行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L71) · [GoogleSignInTests.cs 14行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/GoogleSignInTests.cs#L14)
 
-修正05の基準は `0b30b39`。GoogleSignInの再描画で参照が増えることと、破棄後に旧通知先が呼ばれることを再現した。同一インスタンスで参照を再利用し、破棄時に通知先を解除するよう変更した。.NETの全333テスト、ビルド、静的検査が成功した。次はRefactorの要否を確認し、修正06へ進む。
+修正05の基準は `0b30b39`。GoogleSignInの再描画で参照が増えることと、破棄後に旧通知先が呼ばれることを再現した。同一インスタンスで参照を再利用し、破棄時に通知先を解除するよう変更した。.NETの全333テスト、ビルド、静的検査が成功した。Greenは `032fac7` に記録済み。Refactorを確認し、追加変更なし。
 
 ### 06　壊れた記録応答をDomainへ渡す前に検出する
 
@@ -75,6 +75,8 @@ Reactは `id === undefined` だけを判定するため、JSONの `null` と数�
 
 - **修正**　技術ごとに独立して直す。Reactは変換境界でIDが文字列かを判定する。Blazorは `StartedAt` をJSONの必須プロパティとする。終了時刻が省略された場合の扱いはAPIが返す明示的な `null` と区別する（項目10参照）。
 - **完了条件**　既存の開始応答のテストに、Reactでは欠落・null・数値ID、Blazorでは開始時刻の欠落を与え、変換失敗を観測する。正常な未終了・終了済み応答の復元は両方で確認する。ID文字列の形式に新条件を設ける必要はない。 [timeRecordService.ts 45行](../src/frontends/react/src/infrastructure/timeRecordService.ts#L45) · [TimeRecordResponse.cs 10行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordResponse.cs#L10) · [timeRecordService.test.ts 64行](../tests/frontends/react/infrastructure/timeRecordService.test.ts#L64) · [TimeRecordApiTests.cs 1行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs#L1)
+
+修正06のReact側の基準は `032fac7`。成功応答のIDがnullまたは数値の場合に記録が復元されることを再現し、通信サービスの変換時にIDの型を検証するよう修正した。TypeScriptの全244テスト、ビルド、静的検査が成功した。次はRefactorの要否を確認し、Blazor側の開始時刻欠落を扱う。
 
 ### 07　両APIでBearer認証方式名の大文字小文字を同じように扱う
 

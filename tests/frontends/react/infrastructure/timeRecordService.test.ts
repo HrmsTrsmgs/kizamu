@@ -60,8 +60,15 @@ describe('timeRecordService', () => {
     })
   })
 
-  it('開始要求が成功しても応答に記録IDがなければ、呼び出し元にエラーを返します', async () => {
-    fetchMock.mockImplementation(async () => Response.json({ startedAt: 開始時刻, endedAt: null }, { status: 201 }))
+  it.each([
+    ['欠落している', {}],
+    ['nullである', { id: null }],
+    ['数値である', { id: 1 }],
+  ])('開始要求が成功しても応答の記録IDが%s場合は、呼び出し元にエラーを返します', async (_, 応答のID) => {
+    fetchMock.mockImplementation(async () => Response.json(
+      { startedAt: 開始時刻, endedAt: null, ...応答のID },
+      { status: 201 },
+    ))
 
     await tested.startTimeRecord().should.rejects.toThrow()
   })
