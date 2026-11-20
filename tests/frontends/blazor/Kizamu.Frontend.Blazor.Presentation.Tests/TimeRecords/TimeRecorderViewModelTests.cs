@@ -248,6 +248,34 @@ public sealed class TimeRecorderViewModelTests
         service.EndedIds.Should().Equal(Bの終了操作直後の要求);
     }
 
+    [Fact]
+    public async Task 終了通信の失敗を待つ間に別のプロジェクトを選んでも再取得で確認した終了済み記録の終了は再要求しません()
+    {
+        var Aの記録 = service.StartedRecord;
+        await プロジェクトAとBで記録を開始する();
+        var Bの終了済み記録 = service.StartedRecord.End(終了時刻.AddMinutes(1));
+        service.Records = [Aの記録, Bの終了済み記録];
+        var 応答 = service.DelayEndResponse();
+
+        var Bの終了操作 = tested.EndTimeRecordAsync();
+        service.EndedIds.Should().Equal(別の記録ID);
+        tested.SelectProject(プロジェクトA);
+        応答.SetException(new HttpRequestException());
+        await Assert.ThrowsAsync<HttpRequestException>(() => Bの終了操作);
+
+        tested.Records.Should().Equal(Aの記録, Bの終了済み記録);
+
+        tested.SelectProject(プロジェクトB);
+        service.EndResponse = Task.FromResult(Bの終了済み記録);
+        await tested.EndTimeRecordAsync();
+
+        tested.SelectProject(プロジェクトA);
+        service.EndResponse = null;
+        await tested.EndTimeRecordAsync();
+
+        service.EndedIds.Should().Equal(別の記録ID, 記録ID);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

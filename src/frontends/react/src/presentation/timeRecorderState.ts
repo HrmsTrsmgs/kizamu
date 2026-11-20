@@ -39,10 +39,22 @@ export function timeRecorderReducer(
     case 'recordsLoaded': {
       const updates = action.updatedRecords ?? []
       const records = mergeLoadedRecords(action.records, updates)
+      const timeRecordId = getEndTargetAfterLoad(state, records, updates)
+      const projectTimeRecordIds = state.projectTimeRecordIds === undefined
+        ? undefined
+        : new Map(state.projectTimeRecordIds)
+      if (projectTimeRecordIds !== undefined) {
+        for (const [project, id] of projectTimeRecordIds) {
+          if (id !== null && records.some(({ record }) => record.id === id && record.endedAt !== null)) {
+            projectTimeRecordIds.set(project, null)
+          }
+        }
+      }
       return {
         ...state,
         records,
-        timeRecordId: getEndTargetAfterLoad(state, records, updates),
+        ...(projectTimeRecordIds === undefined ? {} : { projectTimeRecordIds }),
+        timeRecordId,
       }
     }
     case 'recordStarted':

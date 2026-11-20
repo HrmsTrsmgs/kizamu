@@ -95,7 +95,9 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
             var loadedRecords = await service.GetTimeRecordsAsync();
             if (version != loadVersion) return;
             records = MergeLoadedRecords(loadedRecords, updatesDuringLoad);
-            CurrentId = FindCurrentIdAfterLoad(updatesDuringLoad);
+            var currentId = FindCurrentIdAfterLoad(updatesDuringLoad);
+            ClearEndedCurrentIds();
+            CurrentId = currentId;
             IsStateUnconfirmed = false;
         }
         finally
@@ -121,6 +123,18 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         return [.. recordsFromResponse, .. recordsMissingFromResponse];
     }
 
+    void ClearEndedCurrentIds()
+    {
+        var endedIds = records.Where(record => record.EndedAt is not null).Select(record => record.Id).ToHashSet();
+        if (unspecifiedCurrentId is { } id && endedIds.Contains(id)) unspecifiedCurrentId = null;
+        foreach (var project in projectCurrentIds.Keys.ToArray())
+        {
+            if (projectCurrentIds[project] is { } projectId && endedIds.Contains(projectId))
+            {
+                projectCurrentIds[project] = null;
+            }
+        }
+    }
     /// <summary>一覧取得中に操作した終了対象を優先し、それ以外は、選択中の対象に割り当てられる最初の未終了記録を選びます。</summary>
     Guid? FindCurrentIdAfterLoad(IReadOnlyList<TimeRecord> updatesDuringLoad)
     {
