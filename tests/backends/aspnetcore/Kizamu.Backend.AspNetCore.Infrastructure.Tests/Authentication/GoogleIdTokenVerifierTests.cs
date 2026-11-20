@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using AwesomeAssertions;
 using Google.Apis.Auth;
+using Google.Apis.Json;
 using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
 
 namespace Kizamu.Backend.AspNetCore.Infrastructure.Tests.Authentication;
@@ -90,6 +91,24 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     public async Task GoogleのIDトークンにsubがなければ本人識別子を取得できません()
     {
         (await tested.VerifyAsync(CreateToken(subject: null))).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("123", null)]
+    [InlineData("\"\"", null)]
+    [InlineData("\"00123\"", "00123")]
+    [InlineData("\"2026-01-01T00:00:00Z\"", "2026-01-01T00:00:00Z")]
+    public async Task Googleのsubが空でないJSON文字列のときだけ元の値を本人識別子として取得できます(
+        string subjectJson,
+        string? expectedSubject)
+    {
+        var claimsJson = $$"""{"sub":{{subjectJson}},"exp":60}""";
+        var verifier = new GoogleIdTokenVerifier(
+            verifySignedToken: _ => Task.FromResult<JsonWebToken.Payload>(
+                NewtonsoftJsonSerializer.Instance.Deserialize<GoogleIdentityPayload>(claimsJson)),
+            timeProvider: new FixedTimeProvider(DateTimeOffset.UnixEpoch));
+
+        (await verifier.VerifyAsync("verified-token-placeholder")).Should().Be(expectedSubject);
     }
 
     [Fact]

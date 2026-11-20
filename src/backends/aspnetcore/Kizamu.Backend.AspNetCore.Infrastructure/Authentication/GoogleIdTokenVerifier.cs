@@ -1,5 +1,6 @@
 using Google.Apis.Auth;
 using Google.Apis.Http;
+using Newtonsoft.Json;
 
 namespace Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
 
@@ -24,7 +25,7 @@ public sealed class GoogleIdTokenVerifier
             TrustedIssuers = { "https://accounts.google.com", "accounts.google.com" },
             HttpClientFactory = new PublicKeyClientFactory(publicKeyClient)
         };
-        verifySignedToken = async idToken => await JsonWebSignature.VerifySignedTokenAsync(idToken, options);
+        verifySignedToken = async idToken => await JsonWebSignature.VerifySignedTokenAsync<GoogleIdentityPayload>(idToken, options);
         timeProvider = TimeProvider.System;
     }
 
@@ -38,7 +39,7 @@ public sealed class GoogleIdTokenVerifier
     /// 署名、Googleの発行元、対象アプリ、有効期限を検証します。
     /// </summary>
     /// <param name="idToken">Googleから取得したIDトークン。</param>
-    /// <returns>検証済みのsub。不正なトークン、有効期限に達したトークン、subがない場合はnull。</returns>
+    /// <returns>検証済みの空でない文字列のsub。トークンやsubが無効な場合はnull。</returns>
     public async Task<string?> VerifyAsync(string idToken)
     {
         try
@@ -66,4 +67,41 @@ public sealed class GoogleIdTokenVerifier
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             client.GetAsync(request.RequestUri, cancellationToken);
     }
+}
+
+[JsonConverter(typeof(GoogleIdentityPayloadConverter))]
+internal sealed class GoogleIdentityPayload : JsonWebSignature.Payload
+{
+    // JSONの数値を文字列に変換せず、元の型で本人識別子を判定します。
+    [JsonProperty("sub", NullValueHandling = NullValueHandling.Include)]
+    object? SubjectClaim
+    {
+        set => Subject = value is string { Length: > 0 } identifier ? identifier : null;
+    }
+}
+
+sealed class GoogleIdentityPayloadConverter : JsonConverter<GoogleIdentityPayload>
+{
+    public override bool CanWrite => false;
+
+    public override GoogleIdentityPayload ReadJson(
+        JsonReader reader, Type objectType, GoogleIdentityPayload? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        var dateParseHandling = reader.DateParseHandling;
+        try
+        {
+            // 日付形式の文字列も、本人識別子として元の表記を保ちます。
+            reader.DateParseHandling = DateParseHandling.None;
+            var payload = new GoogleIdentityPayload();
+            serializer.Populate(reader, payload);
+            return payload;
+        }
+        finally
+        {
+            reader.DateParseHandling = dateParseHandling;
+        }
+    }
+
+    public override void WriteJson(JsonWriter writer, GoogleIdentityPayload? value, JsonSerializer serializer) =>
+        throw new NotSupportedException();
 }
