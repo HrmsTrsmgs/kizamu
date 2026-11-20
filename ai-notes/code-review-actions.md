@@ -122,6 +122,8 @@ ASP.NET側のテストはデシリアライズしたnullableプロパティを�
 
 各APIでテスト用の所有者の記録を一件開始し、同じ利用者の期限切れテスト資格情報で終了を要求する。応答が401で、その後、所有者の有効な資格情報で取得した同じ記録の終了時刻がnullであることを確認する。他の検証条件の組合せは検証器の単体テストに残す。 [TimeRecordEndpointTests.cs 47行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L47) · [timeRecordEndpoints.test.ts 40行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L40) · [GoogleIdTokenVerifierTests.cs 63行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs#L63) · [googleIdTokenVerifier.test.ts 1行](../tests/backends/node/infrastructure/googleIdTokenVerifier.test.ts#L1)
 
+修正11の基準は `856cbf8`。両APIで所有者の記録に期限切れ資格情報で終了を要求すると401となり、有効な資格情報で再取得した記録が未終了のままであるテストを追加した。追加テストは既存実装で成功。.NET 336件・TypeScript 247件の全テスト、ビルド、静的検査が成功した。formatの初回実行ではワークスペース読み込み警告が出たが、診断出力付きの再実行では再現せず原因は未特定。次は修正12へ進む。
+
 ### 12　開始時の時計を二回の要求で読み直すことを検証する
 
 Nodeの「開始するたびに…現在時刻を開始時刻とする」テストは二回とも時計が同じ。二件目で最初の時刻を再利用しても通る。

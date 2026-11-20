@@ -17,10 +17,10 @@ const publicKeyFetch: typeof fetch = async () => Response.json({
   'endpoint-test-key': key.publicKey.export({ type: 'spki', format: 'pem' }).toString(),
 })
 function createTestApp() { return createApp(new GoogleIdTokenVerifier('kizamu-client', publicKeyFetch)) }
-function authorization(user = 'google-user') {
+function authorization(user = 'google-user', expiresInSeconds = 3600) {
   const now = Math.floor(Date.now() / 1000)
   const header = Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'endpoint-test-key' })).toString('base64url')
-  const payload = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', aud: 'kizamu-client', sub: user, iat: now - 7200, exp: now + 3600 })).toString('base64url')
+  const payload = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', aud: 'kizamu-client', sub: user, iat: now - 7200, exp: now + expiresInSeconds })).toString('base64url')
   const content = header + '.' + payload
   return 'Bearer ' + content + '.' + sign('RSA-SHA256', Buffer.from(content), key.privateKey).toString('base64url')
 }
@@ -96,6 +96,19 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
 
     const records = await readTimeRecords(app)
     records.should.deep.equal([startedRecord])
+  })
+
+  test('期限切れの認証情報で記録の終了を要求すると401が返り終了時刻は未設定のままです', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: `/api/time-records/${startedRecord.id}/end`,
+      headers: { authorization: authorization('google-user', -3600), 'sec-fetch-site': 'same-origin' },
+    })
+
+    response.statusCode.should.equal(401)
+    const records = await readTimeRecords(app)
+    records.should.deep.equal([startedRecord])
+    records[0].should.have.property('endedAt', null)
   })
 
   test('記録を終了すると、元の識別子と開始時刻が保たれ、サーバーの現在時刻が終了時刻として返されます', async () => {

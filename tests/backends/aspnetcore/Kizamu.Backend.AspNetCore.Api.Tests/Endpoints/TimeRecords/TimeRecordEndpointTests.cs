@@ -104,6 +104,21 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     }
 
     [Fact]
+    public async Task 期限切れの認証情報で記録の終了を要求すると401が返り終了時刻は未設定のままです()
+    {
+        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
+        using var request = 同一オリジンの未認証POST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
+        request.Headers.Authorization = 認証情報を用意する(expiresAt: DateTimeOffset.UtcNow.AddHours(-1));
+
+        using var response = await client.SendAsync(request, CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var records = await 記録一覧を取得する();
+        records.Should().ContainSingle().Which.Should().Be(startedRecord);
+        records[0].EndedAt.Should().BeNull();
+    }
+
+    [Fact]
     public async Task 別の利用者が開始した記録の終了を要求すると404が返ります()
     {
         var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻, "first-user");
@@ -254,7 +269,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         return await client.SendAsync(request, CancellationToken);
     }
 
-    static AuthenticationHeaderValue 認証情報を用意する(string user = "google-user")
+    static AuthenticationHeaderValue 認証情報を用意する(string user = "google-user", DateTimeOffset? expiresAt = null)
     {
         var now = DateTimeOffset.UtcNow;
         var header = Encode(JsonSerializer.SerializeToUtf8Bytes(new { alg = "RS256", kid = "endpoint-test-key" }));
@@ -264,7 +279,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
             aud = "kizamu-client",
             sub = user,
             iat = now.AddHours(-2).ToUnixTimeSeconds(),
-            exp = now.AddHours(1).ToUnixTimeSeconds()
+            exp = (expiresAt ?? now.AddHours(1)).ToUnixTimeSeconds()
         }));
         var content = $"{header}.{payload}";
         var signature = googleKey.SignData(Encoding.ASCII.GetBytes(content), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
