@@ -47,6 +47,17 @@ test.each(['GET', 'POST'] as const)('記録APIにBasic認証で%s要求を送る
   response.statusCode.should.equal(401)
 })
 
+test('有効なBearer認証の方式名が小文字でも記録一覧を取得できます', async () => {
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/time-records',
+    headers: { authorization: authorization().replace('Bearer ', 'bearer ') },
+  })
+
+  response.statusCode.should.equal(200)
+})
+
+
 test('認証情報のない記録一覧の取得要求には401が返されます', async () => {
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })
 

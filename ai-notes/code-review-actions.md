@@ -78,7 +78,7 @@ Reactは `id === undefined` だけを判定するため、JSONの `null` と数�
 
 修正06のReact側の基準は `032fac7`。成功応答のIDがnullまたは数値の場合に記録が復元されることを再現し、通信サービスの変換時にIDの型を検証するよう修正した。TypeScriptの全244テスト、ビルド、静的検査が成功した。Greenは `99a94ee` に記録済み。Refactorを確認し、追加変更なし。
 
-修正06のBlazor側の基準は `550f954`。HTTP 201の応答に開始時刻がないときに例外が発生しないことを再現し、開始時刻を必須にした。.NETの全334テスト、ビルド、静的検査が成功した。次はRefactorの要否を確認し、修正07へ進む。
+修正06のBlazor側の基準は `550f954`。HTTP 201の応答に開始時刻がないときに例外が発生しないことを再現し、開始時刻を必須にした。.NETの全334テスト、ビルド、静的検査が成功した。Greenは `fdb7fab` に記録済み。Refactorを確認し、追加変更なし。
 
 ### 07　両APIでBearer認証方式名の大文字小文字を同じように扱う
 
@@ -86,6 +86,8 @@ Nodeは先頭の `Bearer ` を大小文字まで固定して照合し、ASP.NET 
 
 - **修正**　Nodeでは方式名だけを大小文字を区別せず判定し、資格情報そのものは元の文字列のまま既存の検証器に渡す。
 - **完了条件**　両APIでテスト用の有効な資格情報を用い、小文字の方式名による一覧取得が200となることを確認する。既存の未指定・別方式の拒否も実行する。 [timeRecordEndpoints.ts 35行](../src/backends/node/api/timeRecordEndpoints.ts#L35) · [TimeRecordAuthentication.cs 10行](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Endpoints/TimeRecords/TimeRecordAuthentication.cs#L10) · [timeRecordEndpoints.test.ts 40行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L40) · [TimeRecordEndpointTests.cs 47行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L47)
+
+修正07の基準は `fdb7fab`。小文字の認証方式名を使った一覧取得が401になることをテストで再現し、方式名を大小文字を区別せず判定するよう修正した。TypeScriptの全245テスト、lint、ビルドが成功した。委任ツールを使用できないため、この工程は同じ担当者がRed・Greenを実施した。次はRefactorの要否を確認し、修正08へ進む。
 
 ### 08　Nodeの公開鍵取得に有効期限を適用する
 

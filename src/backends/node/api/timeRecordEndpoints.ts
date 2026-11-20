@@ -32,7 +32,7 @@ export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: T
 }
 
 function getOwner(authorization: string | undefined, verifier: GoogleIdTokenVerifier): Promise<string | null> {
-  return authorization?.startsWith('Bearer ') ? verifier.verify(authorization.slice(7)) : Promise.resolve(null)
+  return authorization?.slice(0, 7).toLowerCase() === 'bearer ' ? verifier.verify(authorization.slice(7)) : Promise.resolve(null)
 }
 
 function toResponse(record: TimeRecord) {
