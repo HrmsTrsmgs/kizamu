@@ -96,7 +96,7 @@ Nodeの検証器は有効な公開鍵を取得した直後でも、次の記録�
 - **修正**　既に導入している `google-auth-library` の `getFederatedSignonCertsAsync()` に公開鍵取得と有効期限処理を任せる。テストでは既存の偽通信をライブラリの通信境界へ移す。署名、発行元、利用先、期限、本人識別の判定条件と、鍵取得失敗を上位に伝える動作を保つ。
 - **完了条件**　固定時計とキャッシュ期限付きの偽応答で、有効期間内の連続二件は鍵取得一回、期限後の検証は再取得することを確認する。既存の正常・拒否ケースも通し、実Googleへの通信を必要としない。 [googleIdTokenVerifier.ts 18行](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L18) · [googleIdTokenVerifier.test.ts 5行](../tests/backends/node/infrastructure/googleIdTokenVerifier.test.ts#L5)
 
-修正08の基準は `0478118`。公開鍵の有効期間内でも毎回取得することを再現し、採用済みライブラリの公開鍵取得と有効期限キャッシュを利用するよう変更した。テスト用の鍵応答をPEM形式に合わせた。TypeScriptの全246テスト、lint、ビルドが成功した。次はRefactorの要否を確認し、修正09へ進む。
+修正08の基準は `0478118`。公開鍵の有効期間内でも毎回取得することを再現し、採用済みライブラリの公開鍵取得と有効期限キャッシュを利用するよう変更した。テスト用の鍵応答をPEM形式に合わせた。TypeScriptの全246テスト、lint、ビルドが成功した。Greenは `1eebe8e` に記録済み。Refactorを確認し、追加変更なし。
 
 ## テストが見逃している箇所
 
@@ -105,6 +105,8 @@ Nodeの検証器は有効な公開鍵を取得した直後でも、次の記録�
 `timeRecord.EndedAt` は操作前に保持した不変オブジェクトを検査している。別の終了済みインスタンスで保存先を誤更新しても通る。
 
 `Execute` の後で `state.Find(timeRecord.Id).Should().Be(timeRecord)` とする。取得できること、元のID・開始時刻・未設定の終了時刻を同時に確かめられる。未知IDに対する戻り値や例外の契約はD009で保留のため、この修正で固定しない。 [TimeRecordEndOperationTests.cs 99行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs#L99)
+
+修正09の基準は `1eebe8e`。未知IDでの終了後に保存先から元の記録を取得し、値全体が元のままか確認するようテストを変更した。.NETの全334テスト、ビルド、静的検査が成功した。未知IDの戻り値と例外は引き続き未確定。次は修正10へ進む。
 
 ### 10　記録開始のHTTP応答で、endedAtのキーとnullを確認する
 

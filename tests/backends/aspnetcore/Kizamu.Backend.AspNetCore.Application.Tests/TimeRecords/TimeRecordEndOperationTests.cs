@@ -96,7 +96,7 @@ public sealed class TimeRecordEndOperationTests
     }
 
     [Fact]
-    public void 存在しない識別子で終了を要求しても開始した記録の終了時刻は未設定のままです()
+    public void 存在しない識別子で終了を要求しても保存済みの記録は変わりません()
     {
         var timeRecord = 記録を開始して保存する(早い時刻);
         timeProvider.SetUtcNow(遅い時刻);
@@ -104,7 +104,7 @@ public sealed class TimeRecordEndOperationTests
         // 対象が異なる場合の戻り値や例外は未確定のため、記録への影響だけを確認する。
         Record.Exception(() => tested.Execute(Guid.NewGuid()));
 
-        timeRecord.EndedAt.Should().BeNull();
+        state.Find(timeRecord.Id).Should().Be(timeRecord);
     }
 
     (TimeRecord 最初の記録, TimeRecord 次の記録) 二件の記録を開始して保存する() =>
