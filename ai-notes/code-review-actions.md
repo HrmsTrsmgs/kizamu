@@ -114,6 +114,8 @@ ASP.NET側のテストはデシリアライズしたnullableプロパティを�
 
 既存の201テストで応答本文をJSONとして読み、正確なキー名 `endedAt` があり `JsonValueKind.Null` であることを確認する。現在のIDと開始時刻の検証も維持する。Nodeの対応テストは既にキーを確認している。 [TimeRecordEndpointTests.cs 145行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L145) · [timeRecordEndpoints.test.ts 187行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L187)
 
+修正10の基準は `3adf0ca`。開始応答のJSONにendedAtキーがnullで含まれることを独立したテストで確認した。.NETの全335テスト、ビルド、静的検査が成功した。委任ツールを利用できないため統括が担当した。次は修正11へ進む。
+
 ### 11　期限切れの資格情報を記録APIが拒否する接続を確認する
 
 単体での有効期限の検証と、APIでの欠落・別方式の拒否はある。検証器が期限切れを返したときにAPIが操作を拒否する接続がテストされていない。

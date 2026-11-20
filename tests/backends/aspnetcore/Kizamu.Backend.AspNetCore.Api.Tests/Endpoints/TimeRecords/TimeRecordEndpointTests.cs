@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Net;
@@ -148,6 +149,21 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         body.StartedAt.Should().Be(早い時刻);
         body.EndedAt.Should().BeNull();
     }
+
+    [Fact]
+    public async Task 記録の開始応答のJSONには終了時刻を表すendedAtがnullで含まれます()
+    {
+        using var request = 同一オリジンのPOST要求を用意する("/api/time-records/start");
+
+        using var response = await client.SendAsync(request, CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var json = await response.Content.ReadFromJsonAsync<JsonObject>(CancellationToken);
+        json.Should().NotBeNull();
+        json.Should().ContainKey("endedAt");
+        json["endedAt"].Should().BeNull();
+    }
+
 
     [Fact]
     public async Task 記録を終了すると200と終了した作業記録のJSONが返されます()
