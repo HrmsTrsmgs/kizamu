@@ -34,8 +34,10 @@ public sealed class InMemoryTimeRecordState : ITimeRecordState
         lock (sync)
         {
             var index = timeRecords.FindIndex(it => it.Id == timeRecord.Id);
-            if (index >= 0)
-                timeRecords[index] = timeRecord;
+            if (index < 0)
+                throw new TimeRecordNotFoundException();
+
+            timeRecords[index] = timeRecord;
         }
     }
 

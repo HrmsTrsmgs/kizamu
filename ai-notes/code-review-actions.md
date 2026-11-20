@@ -373,19 +373,23 @@ TS Domainの不変性、.NETの値等価、通信でのクラス復元、参照�
 - **修正済み。終了の失敗後の再取得で、別タブの終了対象を更新する。** 進行中のAとBがあり、Bの終了応答を待つ間にAに切り替える。従来は応答が失敗し、再取得でBの終了を確認しても、Bに戻ると終了を再送できた。D009では再終了が終了時刻を更新するため、意図せず時刻を変えられる。D012に従い、再取得した一覧で終了済みと確認できた別タブの対象を解除した。進行中の既知対象と、所属不明の記録に対する既存の割当は維持する。 [D012](../docs/decisions.md#d012記録操作の結果が未確認なら一覧の再取得で復旧する)
 - **同じ対象に開始要求を繰り返せる。** ViewModelとhookは操作中や未確認の状態を抑止する一方、開始が成功した後の同じ対象には再度送信できる。画面は開始ボタンを切り替える。操作の境界でも既に進行中なら二件目は作れないことを、同じタブへの連続呼び出しで検証する。抑止結果を呼び出し側にどう伝えるか、初回一覧取得と並行する開始の扱いは別途決める。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L150) · [React](../src/frontends/react/src/presentation/useTimeRecorder.ts#L79) · [MVPの同時記録の条件](../docs/roadmap.md#ステップ1-プロジェクト単位の複数同時記録)
 - **終了の成功応答が操作の結果を保証しない。** 両画面の通信サービスは、2xxなら別IDの記録や終了時刻が `null` の記録も返す。主なサーバー経路は正しい応答を返す。通信境界のテストに、別ID、終了時刻なし、正常な終了を与え、受理するのは指定IDの終了済み記録だけにする。Reactでは復元前に時刻のJSON型も確認する。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordApi.cs#L33) · [React](../src/frontends/react/src/infrastructure/timeRecordService.ts#L27)
-- **保存先で差し替えできなかったことを公開操作から知る手段がない。** ASP.NET Coreの `Update` とNodeの `replace` は未保存IDの更新でも正常終了し、成功時と戻り値が同じ。通常のHTTP終了は先に記録を検索し、現行の保存先には削除経路がない。保存テストに未保存IDの更新を加え、既存記録の維持と失敗の通知を確かめる。 [C#](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/ITimeRecordState.cs#L33) · [Node](../src/backends/node/application/timeRecords.ts#L4)
+- **修正済み。保存APIの差し替えで対象の不在を通知する。** ASP.NET Coreの `Update` とNodeの `replace` は、未保存IDの更新時に既存の専用例外を投げる。保存テストで、失敗時に既存記録と保存順が保たれ、新規追加もないことを確かめた。 [C#](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/ITimeRecordState.cs#L33) · [Node](../src/backends/node/application/timeRecords.ts#L4)
 - **認証結果の境界条件が実装によって異なる。** 採用済みライブラリの期限判定の猶予が両バックエンドで異なり、現在の期限テストは十分に経過した例を使う。また、本人識別子の形式や公開鍵取得に失敗した場合の契約を揃える余地がある。D014の期限・本人識別の契約を基準に、時計の境界値と検証器の失敗をテストする。 [D014](../docs/decisions.md#d014ベータ版はgoogleのidトークンで本人を識別する) · [Node検証器](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L14)
 - **起動確認が待機せず失敗する条件がある。** 項目30を、204のあと待機を挟めば200を返す代役で確認した。現行は待機0回で60回照会し失敗を返す。項目31の起動失敗時の診断表示も確認した。修正箇所とテスト案は項目30・31に記載済み。 [Wait-HealthEndpoint.ps1](../scripts/Wait-HealthEndpoint.ps1#L7)
 
 ### 修正と検証
 
-基準は `4e04843`。画面を介さないViewModelとhookのテストで、期待した終了要求 `[B, A]` に対し `[B, B, A]` となる失敗を両方で確認した。最小修正後は両テストが成功し、.NET 303件とnpm 225件がすべて成功。両方のビルド、ESLint、変更したC#ファイルのformatと差分検査も成功した。.NETの全体formatは既知の `GoogleSignIn.cs` のBL0016で失敗。修正は `b0017be` に記録済み。今回の修正の次は保存先で差し替えできなかった場合の契約を確認する。 [Blazorのテスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L252) · [Reactのテスト](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L570)
+基準は `4e04843`。画面を介さないViewModelとhookのテストで、期待した終了要求 `[B, A]` に対し `[B, B, A]` となる失敗を両方で確認した。最小修正後は両テストが成功し、.NET 303件とnpm 225件がすべて成功。両方のビルド、ESLint、変更したC#ファイルのformatと差分検査も成功した。.NETの全体formatは既知の `GoogleSignIn.cs` のBL0016で失敗。修正は `b0017be` に記録済み。保存先の差し替えについては下記に記録。 [Blazorのテスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L252) · [Reactのテスト](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L570)
 
 ### 仕様を決めてから扱う事項
 
 - 初回の一覧取得が失敗した場合はD012の対象外。Reactでは未処理の拒否となり、Blazorでは初期表示時の例外になる。空一覧と区別する表示、再取得の方法、初回取得中の操作可否を決める。サービス切替と古い応答は既存候補C003を参照する。 [D012](../docs/decisions.md#d012記録操作の結果が未確認なら一覧の再取得で復旧する) · [候補一覧](development-candidates.md)
 - 所属不明の記録をどのタブに割り当てるか、どの記録を操作欄に表示するかは「仕様の決定が必要な差」を参照する。既知の割当に対する優先順も、新しい割当と区別して扱う。
 - 保存先に既にあるIDを再度追加した場合の責務、取得済み一覧が後の更新を反映するかは保存契約の論点。C#の `All` のライブ性と `CopyAll` の固定スナップショットは既存テストが保証する。Nodeの取得済み一覧のライブ性に同じ保証はない。終了時刻が開始時刻より前になる入力はロードマップの未決事項にある。 [C#の保存テスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/TimeRecords/InMemoryTimeRecordStateTests.cs#L79) · [ロードマップ](../docs/roadmap.md#ステップ3-記録の修正)
+
+### 保存APIの差し替え
+
+2026-11-20、基準は `5c24bd1`。両保存実装の公開操作に、対象不在の例外と失敗後の一覧を確認するテストを追加。実装前に双方が例外を投げず失敗することを確認した。修正後はASP.NET Core側85件、npm側231件、両ビルド、format、Lint、差分検査が成功。 [ASP.NET Coreのテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/TimeRecords/InMemoryTimeRecordStateTests.cs#L69) · [Nodeのテスト](../tests/backends/node/infrastructure/timeRecordInfrastructure.test.ts#L37)
 
 ## TypeScriptの型と実行時検査
 

@@ -13,7 +13,7 @@ export interface TimeRecordSources {
   now(): Temporal.Instant
 }
 
-/** 終了を要求した作業記録が保存先に存在しないことを示します。 */
+/** 指定した作業記録が保存先に存在しないことを示します。 */
 export class TimeRecordNotFoundError extends Error {}
 
 export class TimeRecords {

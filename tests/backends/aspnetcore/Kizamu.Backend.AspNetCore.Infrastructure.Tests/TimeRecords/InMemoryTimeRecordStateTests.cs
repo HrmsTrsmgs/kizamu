@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Kizamu.Backend.AspNetCore.Application.TimeRecords;
 using Kizamu.Domain;
 using Kizamu.Backend.AspNetCore.Infrastructure.TimeRecords;
 
@@ -62,6 +63,17 @@ public sealed class InMemoryTimeRecordStateTests
         tested.Update(終了した記録);
 
         tested.All.Should().Equal(終了した記録, 次の記録);
+    }
+
+    [Fact]
+    public void 未保存の記録を更新するとTimeRecordNotFoundExceptionが投げられ保存済みの記録は変わりません()
+    {
+        tested.Add(最初の記録);
+
+        var 更新する = () => tested.Update(次の記録);
+        更新する.Should().ThrowExactly<TimeRecordNotFoundException>();
+
+        tested.All.Should().ContainSingle().Which.Should().BeSameAs(最初の記録);
     }
 
     [Fact]

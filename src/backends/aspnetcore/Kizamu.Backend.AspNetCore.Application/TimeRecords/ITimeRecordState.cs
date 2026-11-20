@@ -34,6 +34,7 @@ public interface ITimeRecordState
     /// 同じ識別子の作業記録を、保存順を保って差し替えます。
     /// </summary>
     /// <param name="timeRecord">更新後の作業記録。</param>
+    /// <exception cref="TimeRecordNotFoundException">指定した作業記録が保存先に存在しない場合。</exception>
     void Update(TimeRecord timeRecord);
 
     /// <summary>
