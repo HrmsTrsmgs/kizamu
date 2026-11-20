@@ -284,7 +284,7 @@ dotnet restore Kizamu.AspNetCore.slnx
 dotnet run --project src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api --no-launch-profile --urls http://localhost:5213
 ```
 
-正常性確認は `http://localhost:5213/api/health`、記録一覧は `http://localhost:5213/api/time-records` です。
+正常性確認は `http://localhost:5213/api/health` です。記録一覧のGET、開始と終了のPOSTには、GoogleのIDトークンを `Authorization: Bearer <IDトークン>` で送ります。開始と終了のPOSTでは `Sec-Fetch-Site: same-origin` も必要です。記録一覧のURLは `http://localhost:5213/api/time-records` です。
 
 ## Node版業務APIのセットアップと起動
 
@@ -392,7 +392,7 @@ BlazorサーバーのAPI中継には、Microsoft提供の [Yarp.ReverseProxy](ht
 
 ## 未実装
 
-プロジェクト登録・タブ切替、プロジェクト単位の複数同時記録、記録の修正、作業ツリー、時間配分、Clockify連携、ログイン、ユーザー管理、永続化、集計、公開用成果物の組み立ては未実装です。直近の作業状況は実装計画の「現在の次作業」を参照してください。
+サーバーでのプロジェクト情報と記録の関連付け、記録の修正、作業ツリー、時間配分、Clockify連携、永続化、集計、公開用成果物の組み立ては未実装です。直近の作業状況は実装計画の「現在の次作業」を参照してください。
 
 AsData連携およびWord・Excel・PDFの入出力は今後の検討対象です。今回のBlazor移行には含めず、対応形式、処理場所、依存ライブラリを決めてから別の作業単位として扱います。
 
