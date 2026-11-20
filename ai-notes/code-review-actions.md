@@ -76,7 +76,9 @@ Reactは `id === undefined` だけを判定するため、JSONの `null` と数�
 - **修正**　技術ごとに独立して直す。Reactは変換境界でIDが文字列かを判定する。Blazorは `StartedAt` をJSONの必須プロパティとする。終了時刻が省略された場合の扱いはAPIが返す明示的な `null` と区別する（項目10参照）。
 - **完了条件**　既存の開始応答のテストに、Reactでは欠落・null・数値ID、Blazorでは開始時刻の欠落を与え、変換失敗を観測する。正常な未終了・終了済み応答の復元は両方で確認する。ID文字列の形式に新条件を設ける必要はない。 [timeRecordService.ts 45行](../src/frontends/react/src/infrastructure/timeRecordService.ts#L45) · [TimeRecordResponse.cs 10行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordResponse.cs#L10) · [timeRecordService.test.ts 64行](../tests/frontends/react/infrastructure/timeRecordService.test.ts#L64) · [TimeRecordApiTests.cs 1行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs#L1)
 
-修正06のReact側の基準は `032fac7`。成功応答のIDがnullまたは数値の場合に記録が復元されることを再現し、通信サービスの変換時にIDの型を検証するよう修正した。TypeScriptの全244テスト、ビルド、静的検査が成功した。次はRefactorの要否を確認し、Blazor側の開始時刻欠落を扱う。
+修正06のReact側の基準は `032fac7`。成功応答のIDがnullまたは数値の場合に記録が復元されることを再現し、通信サービスの変換時にIDの型を検証するよう修正した。TypeScriptの全244テスト、ビルド、静的検査が成功した。Greenは `99a94ee` に記録済み。Refactorを確認し、追加変更なし。
+
+修正06のBlazor側の基準は `550f954`。HTTP 201の応答に開始時刻がないときに例外が発生しないことを再現し、開始時刻を必須にした。.NETの全334テスト、ビルド、静的検査が成功した。次はRefactorの要否を確認し、修正07へ進む。
 
 ### 07　両APIでBearer認証方式名の大文字小文字を同じように扱う
 

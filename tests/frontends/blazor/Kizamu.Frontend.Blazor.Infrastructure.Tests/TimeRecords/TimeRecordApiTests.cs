@@ -66,6 +66,16 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
+    public async Task 記録開始APIの成功応答に開始時刻がないとJsonExceptionが発生します()
+    {
+        handler.RespondWithJson(new { id = 記録ID, endedAt = (DateTimeOffset?)null }, HttpStatusCode.Created);
+
+        var 操作 = () => tested.StartTimeRecordAsync();
+
+        await 操作.Should().ThrowAsync<JsonException>();
+    }
+
+    [Fact]
     public async Task 記録開始APIの成功応答に記録IDがないとJsonExceptionが発生します()
     {
         handler.RespondWithJson(new { startedAt = 開始時刻, endedAt = (DateTimeOffset?)null }, HttpStatusCode.Created);
