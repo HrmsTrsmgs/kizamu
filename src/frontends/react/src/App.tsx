@@ -17,8 +17,9 @@ type AppProps = {
 
 export default function App({ isAuthenticated = false, health, timeRecords, signInWithGoogle, createTimeRecords, renderGoogleButton }: AppProps) {
   const [signedInTimeRecords, setSignedInTimeRecords] = useState<TimeRecordService>()
+  const [hasSignedOut, setHasSignedOut] = useState(false)
   const googleButton = useRef<HTMLDivElement>(null)
-  const activeTimeRecords = signedInTimeRecords ?? (isAuthenticated ? timeRecords : undefined)
+  const activeTimeRecords = signedInTimeRecords ?? (isAuthenticated && !hasSignedOut ? timeRecords : undefined)
   useEffect(() => {
     if (googleButton.current && renderGoogleButton && createTimeRecords) {
       renderGoogleButton(googleButton.current, token => setSignedInTimeRecords(createTimeRecords(token)))
@@ -34,6 +35,7 @@ export default function App({ isAuthenticated = false, health, timeRecords, sign
   const [state, dispatch] = useReducer(projectTabsReducer, initialProjectTabsState)
 
   function signOut() {
+    setHasSignedOut(true)
     setSignedInTimeRecords(undefined)
     dispatch({ type: 'signedOut' })
   }

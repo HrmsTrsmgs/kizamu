@@ -63,8 +63,9 @@
     TimeRecorderViewModel? timeRecorder;
     ElementReference googleButton;
     bool renderGoogleButton = true;
+    bool hasSignedOut;
 
-    bool ShowAuthenticatedContent => IsAuthenticated || timeRecorder is not null;
+    bool ShowAuthenticatedContent => (IsAuthenticated && !hasSignedOut) || timeRecorder is not null;
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -94,6 +95,7 @@
 
     void SignOut()
     {
+        hasSignedOut = true;
         timeRecorder = null;
         ViewModel = new();
         renderGoogleButton = true;

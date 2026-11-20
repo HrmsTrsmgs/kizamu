@@ -49,7 +49,7 @@ AとBを記録中にしてAの終了応答を保留し、Bへ切り替えてか�
 - **修正**　両画面の未指定を他のタブと同じく選べる `button`（`role="tab"`）にする。BlazorのタブViewModelは `SelectProject(Project?)` で `null` を受け、Reactは既存の `projectSelected` に `undefined` を渡す。
 - **完了条件**　画面ではA登録後に未指定が選択済みでAは未選択と確かめ、未指定→A→未指定の順に選び、各時点の両タブの選択表示と記録欄の見出しを確認する。BlazorのタブViewModelではA選択後に未指定へ戻せることを直接確認する。プロジェクト別の記録状態の全組合せは既存の内側のテストで確認する。 [App.razor 34行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L34) · [ProjectTabsViewModel.cs 17行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/Projects/ProjectTabsViewModel.cs#L17) · [App.tsx 55行](../src/frontends/react/src/App.tsx#L55) · [projectTabsState.ts 35行](../src/frontends/react/src/presentation/projectTabsState.ts#L35) · [AppTests.cs 199行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L199) · [App.test.tsx 122行](../tests/frontends/react/App.test.tsx#L122)
 
-修正03の基準は `3ba1bae`。BlazorとReactの画面テストで、Aを選んだ後に「未指定」のタブが見つからない失敗を再現した。「未指定」を選べるボタンに変更し、選択状態と記録の見出しが切り替わることを確認した。.NET 328件・TypeScript 241件の全テストと両方のビルド・静的検査が成功した。次はRefactorの要否を確認し、修正04へ進む。
+修正03の基準は `3ba1bae`。BlazorとReactの画面テストで、Aを選んだ後に「未指定」のタブが見つからない失敗を再現した。「未指定」を選べるボタンに変更し、選択状態と記録の見出しが切り替わることを確認した。.NET 328件・TypeScript 241件の全テストと両方のビルド・静的検査が成功した。Greenは `8e22096` に記録済み。Refactorを確認し、追加変更なし。
 
 ### 04　認証状態を初期注入した場合にもログアウトを反映する
 
@@ -57,6 +57,8 @@ Blazorの表示条件は `IsAuthenticated || timeRecorder is not null`、React�
 
 - **修正**　注入値は認証状態の初期化時に一度だけ読む。以後の表示、ログイン成功、ログアウトが同一の状態を参照・更新するようにする。Blazorの注入済み記録ViewModelの初回表示も維持する。既知の作業記録の重複起票は不要。
 - **完了条件**　初期認証済みで開き、ログアウトすると記録一覧が消え、ログイン入口が表示される。通常の認証経路でもログアウト・再ログインでき、旧プロジェクトを引き継がないことを既存テストと併せて確認する。 [App.razor 68行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L68) · [App.tsx 21行](../src/frontends/react/src/App.tsx#L21) · [AppTests.cs 83行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L83) · [App.test.tsx 79行](../tests/frontends/react/App.test.tsx#L79)
+
+修正04の基準は `8e22096`。BlazorとReactの画面テストで、初期認証済みで開くとログアウト後も一覧が残る問題を再現した。ログアウトで初期認証状態を解除するよう変更し、一覧が消えてGoogleログインボタンが戻ることを確認した。.NET 329件・TypeScript 242件の全テストと両方のビルド・静的検査が成功した。次はRefactorの要否を確認し、修正05へ進む。
 
 ### 05　Googleログインボタンの再描画でBlazorのコールバック参照を蓄積しない
 

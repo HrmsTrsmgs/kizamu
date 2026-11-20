@@ -81,6 +81,15 @@ describe('ログイン済みのApp', () => {
     render(<App isAuthenticated health={health} timeRecords={createTimeRecordServiceStub()} />)
   })
 
+  it('初期認証済みの画面でログアウトすると作業記録一覧が消えてGoogleのログインボタンが表示されます', () => {
+    screen.getByRole('list', { name: '作業記録一覧' }).should.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+
+    should.not.exist(screen.queryByRole('list', { name: '作業記録一覧' }))
+    screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
+  })
+
   it('追加ボタンを押すとプロジェクト追加ダイアログを表示します', () => {
     fireEvent.click(screen.getByRole('button', { name: '追加' }))
 

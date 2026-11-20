@@ -120,6 +120,18 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
+    public void 初期認証済みの画面でログアウトすると作業記録一覧が消えてGoogleのログインボタンが表示されます()
+    {
+        var tested = ログイン済みの画面;
+        tested.FindAll("ul[aria-label='作業記録一覧']").Should().ContainSingle();
+
+        ログアウトする(tested);
+
+        tested.FindAll("ul[aria-label='作業記録一覧']").Should().BeEmpty();
+        tested.FindAll("button").Select(it => it.TextContent).Should().Contain("Googleでログイン");
+    }
+
+    [Fact]
     public void 画面の見出しにアプリ名を表示します()
     {
         ログイン済みの画面.Find("h1").TextContent.Should().Be("Kizamu");
