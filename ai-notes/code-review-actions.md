@@ -140,7 +140,7 @@ Nodeの「開始するたびに…現在時刻を開始時刻とする」テス�
 
 `waitForListeningUrl` は改行を受け取った完全な行からURLを読む。疑似ストリームに `http://localhost:52`、続いて `13\n` を渡し、最初の入力では未完了、次でポート5213となることを確認する。既存の実プロセス起動、早期終了、タイムアウト、後始末を維持する。 [serverStartup.test.ts 50行](../tests/backends/node/serverStartup.test.ts#L50)
 
-修正13の基準は `737b0fb`。先行ログ行の後に分割されたURLを使うテストで、途中のポート番号で完了する失敗を確認し、URLを含む行の改行まで待つよう修正した。Nodeを含むTypeScriptの全222テスト、lint、ビルドが成功。差分はレビュー待ち。
+修正13の基準は `737b0fb`。先行ログ行の後に分割されたURLを使うテストで、途中のポート番号で完了する失敗を確認し、URLを含む行の改行まで待つよう修正した。Nodeを含むTypeScriptの全222テスト、lint、ビルドが成功。`d11b5d8` でコミット済み。
 
 ### 14　再開始の表示を同じ画面の更新として確認する
 
@@ -160,11 +160,15 @@ Blazorは `.recorder-panel button` のテキスト列を `Equal("記録を終了
 
 モックで渡された `Func<Task>` を捕捉して一旦保留する。再取得クリック時点では初回読込の一回だけ、捕捉した関数を実行すると二回目となることを確認する。開始・終了を呼んでいない検証も残す。 [TimeRecorderTests.cs 209行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecorderTests.cs#L209) · [TimeRecorder.razor 24行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecorder.razor#L24)
 
+修正14〜16は `5ef1933` のテスト整理で対応済み。同一画面の再描画、操作欄と一覧の領域別検証、手動再取得の委譲先の実行を確認している。
+
 ### 17　時刻表示テストで分の境界と各時刻の名前を直接観測する
 
 「表示が一分進む」は進んだ後しか見ず、アクセシブルな名前のテストは属性の個数しか見ない。固定表示やラベルの入れ替えでも通る。
 
 同一の描画済みコンポーネントで90分59秒時点の `1時間30分` と、一秒後の `1時間31分` を確認する。名前のTheoryでは二つの `time` の `aria-label` を表示順に比較し、操作欄は「開始時刻」「終了時刻」、一覧は両方とも属性なしと確認する。 [TimeRecordTimesTests.cs 64行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecordTimesTests.cs#L64) · [TimeRecordTimesTests.cs 116行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecordTimesTests.cs#L116)
+
+修正17の基準は `d11b5d8`。分境界の前後を同じコンポーネントで確認し、時刻のアクセシブルな名前を表示順に比較する。対象10件を確認済み。コミット前の再検証では.NET全302テスト、非増分ビルド、変更ファイルのformatが成功。全体のformat検査は既知のBL0016警告のみで終了コード2。
 
 ### 18　開始通信中の終了抑止を、有効な終了対象で試す
 
@@ -329,7 +333,7 @@ HTTP 200なら即成功、プロセス終了なら即失敗とし、そのどち
 
 **反映結果（2026-11-20）**
 
-基準は `21bf4a6`。12項目をテストへ反映し、バックエンド・Domainを `f33b9df`、フロントエンドと本記録を `5ef1933` でコミットした。変更時点の.NET全300テスト、非増分ビルド、format、TypeScript全221テスト、ビルド、lintが成功。次の既存項目は13の起動URLを行末まで待つ保証。
+基準は `21bf4a6`。12項目をテストへ反映し、バックエンド・Domainを `f33b9df`、フロントエンドと本記録を `5ef1933` でコミットした。変更時点の.NET全300テスト、非増分ビルド、format、TypeScript全221テスト、ビルド、lintが成功。項目13〜17は対応済み。修正一覧の次は項目18。
 
 C# 15への更新の基準は `5ef1933`。.NET 11にプロジェクト・依存パッケージ・起動スクリプト・READMEを更新した。一時領域のSDK 11.0.100で全.NETテスト300件とビルドが成功。既存の `GoogleSignIn.cs` に新しいBL0016警告が1件あり、format検査は終了コード2。Visual Studioを18.10から18.12へ更新し、付属MSBuildでnet11.0・C# 15.0とDomainのビルドを確認した。インストーラーは再起動が必要な正常終了（3010）を返した。通常環境へのSDK 11.0.100インストールは成功し、dotnetコマンドでC# 15.0を確認済み。
 

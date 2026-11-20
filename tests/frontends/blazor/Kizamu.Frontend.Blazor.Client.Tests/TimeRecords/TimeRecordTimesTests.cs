@@ -65,9 +65,12 @@ public sealed class TimeRecordTimesTests : IDisposable
     {
         clock.SetUtcNow(開始時刻.AddMinutes(90).AddSeconds(59));
 
-        await 記録中の表示.InvokeAsync(() => clock.Advance(TimeSpan.FromSeconds(1)));
+        var tested = 記録中の表示;
+        tested.Find(".time-record-duration-value").TextContent.Should().Be("1時間30分");
 
-        記録中の表示.Find(".time-record-duration-value").TextContent.Should().Be("1時間31分");
+        await tested.InvokeAsync(() => clock.Advance(TimeSpan.FromSeconds(1)));
+
+        tested.Find(".time-record-duration-value").TextContent.Should().Be("1時間31分");
     }
 
     [Fact]
@@ -111,7 +114,8 @@ public sealed class TimeRecordTimesTests : IDisposable
             .Add(it => it.Record, new TimeRecord(Guid.Empty, 開始時刻, 終了時刻))
             .Add(it => it.Labelled, 操作欄));
 
-        tested.FindAll("time[aria-label]").Should().HaveCount(操作欄 ? 2 : 0);
+        tested.FindAll("time").Select(it => it.GetAttribute("aria-label")).Should().Equal(
+            操作欄 ? "開始時刻" : null, 操作欄 ? "終了時刻" : null);
     }
 
     IRenderedComponent<TimeRecordTimes> 表示する(DateTimeOffset? 終了時刻) =>
