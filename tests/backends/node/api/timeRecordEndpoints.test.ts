@@ -1,7 +1,7 @@
 import { generateKeyPairSync, sign } from 'node:crypto'
-import { GoogleIdTokenVerifier } from '../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
+import { GoogleIdTokenVerifier } from '../../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
 import { afterEach, beforeEach, describe, test, vi } from 'vitest'
-import { createApp } from '../../../src/backends/node/app.js'
+import { createApp } from '../../../../src/backends/node/app.js'
 
 interface TimeRecordResponse {
   id: string

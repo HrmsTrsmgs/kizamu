@@ -69,10 +69,10 @@
 
 ### 第2回で変更・追加したファイル
 
-* **Blazor**　[TimeRecordTimes.razor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecordTimes.razor)、[TimeRecordRefreshTimer.cs](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecordRefreshTimer.cs)、[TimeRecordRefreshTimerTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecordRefreshTimerTests.cs)、[HealthApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/Health/HealthApiTests.cs)、[TimeRecordApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecorderViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs)、[TestHttpMessageHandler.cs](../tests/frontends/blazor/TestSupport/TestHttpMessageHandler.cs)
+* **Blazor**　[TimeRecordTimes.razor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecordTimes.razor)、[TimeRecordRefreshTimer.cs](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecordRefreshTimer.cs)、[TimeRecordRefreshTimerTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecordRefreshTimerTests.cs)、[HealthApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/Health/HealthApiTests.cs)、[TimeRecordApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecorderViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs)、[TestHttpMessageHandler.cs](../tests/frontends/blazor/TestSupport/TestHttpMessageHandler.cs)
 * **React**　[App.tsx](../src/frontends/react/src/App.tsx)、[pendingTimeRecordLoads.ts](../src/frontends/react/src/presentation/pendingTimeRecordLoads.ts)、[projectTabsState.ts](../src/frontends/react/src/presentation/projectTabsState.ts)、[useTimeRecorder.ts](../src/frontends/react/src/presentation/useTimeRecorder.ts)、[App.test.tsx](../tests/frontends/react/App.test.tsx)、[pendingTimeRecordLoads.test.ts](../tests/frontends/react/presentation/pendingTimeRecordLoads.test.ts)、[projectTabsState.test.ts](../tests/frontends/react/presentation/projectTabsState.test.ts)、[timeRecorderState.test.ts](../tests/frontends/react/presentation/timeRecorderState.test.ts)、[useTimeRecorder.test.ts](../tests/frontends/react/presentation/useTimeRecorder.test.ts)
-* **ASP.NET Core**　[TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs)、[TimeRecordEndOperationTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs)
-* **Node**　[timeRecords.test.ts](../tests/backends/node/timeRecords.test.ts)
+* **ASP.NET Core**　[TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)、[TimeRecordEndOperationTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs)
+* **Node**　[timeRecords.test.ts](../tests/backends/node/application/timeRecords.test.ts)
 * **TypeScript Domain**　[timeRecord.test.ts](../tests/domains/typescript/timeRecord.test.ts)
 
 ### 最終検証
@@ -196,9 +196,9 @@
 | ファイル | 全行精査の結果 |
 | --- | --- |
 | `Kizamu.Backend.AspNetCore.Api.Tests/ApiDependenciesTests.cs`、`Kizamu.Backend.AspNetCore.Application.Tests/ApplicationDependenciesTests.cs`、`Kizamu.Backend.AspNetCore.Infrastructure.Tests/InfrastructureDependenciesTests.cs` | 維持。参照可能なアセンブリは各層で異なる。許可する依存先をテスト本文から読める。 |
-| [Kizamu.Backend.AspNetCore.Api.Tests/BlazorHostingTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/BlazorHostingTests.cs)、[Kizamu.Backend.AspNetCore.Api.Tests/HealthEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/HealthEndpointTests.cs) | 修正。テストごとのHTTPクライアントを生成するフィクスチャと、そのクライアントを破棄する責任をクラス内で直接表す。 |
+| [Kizamu.Backend.AspNetCore.Api.Tests/BlazorHostingTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/BlazorHostingTests.cs)、[Kizamu.Backend.AspNetCore.Api.Tests/HealthEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/Health/HealthEndpointTests.cs) | 修正。テストごとのHTTPクライアントを生成するフィクスチャと、そのクライアントを破棄する責任をクラス内で直接表す。 |
 | `Kizamu.Backend.AspNetCore.Api.Tests/Kizamu.Backend.AspNetCore.Api.Tests.csproj`、`Kizamu.Backend.AspNetCore.Application.Tests/Kizamu.Backend.AspNetCore.Application.Tests.csproj`、`Kizamu.Backend.AspNetCore.Infrastructure.Tests/Kizamu.Backend.AspNetCore.Infrastructure.Tests.csproj` | 維持。各プロジェクトに必要な対象フレームワーク、参照方向、テスト依存を宣言している。 |
-| [Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs) | 修正。拒否後の一覧GET・200・JSON読取を再利用し、開始・終了を拒否した後に何が保存されているかを本文で確認する。 |
+| [Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs) | 修正。拒否後の一覧GET・200・JSON読取を再利用し、開始・終了を拒否した後に何が保存されているかを本文で確認する。 |
 | `Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/FakeTimeRecordState.cs`、`Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs`、`Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordReaderTests.cs`、`Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordStartOperationTests.cs`、`Kizamu.Backend.AspNetCore.Infrastructure.Tests/TimeRecords/InMemoryTimeRecordStateTests.cs` | 維持。ID指定の終了、保存順・列挙中の追加・同一参照、時計を内側で確認。テストの操作順と準備を保持。 |
 
 ### Nodeテスト（`tests/backends/node/`）
@@ -209,7 +209,7 @@
 | `healthEndpoint.test.ts` | 維持。正常性HTTP応答のJSONとContent-Typeの検証に限定。 |
 | `kizamu-backend-node-tests.esproj`、`package.json`、`tsconfig.json`、`vitest.config.ts` | 維持。実行入口、型検査、依存先またはテスト起動を宣言。構成の差はツールや層に対応。 |
 | [serverStartup.test.ts](../tests/backends/node/serverStartup.test.ts) | 修正。待受URLの取得・タイムアウトとプロセスの停止・close待ちを分け、テスト本文は起動したAPIへの要求と期待応答を示す。 |
-| [timeRecordEndpoints.test.ts](../tests/backends/node/timeRecordEndpoints.test.ts) | 修正。拒否後の一覧GET・200・JSON読取を再利用し、開始・終了を拒否した後に何が保存されているかを本文で確認する。 |
+| [timeRecordEndpoints.test.ts](../tests/backends/node/api/timeRecordEndpoints.test.ts) | 修正。拒否後の一覧GET・200・JSON読取を再利用し、開始・終了を拒否した後に何が保存されているかを本文で確認する。 |
 | `timeRecordInfrastructure.test.ts`、`timeRecords.test.ts` | 維持。記録源と保存順は別の公開境界。未定義の戻り値、記録のクラス、順序を含む期待を照合。 |
 
 ### Blazorテスト（`tests/frontends/blazor/`）

@@ -1,8 +1,8 @@
 import { beforeEach, describe, test, vi } from 'vitest'
 import { Temporal } from 'temporal-polyfill'
 import { TimeRecord } from 'kizamu-domain-typescript'
-import { InMemoryTimeRecordState } from '../../../src/backends/node/infrastructure/timeRecordState.js'
-import { timeRecordSources } from '../../../src/backends/node/infrastructure/timeRecordSources.js'
+import { InMemoryTimeRecordState } from '../../../../src/backends/node/infrastructure/timeRecordState.js'
+import { timeRecordSources } from '../../../../src/backends/node/infrastructure/timeRecordSources.js'
 
 describe('メモリ上の記録', () => {
   const 開始時刻 = Temporal.Instant.from('2026-08-01T09:00:00Z')

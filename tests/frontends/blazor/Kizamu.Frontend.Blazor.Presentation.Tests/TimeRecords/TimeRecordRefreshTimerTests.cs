@@ -2,7 +2,7 @@ using AwesomeAssertions;
 using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 using Microsoft.Extensions.Time.Testing;
 
-namespace Kizamu.Frontend.Blazor.Client.Tests.TimeRecords;
+namespace Kizamu.Frontend.Blazor.Presentation.Tests.TimeRecords;
 
 public sealed class TimeRecordRefreshTimerTests : IDisposable
 {

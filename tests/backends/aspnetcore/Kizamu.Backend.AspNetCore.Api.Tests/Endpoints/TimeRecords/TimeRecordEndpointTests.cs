@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
-namespace Kizamu.Backend.AspNetCore.Api.Tests;
+namespace Kizamu.Backend.AspNetCore.Api.Tests.Endpoints.TimeRecords;
 
 using static Kizamu.Tests.TestCancellation;
 

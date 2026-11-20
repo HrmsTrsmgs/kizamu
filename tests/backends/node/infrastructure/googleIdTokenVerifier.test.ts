@@ -1,6 +1,6 @@
 import { generateKeyPairSync, sign, type KeyObject } from 'node:crypto'
 import { beforeEach, test } from 'vitest'
-import { GoogleIdTokenVerifier } from '../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
+import { GoogleIdTokenVerifier } from '../../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
 
 const googleKey = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const attackerKey = generateKeyPairSync('rsa', { modulusLength: 2048 })

@@ -31,7 +31,7 @@ AとBを記録中にしてAの終了応答を保留し、Bへ切り替えてか�
 - **修正**　Blazorは開始処理と同様に要求時のプロジェクトを保持し、応答時はそのプロジェクトに `SetCurrentId` を適用する。Reactは `endTimeRecord` から `recordEnded` に要求元を渡し、表示中のプロジェクトと異なる場合は要求元の保存済みIDだけを解除する。共有一覧のAを終了済みに更新する。
 - **完了条件**　ViewModel／hookに遅延応答を渡す。応答直後にBで終了を要求すれば引数はBのID、Aへ戻ったときは終了を要求できない。Aの一覧行の開始・終了はどちらもAの応答値になる。同じタブで終了した既存ケースも通す。 [TimeRecorderViewModel.cs 164行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L164) · [useTimeRecorder.ts 87行](../src/frontends/react/src/presentation/useTimeRecorder.ts#L87) · [timeRecorderState.ts 60行](../src/frontends/react/src/presentation/timeRecorderState.ts#L60) · [TimeRecorderViewModelTests.cs 201行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L201) · [useTimeRecorder.test.ts 30行](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L30)
 
-2026-11-20の作業状況。基準コミットは `7005c13`。BlazorとReactで再現テストが期待どおり失敗することを確認後、終了要求時のプロジェクトに応答を反映するよう変更した。変更後は両方の再現テストと既存テストを含む.NET 326件・TypeScript 239件が成功し、両方のビルドと静的検査も成功した。Greenの変更を記録し、次に項目01のRefactor要否を確認する。
+2026-11-20の作業状況。基準コミットは `7005c13`。BlazorとReactで再現テストが期待どおり失敗することを確認後、終了要求時のプロジェクトに応答を反映するよう変更した。変更後は両方の再現テストと既存テストを含む.NET 326件・TypeScript 239件が成功し、両方のビルドと静的検査も成功した。Greenは `b2e7957` に記録済み。テスト配置の整理ではBlazor、ASP.NET Core、Nodeのテスト7ファイルを対応する階層へ移動し、全565テストと両技術のビルド・静的検査が成功した。次は項目02に着手する。
 
 ### 02　初回一覧が遅れても、Aで開始した記録をBの終了対象にしない
 
@@ -73,14 +73,14 @@ Reactは `id === undefined` だけを判定するため、JSONの `null` と数�
 Nodeは先頭の `Bearer ` を大小文字まで固定して照合し、ASP.NET Coreは方式名を大小文字を区別せず照合している。同じ有効な認証情報で結果が異なる。
 
 - **修正**　Nodeでは方式名だけを大小文字を区別せず判定し、資格情報そのものは元の文字列のまま既存の検証器に渡す。
-- **完了条件**　両APIでテスト用の有効な資格情報を用い、小文字の方式名による一覧取得が200となることを確認する。既存の未指定・別方式の拒否も実行する。 [timeRecordEndpoints.ts 35行](../src/backends/node/api/timeRecordEndpoints.ts#L35) · [TimeRecordAuthentication.cs 10行](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Endpoints/TimeRecords/TimeRecordAuthentication.cs#L10) · [timeRecordEndpoints.test.ts 40行](../tests/backends/node/timeRecordEndpoints.test.ts#L40) · [TimeRecordEndpointTests.cs 47行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs#L47)
+- **完了条件**　両APIでテスト用の有効な資格情報を用い、小文字の方式名による一覧取得が200となることを確認する。既存の未指定・別方式の拒否も実行する。 [timeRecordEndpoints.ts 35行](../src/backends/node/api/timeRecordEndpoints.ts#L35) · [TimeRecordAuthentication.cs 10行](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Endpoints/TimeRecords/TimeRecordAuthentication.cs#L10) · [timeRecordEndpoints.test.ts 40行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L40) · [TimeRecordEndpointTests.cs 47行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L47)
 
 ### 08　Nodeの公開鍵取得に有効期限を適用する
 
 Nodeの検証器は有効な公開鍵を取得した直後でも、次の記録操作で全鍵を再取得・再変換する。鍵配信への往復が毎回必要で、一時的な通信失敗がその間の記録操作にも及ぶ。
 
 - **修正**　既に導入している `google-auth-library` の `getFederatedSignonCertsAsync()` に公開鍵取得と有効期限処理を任せる。テストでは既存の偽通信をライブラリの通信境界へ移す。署名、発行元、利用先、期限、本人識別の判定条件と、鍵取得失敗を上位に伝える動作を保つ。
-- **完了条件**　固定時計とキャッシュ期限付きの偽応答で、有効期間内の連続二件は鍵取得一回、期限後の検証は再取得することを確認する。既存の正常・拒否ケースも通し、実Googleへの通信を必要としない。 [googleIdTokenVerifier.ts 18行](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L18) · [googleIdTokenVerifier.test.ts 5行](../tests/backends/node/googleIdTokenVerifier.test.ts#L5)
+- **完了条件**　固定時計とキャッシュ期限付きの偽応答で、有効期間内の連続二件は鍵取得一回、期限後の検証は再取得することを確認する。既存の正常・拒否ケースも通し、実Googleへの通信を必要としない。 [googleIdTokenVerifier.ts 18行](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L18) · [googleIdTokenVerifier.test.ts 5行](../tests/backends/node/infrastructure/googleIdTokenVerifier.test.ts#L5)
 
 ## テストが見逃している箇所
 
@@ -94,19 +94,19 @@ Nodeの検証器は有効な公開鍵を取得した直後でも、次の記録�
 
 ASP.NET側のテストはデシリアライズしたnullableプロパティを読むため、`endedAt` がJSONから消えても通る。Reactの変換処理はキーの欠落を明示的な `null` と別に扱う。
 
-既存の201テストで応答本文をJSONとして読み、正確なキー名 `endedAt` があり `JsonValueKind.Null` であることを確認する。現在のIDと開始時刻の検証も維持する。Nodeの対応テストは既にキーを確認している。 [TimeRecordEndpointTests.cs 145行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs#L145) · [timeRecordEndpoints.test.ts 187行](../tests/backends/node/timeRecordEndpoints.test.ts#L187)
+既存の201テストで応答本文をJSONとして読み、正確なキー名 `endedAt` があり `JsonValueKind.Null` であることを確認する。現在のIDと開始時刻の検証も維持する。Nodeの対応テストは既にキーを確認している。 [TimeRecordEndpointTests.cs 145行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L145) · [timeRecordEndpoints.test.ts 187行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L187)
 
 ### 11　期限切れの資格情報を記録APIが拒否する接続を確認する
 
 単体での有効期限の検証と、APIでの欠落・別方式の拒否はある。検証器が期限切れを返したときにAPIが操作を拒否する接続がテストされていない。
 
-各APIでテスト用の所有者の記録を一件開始し、同じ利用者の期限切れテスト資格情報で終了を要求する。応答が401で、その後、所有者の有効な資格情報で取得した同じ記録の終了時刻がnullであることを確認する。他の検証条件の組合せは検証器の単体テストに残す。 [TimeRecordEndpointTests.cs 47行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs#L47) · [timeRecordEndpoints.test.ts 40行](../tests/backends/node/timeRecordEndpoints.test.ts#L40) · [GoogleIdTokenVerifierTests.cs 63行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs#L63) · [googleIdTokenVerifier.test.ts 1行](../tests/backends/node/googleIdTokenVerifier.test.ts#L1)
+各APIでテスト用の所有者の記録を一件開始し、同じ利用者の期限切れテスト資格情報で終了を要求する。応答が401で、その後、所有者の有効な資格情報で取得した同じ記録の終了時刻がnullであることを確認する。他の検証条件の組合せは検証器の単体テストに残す。 [TimeRecordEndpointTests.cs 47行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L47) · [timeRecordEndpoints.test.ts 40行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L40) · [GoogleIdTokenVerifierTests.cs 63行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs#L63) · [googleIdTokenVerifier.test.ts 1行](../tests/backends/node/infrastructure/googleIdTokenVerifier.test.ts#L1)
 
 ### 12　開始時の時計を二回の要求で読み直すことを検証する
 
 Nodeの「開始するたびに…現在時刻を開始時刻とする」テストは二回とも時計が同じ。二件目で最初の時刻を再利用しても通る。
 
-`first = tested.start()` と二回目の `start()` の間で既存の `now` を10:30に進める。元の09:00と進めた10:30、別々のID、どちらも未終了、をそれぞれの期待 `TimeRecord` に明記する。 [timeRecords.test.ts 37行](../tests/backends/node/timeRecords.test.ts#L37)
+`first = tested.start()` と二回目の `start()` の間で既存の `now` を10:30に進める。元の09:00と進めた10:30、別々のID、どちらも未終了、をそれぞれの期待 `TimeRecord` に明記する。 [timeRecords.test.ts 37行](../tests/backends/node/application/timeRecords.test.ts#L37)
 
 ### 13　Nodeの起動テストでURLの行末を待つ
 
@@ -192,7 +192,7 @@ SDKの代役を同ファイルの名前付き準備へ移し、ヘルス応答�
 
 APIテストと検証器テストが、同じ技術内でテスト資格情報の生成と偽の鍵配信を別々に実装している。ASP.NETのAPIテストの静的RSA鍵には破棄する持ち主がいない。
 
-C#はテスト側の共有ソースと寿命を持つfixture、Nodeはバックエンドのテスト用モジュールへ、同じ鍵から資格情報と公開鍵応答を作る共通部分を移す。所有者・期限・発行元・異なる署名鍵など、各テストが変える値は本文に残し、既存の鍵IDと時刻条件を保つ。各言語で正常・期限切れ・不正署名、利用者間の分離テストを通す。 [TimeRecordEndpointTests.cs 241行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs#L241) · [GoogleIdTokenVerifierTests.cs 80行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs#L80) · [timeRecordEndpoints.test.ts 15行](../tests/backends/node/timeRecordEndpoints.test.ts#L15) · [googleIdTokenVerifier.test.ts 41行](../tests/backends/node/googleIdTokenVerifier.test.ts#L41)
+C#はテスト側の共有ソースと寿命を持つfixture、Nodeはバックエンドのテスト用モジュールへ、同じ鍵から資格情報と公開鍵応答を作る共通部分を移す。所有者・期限・発行元・異なる署名鍵など、各テストが変える値は本文に残し、既存の鍵IDと時刻条件を保つ。各言語で正常・期限切れ・不正署名、利用者間の分離テストを通す。 [TimeRecordEndpointTests.cs 241行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L241) · [GoogleIdTokenVerifierTests.cs 80行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs#L80) · [timeRecordEndpoints.test.ts 15行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L15) · [googleIdTokenVerifier.test.ts 41行](../tests/backends/node/infrastructure/googleIdTokenVerifier.test.ts#L41)
 
 ### 27　通常起動のAppからプロジェクト画面の責務を分ける
 
@@ -237,8 +237,8 @@ HTTP 200なら即成功、プロセス終了なら即失敗とし、そのどち
 | 再ログイン後の記録中表示・一覧<br>[App.test.tsx 60行](../tests/frontends/react/App.test.tsx#L60) · [AppTests.cs 103行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L103) · [AppTests.cs 113行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L113) | 再ログイン後の一覧が空なら、記録欄は待機中になり開始ボタンを表示します ／ 再ログイン後の一覧が空なら、前のログイン時の記録行は表示されません | 二回目のサービスの空の一覧を準備で明示し、それぞれが観測する表示を選ぶ。サーバーが前回の記録を返す場合まで消去すると読める名前を避ける。 |
 | 手動再取得後に記録を終了・開始できる<br>[TimeRecorderViewModelTests.cs 554行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L554) · [TimeRecorderViewModelTests.cs 565行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L565) | 手動で再取得した一覧に未終了の記録があるとそのIDで終了を要求できます ／ 手動で再取得した一覧の記録が終了済みなら開始を再び要求できます | 観測しているのはEndedIds／StartCount。サーバーでの完了までをテスト名に含めない。 |
 | 新しく開始した記録から終了する<br>[TimeRecorderViewModelTests.cs 831行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L831) | 一覧応答の先頭に別の未終了記録があっても一覧取得中に開始した記録のIDで終了を要求します | 終了要求は一回。複数件の終了順を検証する名前を避ける。 |
-| 未認証で開始した後の一覧<br>[TimeRecordEndpointTests.cs 74行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs#L74) · [timeRecordEndpoints.test.ts 62行](../tests/backends/node/timeRecordEndpoints.test.ts#L62) | 未認証で記録の開始を要求した後も認証済み利用者の一覧は空です | 開始を要求した主体と、取得した一覧の所有者が異なる。読取時のテスト用利用者を明示する。 |
-| 未認証で終了した後の一覧<br>[TimeRecordEndpointTests.cs 95行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs#L95) · [timeRecordEndpoints.test.ts 83行](../tests/backends/node/timeRecordEndpoints.test.ts#L83) | 未認証で終了を要求しても所有者の一覧では記録の終了時刻は未設定のままです | Nodeのケースが記録全体を比較する場合は「所有者の一覧には開始時の記録がそのまま残ります」とし、既存の全体比較を維持する。 |
+| 未認証で開始した後の一覧<br>[TimeRecordEndpointTests.cs 74行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L74) · [timeRecordEndpoints.test.ts 62行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L62) | 未認証で記録の開始を要求した後も認証済み利用者の一覧は空です | 開始を要求した主体と、取得した一覧の所有者が異なる。読取時のテスト用利用者を明示する。 |
+| 未認証で終了した後の一覧<br>[TimeRecordEndpointTests.cs 95行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L95) · [timeRecordEndpoints.test.ts 83行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L83) | 未認証で終了を要求しても所有者の一覧では記録の終了時刻は未設定のままです | Nodeのケースが記録全体を比較する場合は「所有者の一覧には開始時の記録がそのまま残ります」とし、既存の全体比較を維持する。 |
 
 ## 仕様の決定が必要な差
 

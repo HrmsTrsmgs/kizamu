@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Kizamu.Backend.AspNetCore.Api.Tests;
+namespace Kizamu.Backend.AspNetCore.Api.Tests.Endpoints.Health;
 
 using static Kizamu.Tests.TestCancellation;
 
