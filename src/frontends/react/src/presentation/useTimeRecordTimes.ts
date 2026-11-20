@@ -17,7 +17,7 @@ export function useTimeRecordTimes(record: TimeRecord) {
   const [, updateCurrentTime] = useReducer(count => count + 1, 0)
 
   useEffect(() => {
-    if (endedAt !== null) return
+    if (endedAt) return
     const intervalId = setInterval(() => updateCurrentTime(), 1_000)
     return () => clearInterval(intervalId)
   }, [endedAt])
@@ -26,7 +26,7 @@ export function useTimeRecordTimes(record: TimeRecord) {
 
   return {
     startedAtText: dateTimeFormatter.format(startedAt.epochMilliseconds),
-    endedAtText: endedAt === null ? null : dateTimeFormatter.format(endedAt.epochMilliseconds),
+    endedAtText: endedAt ? dateTimeFormatter.format(endedAt.epochMilliseconds) : null,
     durationText: `${duration.hours}時間${duration.minutes}分`,
   }
 }

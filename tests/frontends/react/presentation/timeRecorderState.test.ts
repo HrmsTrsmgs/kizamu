@@ -30,6 +30,7 @@ describe('timeRecorderReducer', () => {
       })
       tested = timeRecorderReducer(tested, {
         type: 'recordStarted',
+        project: プロジェクトA,
         record: 記録,
       })
 
@@ -53,12 +54,12 @@ describe('timeRecorderReducer', () => {
       const プロジェクトB = new Project('プロジェクトB')
       const Bの記録 = presentedRecord('Bの記録', timestamp('2026-08-01T10:00:00Z'))
       let state = timeRecorderReducer(initialTimeRecorderState, { type: 'projectSelected', project: プロジェクトA })
-      state = timeRecorderReducer(state, { type: 'recordStarted', record: 記録 })
+      state = timeRecorderReducer(state, { type: 'recordStarted', project: プロジェクトA, record: 記録 })
       state = timeRecorderReducer(state, { type: 'projectSelected', project: プロジェクトB })
-      state = timeRecorderReducer(state, { type: 'recordStarted', record: Bの記録 })
+      state = timeRecorderReducer(state, { type: 'recordStarted', project: プロジェクトB, record: Bの記録 })
       state = timeRecorderReducer(state, { type: 'projectSelected', project: プロジェクトA })
 
-      state = timeRecorderReducer(state, { type: 'recordEnded', record: 終了済み記録 })
+      state = timeRecorderReducer(state, { type: 'recordEnded', project: プロジェクトA, record: 終了済み記録 })
 
       state.should.have.property('displayedRecord', 終了済み記録)
     })
@@ -66,6 +67,7 @@ describe('timeRecorderReducer', () => {
     it('プロジェクト未指定で記録を開始し、別のプロジェクトから未指定に戻ると、元の記録が再び終了対象になります', () => {
       let tested = timeRecorderReducer(initialTimeRecorderState, {
         type: 'recordStarted',
+        project: undefined,
         record: 記録,
       })
 
@@ -92,15 +94,15 @@ describe('timeRecorderReducer', () => {
 
       beforeEach(() => {
         プロジェクトの記録 = presentedRecord(プロジェクトの記録ID, 開始時刻)
-        tested = timeRecorderReducer(initialTimeRecorderState, { type: 'recordStarted', record: 記録 })
+        tested = timeRecorderReducer(initialTimeRecorderState, { type: 'recordStarted', project: undefined, record: 記録 })
         tested = timeRecorderReducer(tested, { type: 'projectSelected', project: プロジェクトA })
-        tested = timeRecorderReducer(tested, { type: 'recordStarted', record: プロジェクトの記録 })
+        tested = timeRecorderReducer(tested, { type: 'recordStarted', project: プロジェクトA, record: プロジェクトの記録 })
       })
 
       it('プロジェクトの記録を終了しても未指定の記録は記録中のままです', () => {
         const 終了済みのプロジェクトの記録 = presentedRecord(プロジェクトの記録ID, 開始時刻, 終了時刻)
 
-        tested = timeRecorderReducer(tested, { type: 'recordEnded', record: 終了済みのプロジェクトの記録 })
+        tested = timeRecorderReducer(tested, { type: 'recordEnded', project: プロジェクトA, record: 終了済みのプロジェクトの記録 })
         tested = timeRecorderReducer(tested, { type: 'projectSelected', project: undefined })
 
         tested.should.have.property('timeRecordId', 記録ID)
@@ -109,7 +111,7 @@ describe('timeRecorderReducer', () => {
 
       it('未指定の記録を終了してもプロジェクトの記録は記録中のままです', () => {
         tested = timeRecorderReducer(tested, { type: 'projectSelected', project: undefined })
-        tested = timeRecorderReducer(tested, { type: 'recordEnded', record: 終了済み記録 })
+        tested = timeRecorderReducer(tested, { type: 'recordEnded', project: undefined, record: 終了済み記録 })
         tested = timeRecorderReducer(tested, { type: 'projectSelected', project: プロジェクトA })
 
         tested.should.have.property('timeRecordId', プロジェクトの記録ID)
@@ -226,6 +228,7 @@ describe('timeRecorderReducer', () => {
 
     const result = timeRecorderReducer(state, {
       type: 'recordStarted',
+      project: undefined,
       record: 記録,
     })
 
@@ -246,7 +249,7 @@ describe('timeRecorderReducer', () => {
       displayedRecord: 終了済み記録,
     }
 
-    const state = timeRecorderReducer(前回を終了した状態, { type: 'recordStarted', record: 次の記録 })
+    const state = timeRecorderReducer(前回を終了した状態, { type: 'recordStarted', project: undefined, record: 次の記録 })
 
     state.should.toStrictEqual({
       records: [終了済み記録, 次の記録],
@@ -291,6 +294,7 @@ describe('timeRecorderReducer', () => {
 
     const result = timeRecorderReducer(state, {
       type: 'recordEnded',
+      project: undefined,
       record: 終了済み記録,
     })
 

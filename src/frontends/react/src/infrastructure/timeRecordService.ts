@@ -15,9 +15,9 @@ export function createTimeRecordService(token?: string): TimeRecordService {
   const headers = token === undefined ? undefined : { Authorization: `Bearer ${token}` }
   return {
     async getTimeRecords() {
-      const response = headers === undefined
-        ? await fetch('/api/time-records')
-        : await fetch('/api/time-records', { headers })
+      const response = headers
+        ? await fetch('/api/time-records', { headers })
+        : await fetch('/api/time-records')
       if (!response.ok) {
         throw new Error()
       }
@@ -34,7 +34,7 @@ export function createTimeRecordService(token?: string): TimeRecordService {
 }
 
 async function postTimeRecord(path: string, headers: Record<string, string> | undefined): Promise<TimeRecordPresentation> {
-  const response = await fetch(path, headers === undefined ? { method: 'POST' } : { method: 'POST', headers })
+  const response = await fetch(path, headers ? { method: 'POST', headers } : { method: 'POST' })
   if (!response.ok) {
     throw new Error()
   }

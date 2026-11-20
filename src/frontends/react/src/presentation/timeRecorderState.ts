@@ -12,8 +12,8 @@ export type TimeRecorderState = Readonly<{
 export type TimeRecorderAction =
   | { type: 'projectSelected', project: Project | undefined }
   | { type: 'recordsLoaded', records: readonly TimeRecordPresentation[], updatedRecords?: readonly TimeRecordPresentation[] }
-  | { type: 'recordStarted', record: TimeRecordPresentation, project?: Project }
-  | { type: 'recordEnded', record: TimeRecordPresentation, project?: Project }
+  | { type: 'recordStarted', record: TimeRecordPresentation, project: Project | undefined }
+  | { type: 'recordEnded', record: TimeRecordPresentation, project: Project | undefined }
 
 export const initialTimeRecorderState: TimeRecorderState = {
   records: [],
@@ -40,25 +40,19 @@ export function timeRecorderReducer(
       const updates = action.updatedRecords ?? []
       const records = mergeLoadedRecords(action.records, updates)
       const timeRecordId = getEndTargetAfterLoad(state, records, updates)
-      const projectTimeRecordIds = state.projectTimeRecordIds === undefined
-        ? undefined
-        : new Map(state.projectTimeRecordIds)
-      if (projectTimeRecordIds !== undefined) {
-        for (const [project, id] of projectTimeRecordIds) {
-          if (id !== null && records.some(({ record }) => record.id === id && record.endedAt !== null)) {
-            projectTimeRecordIds.set(project, null)
-          }
+      const nextState = { ...state, records, timeRecordId }
+      if (!state.projectTimeRecordIds) return nextState
+
+      const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
+      for (const [project, id] of projectTimeRecordIds) {
+        if (id !== null && records.some(({ record }) => record.id === id && record.endedAt)) {
+          projectTimeRecordIds.set(project, null)
         }
       }
-      return {
-        ...state,
-        records,
-        ...(projectTimeRecordIds === undefined ? {} : { projectTimeRecordIds }),
-        timeRecordId,
-      }
+      return { ...nextState, projectTimeRecordIds }
     }
     case 'recordStarted':
-      if ('project' in action && action.project !== state.selectedProject) {
+      if (action.project !== state.selectedProject) {
         const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
         projectTimeRecordIds.set(action.project, action.record.record.id)
         return { ...state, records: [...state.records, action.record], projectTimeRecordIds }
@@ -73,7 +67,7 @@ export function timeRecorderReducer(
       const records = state.records.map(record =>
         record.record.id === action.record.record.id ? action.record : record)
       const displayedRecord = state.displayedRecord === null ? null : action.record
-      if ('project' in action && action.project !== state.selectedProject) {
+      if (action.project !== state.selectedProject) {
         const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
         projectTimeRecordIds.set(action.project, null)
         return { ...state, records, projectTimeRecordIds, displayedRecord }

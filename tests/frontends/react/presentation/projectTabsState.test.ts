@@ -57,20 +57,21 @@ describe('projectTabsReducer', () => {
     state.showProjectDialog.should.equal(false)
   })
 
+  it('一覧からプロジェクトを選ぶと、そのプロジェクトが選択中になります', () => {
+    const project = new Project('プロジェクトA')
+    const listed = { ...initialProjectTabsState, projects: [project] }
+
+    const state = projectTabsReducer(listed, { type: 'projectSelected', project })
+
+    state.should.have.property('selectedProject', project)
+  })
+
   describe('プロジェクトAを登録したとき', () => {
     let registered: typeof initialProjectTabsState
 
     beforeEach(() => {
       const named = { ...initialProjectTabsState, projectName: 'プロジェクトA' }
       registered = projectTabsReducer(named, { type: 'projectRegistered' })
-    })
-
-    it('一覧からプロジェクトを選ぶと、そのプロジェクトが選択中になります', () => {
-      const project = registered.projects[0]
-
-      const state = projectTabsReducer(registered, { type: 'projectSelected', project })
-
-      state.should.have.property('selectedProject', project)
     })
 
     it('二つのプロジェクトを順に登録すると、一覧に両方が登録順に並びます', () => {
