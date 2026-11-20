@@ -5,6 +5,7 @@ import { TimeRecords } from '../../../../src/backends/node/application/timeRecor
 import type { TimeRecordState } from '../../../../src/backends/node/application/timeRecords.js'
 
 const 開始時刻 = Temporal.Instant.from('2026-08-01T09:00:00Z')
+const 次の開始時刻 = Temporal.Instant.from('2026-08-01T09:30:00Z')
 const 終了時刻 = Temporal.Instant.from('2026-08-01T10:30:00Z')
 const 再終了時刻 = Temporal.Instant.from('2026-08-01T11:00:00Z')
 
@@ -30,67 +31,52 @@ beforeEach(() => {
   let nextId = 1
   now = 開始時刻
   tested = new TimeRecords(state, {
-    newId: () => String(nextId++), now: () => now,
+    newId: () => `issued-${nextId++}`, now: () => now,
   })
 })
 
-test('開始するたびに新しい識別子が発行され、現在時刻を開始時刻とする記録が返されます', () => {
+test('開始を要求するたびに発行元の識別子とその時点の現在時刻が返されます', () => {
+  const first = tested.start()
+  now = 次の開始時刻
+  const second = tested.start()
+
+  first.id.should.equal('issued-1')
+  first.startedAt.should.deep.equal(開始時刻)
+  second.id.should.equal('issued-2')
+  second.startedAt.should.deep.equal(次の開始時刻)
+})
+
+test('二件の記録を開始すると、一覧には開始した記録が保存順に返されます', () => {
   const first = tested.start()
   const second = tested.start()
 
-  first.should.toStrictEqual(new TimeRecord('1', 開始時刻, null))
-  second.should.toStrictEqual(new TimeRecord('2', 開始時刻, null))
+  tested.list().should.toStrictEqual([first, second])
 })
 
-describe('二件の記録を開始したとき', () => {
-  let first: TimeRecord
-  let second: TimeRecord
+describe.each([
+  { status: '記録中', previousEndedAt: null, requestedAt: 終了時刻 },
+  { status: '終了済み', previousEndedAt: 終了時刻, requestedAt: 再終了時刻 },
+])('$statusの記録が先に保存されているとき', ({ previousEndedAt, requestedAt }) => {
+  let 最初の記録: TimeRecord
+  let 次の記録: TimeRecord
 
   beforeEach(() => {
-    first = tested.start()
-    second = tested.start()
+    最初の記録 = new TimeRecord('1', 開始時刻, previousEndedAt)
+    次の記録 = new TimeRecord('2', 次の開始時刻, null)
+    state.add(最初の記録)
+    state.add(次の記録)
+    now = requestedAt
   })
 
-  test('一覧には開始した記録が保存順に返されます', () => {
-    tested.list().should.toStrictEqual([first, second])
+  test('先に保存した記録を終了すると、その識別子と開始時刻と今回の終了時刻が返されます', () => {
+    const 終了結果 = { ended: tested.end(最初の記録.id) }
+
+    終了結果.should.toStrictEqual({ ended: new TimeRecord(最初の記録.id, 開始時刻, requestedAt) })
   })
 
-  test('複数の記録のうち一件を指定して終了すると、現在時刻を終了時刻とするその記録が返されます', () => {
-    now = 終了時刻
+  test('先に保存した記録を終了すると、一覧ではその記録だけに今回の終了時刻が反映されます', () => {
+    tested.end(最初の記録.id)
 
-    const ended = tested.end(first.id)
-
-    ;({ ended }).should.toStrictEqual({ ended: first.end(終了時刻) })
-  })
-
-  test('一件目を指定して終了すると一覧ではその記録だけが終了しています', () => {
-    now = 終了時刻
-
-    tested.end(first.id)
-
-    tested.list().should.toStrictEqual([first.end(終了時刻), second])
-  })
-})
-
-describe('一件目が終了済みで二件目は記録中のとき', () => {
-  let 二件目: TimeRecord
-
-  beforeEach(() => {
-    二件目 = new TimeRecord('2', 開始時刻, null)
-    state.add(new TimeRecord('1', 開始時刻, 終了時刻))
-    state.add(二件目)
-    now = 再終了時刻
-  })
-
-  test('終了済みの記録を再度指定すると終了時刻を更新した記録を返します', () => {
-    const ended = tested.end('1')
-
-    ;({ ended }).should.toStrictEqual({ ended: new TimeRecord('1', 開始時刻, 再終了時刻) })
-  })
-
-  test('終了済みの記録を再度指定すると一覧ではその記録だけの終了時刻が更新されます', () => {
-    tested.end('1')
-
-    tested.list().should.toStrictEqual([new TimeRecord('1', 開始時刻, 再終了時刻), 二件目])
+    tested.list().should.toStrictEqual([new TimeRecord(最初の記録.id, 開始時刻, requestedAt), 次の記録])
   })
 })

@@ -109,4 +109,14 @@ public sealed class TimeRecordTests
         終了した記録.EndedAt.Should().Be(終了時刻);
         tested.EndedAt.Should().BeNull();
     }
+
+    [Fact]
+    public void 終了済みの記録を再び終了すると指定時刻で終了した記録が返り元の終了時刻は保たれます()
+    {
+        var 終了済みの記録 = new TimeRecord(記録ID, 開始時刻, 終了時刻);
+        var 再終了時刻 = 終了時刻.AddMinutes(30);
+
+        終了済みの記録.End(再終了時刻).Should().Be(new TimeRecord(記録ID, 開始時刻, 再終了時刻));
+        終了済みの記録.EndedAt.Should().Be(終了時刻);
+    }
 }

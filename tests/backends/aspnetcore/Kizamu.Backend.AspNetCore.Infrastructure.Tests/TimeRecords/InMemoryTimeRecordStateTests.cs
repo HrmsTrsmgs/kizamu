@@ -65,25 +65,14 @@ public sealed class InMemoryTimeRecordStateTests
     }
 
     [Fact]
-    public void 記録一覧をコピーした後に追加した記録はコピーには含まれません()
+    public void 記録一覧をコピーしてから記録を追加してもコピーには元の記録インスタンスだけが含まれます()
     {
         tested.Add(最初の記録);
 
         var コピー = tested.CopyAll();
         tested.Add(次の記録);
 
-        コピー.Select(it => it.Id).Should().Equal(最初の記録.Id);
-    }
-
-    [Fact]
-    public void コピーした一覧から元と同じ記録インスタンスを取得できます()
-    {
-        tested.Add(最初の記録);
-
-        var コピー = tested.CopyAll();
-        tested.Add(次の記録);
-
-        コピー[0].Should().BeSameAs(最初の記録);
+        コピー.Should().ContainSingle().Which.Should().BeSameAs(最初の記録);
     }
 
     [Fact]

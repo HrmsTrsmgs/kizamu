@@ -62,27 +62,18 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     }
 
     [Fact]
-    public async Task 未認証で記録の開始を要求すると401が返ります()
+    public async Task 未認証で記録の開始を要求すると401が返り一覧は空のままです()
     {
         using var request = 同一オリジンの未認証POST要求を用意する("/api/time-records/start");
 
         using var response = await client.SendAsync(request, CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
-    [Fact]
-    public async Task 未認証で記録の開始を要求しても一覧に記録は追加されません()
-    {
-        using var request = 同一オリジンの未認証POST要求を用意する("/api/time-records/start");
-
-        using var response = await client.SendAsync(request, CancellationToken);
-
         (await 記録一覧を取得する()).Should().BeEmpty();
     }
 
     [Fact]
-    public async Task 未認証で記録の終了を要求すると401が返ります()
+    public async Task 未認証で記録の終了を要求すると401が返り一覧の記録は開始時のままです()
     {
         var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
         using var request = 同一オリジンの未認証POST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
@@ -90,16 +81,6 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         using var response = await client.SendAsync(request, CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
-    [Fact]
-    public async Task 未認証で記録の終了を要求しても一覧ではその記録の終了時刻は未設定のままです()
-    {
-        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
-        using var request = 同一オリジンの未認証POST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
-
-        using var response = await client.SendAsync(request, CancellationToken);
-
         (await 記録一覧を取得する()).Should().Equal(startedRecord);
     }
 
@@ -119,7 +100,7 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
     }
 
     [Fact]
-    public async Task 別の利用者が開始した記録の終了を要求すると404が返ります()
+    public async Task 別の利用者が記録の終了を要求すると404が返り所有者の一覧には元の記録が残ります()
     {
         var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻, "first-user");
         using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end", "second-user");
@@ -127,16 +108,6 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         using var response = await client.SendAsync(request, CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task 別の利用者が記録の終了を要求しても所有者の一覧では終了時刻は未設定のままです()
-    {
-        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻, "first-user");
-        using var request = 同一オリジンのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end", "second-user");
-
-        using var response = await client.SendAsync(request, CancellationToken);
-
         (await 記録一覧を取得する("first-user")).Should().Equal(startedRecord);
     }
 
@@ -211,29 +182,19 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
 
     [Theory]
     [MemberData(nameof(同一オリジンを示さないヘッダー値))]
-    public async Task 認証済みでもSecFetchSiteが同一オリジンを示さない記録の開始要求には403が返ります(string? secFetchSite)
+    public async Task 認証済みでもSecFetchSiteが同一オリジンを示さない開始要求では403が返り一覧は空のままです(string? secFetchSite)
     {
         using var request = 認証済みのPOST要求を用意する("/api/time-records/start", secFetchSite);
 
         using var response = await client.SendAsync(request, CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-    }
-
-    [Theory]
-    [MemberData(nameof(同一オリジンを示さないヘッダー値))]
-    public async Task 認証済みでもSecFetchSiteが同一オリジンを示さない開始要求では一覧に記録が追加されません(string? secFetchSite)
-    {
-        using var request = 認証済みのPOST要求を用意する("/api/time-records/start", secFetchSite);
-
-        using var response = await client.SendAsync(request, CancellationToken);
-
         (await 記録一覧を取得する()).Should().BeEmpty();
     }
 
     [Theory]
     [MemberData(nameof(同一オリジンを示さないヘッダー値))]
-    public async Task 認証済みでもSecFetchSiteが同一オリジンを示さない記録の終了要求には403が返ります(string? secFetchSite)
+    public async Task 認証済みでもSecFetchSiteが同一オリジンを示さない終了要求では403が返り一覧の記録は開始時のままです(string? secFetchSite)
     {
         var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
         using var request = 認証済みのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end", secFetchSite);
@@ -241,17 +202,6 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         using var response = await client.SendAsync(request, CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-    }
-
-    [Theory]
-    [MemberData(nameof(同一オリジンを示さないヘッダー値))]
-    public async Task 認証済みでもSecFetchSiteが同一オリジンを示さない終了要求では記録の終了時刻は未設定のままです(string? secFetchSite)
-    {
-        var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
-        using var request = 認証済みのPOST要求を用意する($"/api/time-records/{startedRecord.Id}/end", secFetchSite);
-
-        using var response = await client.SendAsync(request, CancellationToken);
-
         (await 記録一覧を取得する()).Should().Equal(startedRecord);
     }
 

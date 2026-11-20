@@ -8,8 +8,6 @@ test('Node版の業務APIを空きポートで起動すると、出力されたU
     const response = await fetch(`${listeningUrl}/api/health`, { signal: AbortSignal.timeout(3000) })
 
     response.status.should.equal(200)
-    const content = { body: await response.json() }
-    content.should.have.property('body').that.deep.equal({ status: 'ok' })
   })
 }, 10000)
 

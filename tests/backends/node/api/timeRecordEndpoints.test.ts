@@ -64,15 +64,10 @@ test('認証情報のない記録一覧の取得要求には401が返されま�
   response.statusCode.should.equal(401)
 })
 
-test('認証情報のない記録開始要求には401が返されます', async () => {
+test('認証情報のない記録開始要求には401が返り、一覧は空のままです', async () => {
   const response = await postWithoutAuthorization(app, '/api/time-records/start')
 
   response.statusCode.should.equal(401)
-})
-
-test('認証情報のない記録開始要求を送っても一覧には記録が追加されません', async () => {
-  await postWithoutAuthorization(app, '/api/time-records/start')
-
   const records = await readTimeRecords(app)
   records.should.deep.equal([])
 })
@@ -85,15 +80,10 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
     vi.setSystemTime(終了時刻)
   })
 
-  test('認証情報のない記録終了要求には401が返されます', async () => {
+  test('認証情報のない記録終了要求には401が返り、一覧の記録は開始時のままです', async () => {
     const response = await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
 
     response.statusCode.should.equal(401)
-  })
-
-  test('認証情報のない記録終了要求を送っても一覧の記録は開始時のままです', async () => {
-    await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
-
     const records = await readTimeRecords(app)
     records.should.deep.equal([startedRecord])
   })
@@ -118,21 +108,15 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
     const endedRecord = response.json<TimeRecordResponse>()
     endedRecord.id.should.equal(startedRecord.id)
     endedRecord.startedAt.should.equal(startedRecord.startedAt)
-    new Date(endedRecord.endedAt ?? '').should.deep.equal(終了時刻)
     endedRecord.should.have.property('endedAt', 終了時刻.toISOString())
   })
 
-  test('記録を二件開始すると異なる識別子が発行されます', async () => {
-    const secondRecord = await prepareStartedRecord(app)
-
-    secondRecord.id.should.not.equal(startedRecord.id)
-  })
-
-  test('二件の記録を開始した後に一覧を取得すると開始した順に両方が返されます', async () => {
+  test('二件の記録を開始すると異なる識別子が発行され、一覧には開始順で両方が返されます', async () => {
     const secondRecord = await prepareStartedRecord(app)
 
     const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
 
+    secondRecord.id.should.not.equal(startedRecord.id)
     response.statusCode.should.equal(200)
     const content = { body: response.json() }
     content.should.have.property('body').that.deep.equal([startedRecord, secondRecord])
@@ -149,19 +133,11 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
   })
 
   test.each(同一オリジンを示さないヘッダー値)(
-    'Sec-Fetch-Siteが同一オリジンを示さない終了要求では403が返されます（%s）',
+    'Sec-Fetch-Siteが同一オリジンを示さない終了要求（%s）には403が返り、一覧の記録は開始時のままです',
     async (secFetchSite) => {
       const response = await postWithFetchSite(app, `/api/time-records/${startedRecord.id}/end`, secFetchSite)
 
       response.statusCode.should.equal(403)
-    },
-  )
-
-  test.each(同一オリジンを示さないヘッダー値)(
-    'Sec-Fetch-Siteが同一オリジンを示さない終了要求（%s）を送っても、対象の記録は記録中のままです',
-    async (secFetchSite) => {
-      await postWithFetchSite(app, `/api/time-records/${startedRecord.id}/end`, secFetchSite)
-
       const records = await readTimeRecords(app)
       records.should.deep.equal([startedRecord])
     },
@@ -176,15 +152,10 @@ describe('別の利用者が開始した記録があるとき', () => {
     vi.setSystemTime(終了時刻)
   })
 
-  test('他の利用者の記録の終了を要求すると404が返されます', async () => {
+  test('他の利用者が記録の終了を要求すると404が返り、所有者の一覧には元の記録が残ります', async () => {
     const response = await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
 
     response.statusCode.should.equal(404)
-  })
-
-  test('他の利用者が終了を要求しても、所有者の一覧には元の記録が残ります', async () => {
-    await postFromSameOrigin(app, `/api/time-records/${startedRecord.id}/end`, 'second-user')
-
     const records = await readTimeRecords(app, 'first-user')
     records.should.deep.equal([startedRecord])
   })
@@ -206,7 +177,6 @@ test('記録を開始すると、空でないGUIDとサーバーの現在時刻�
   const startedRecord = response.json<TimeRecordResponse>()
   startedRecord.id.should.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   startedRecord.id.should.not.equal('00000000-0000-0000-0000-000000000000')
-  new Date(startedRecord.startedAt).should.deep.equal(開始時刻)
   startedRecord.startedAt.should.equal(開始時刻.toISOString())
   startedRecord.should.have.property('endedAt', null)
 })
@@ -235,19 +205,11 @@ test('同じ利用者でも、別に起動したアプリの一覧には元の�
 })
 
 test.each(同一オリジンを示さないヘッダー値)(
-  'Sec-Fetch-Siteが同一オリジンを示さない開始要求では403が返されます（%s）',
+  'Sec-Fetch-Siteが同一オリジンを示さない開始要求（%s）には403が返り、一覧は空のままです',
   async (secFetchSite) => {
     const response = await postWithFetchSite(app, '/api/time-records/start', secFetchSite)
 
     response.statusCode.should.equal(403)
-  },
-)
-
-test.each(同一オリジンを示さないヘッダー値)(
-  'Sec-Fetch-Siteが同一オリジンを示さない開始要求では記録が追加されません（%s）',
-  async (secFetchSite) => {
-    await postWithFetchSite(app, '/api/time-records/start', secFetchSite)
-
     const records = await readTimeRecords(app)
     records.should.deep.equal([])
   },
