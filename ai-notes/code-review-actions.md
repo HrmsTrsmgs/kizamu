@@ -1,6 +1,6 @@
 # 全コードレビューの修正指示
 
-対象は `codex/readability-second-pass` の `9b0a5fd`。直前のテスト命名規約を含むこの版で、製品・テスト・テスト補助・自作スクリプトをファイルの先頭から末尾まで読んだ。行番号はこのコミットのもの。各項目は未着手。
+対象は `codex/readability-second-pass` の `9b0a5fd`。直前のテスト命名規約を含むこの版で、製品・テスト・テスト補助・自作スクリプトをファイルの先頭から末尾まで読んだ。行番号はこのコミットのもの。指摘は精査時点のもの。
 
 **最初に01と02を別々に直す。** どちらもプロジェクトを取り違えるが、01は終了応答、02は一覧応答が引き金になる。片方を直しても他方は残る。03は未指定タブへ戻るための画面操作であり、01・02の修正や再現に先行する必要はない。
 
@@ -30,6 +30,8 @@ AとBを記録中にしてAの終了応答を保留し、Bへ切り替えてか�
 
 - **修正**　Blazorは開始処理と同様に要求時のプロジェクトを保持し、応答時はそのプロジェクトに `SetCurrentId` を適用する。Reactは `endTimeRecord` から `recordEnded` に要求元を渡し、表示中のプロジェクトと異なる場合は要求元の保存済みIDだけを解除する。共有一覧のAを終了済みに更新する。
 - **完了条件**　ViewModel／hookに遅延応答を渡す。応答直後にBで終了を要求すれば引数はBのID、Aへ戻ったときは終了を要求できない。Aの一覧行の開始・終了はどちらもAの応答値になる。同じタブで終了した既存ケースも通す。 [TimeRecorderViewModel.cs 164行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L164) · [useTimeRecorder.ts 87行](../src/frontends/react/src/presentation/useTimeRecorder.ts#L87) · [timeRecorderState.ts 60行](../src/frontends/react/src/presentation/timeRecorderState.ts#L60) · [TimeRecorderViewModelTests.cs 201行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L201) · [useTimeRecorder.test.ts 30行](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L30)
+
+2026-11-20の作業状況。基準コミットは `7005c13`。BlazorとReactで再現テストが期待どおり失敗することを確認後、終了要求時のプロジェクトに応答を反映するよう変更した。変更後は両方の再現テストと既存テストを含む.NET 326件・TypeScript 239件が成功し、両方のビルドと静的検査も成功した。Greenの変更を記録し、次に項目01のRefactor要否を確認する。
 
 ### 02　初回一覧が遅れても、Aで開始した記録をBの終了対象にしない
 

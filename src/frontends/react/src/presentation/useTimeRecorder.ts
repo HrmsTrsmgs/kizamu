@@ -87,9 +87,10 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
   function endTimeRecord() {
     const id = state.timeRecordId
     if (id === null) return Promise.resolve()
+    const project = state.selectedProject
     return changeTimeRecord(
       () => timeRecords.endTimeRecord(id),
-      record => ({ type: 'recordEnded', record }),
+      record => ({ type: 'recordEnded', record, project }),
     )
   }
 

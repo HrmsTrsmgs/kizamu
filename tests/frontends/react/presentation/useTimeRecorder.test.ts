@@ -499,6 +499,43 @@ describe('useTimeRecorder', () => {
     })
   })
 
+  it('利用者がプロジェクトAの記録の終了応答を待つ間にBを選ぶと、Aだけが終了済みになり、Bの記録は引き続き終了できます', async () => {
+    const プロジェクトA = new Project('プロジェクトA')
+    const プロジェクトB = new Project('プロジェクトB')
+    const Bの記録 = presentedRecord(次の記録ID, 終了時刻)
+    const Aの終了済み記録 = presentedRecord(記録ID, timestamp('2026-08-01T09:01:00Z'), 終了時刻)
+    const 応答 = deferred<typeof Aの終了済み記録>()
+    startTimeRecord.mockResolvedValueOnce(記録).mockResolvedValueOnce(Bの記録)
+    endTimeRecord.mockReturnValueOnce(応答.promise)
+    const { result } = renderRecorder()
+
+    act(() => result.current.selectProject(プロジェクトA))
+    await act(() => result.current.startTimeRecord())
+    act(() => result.current.selectProject(プロジェクトB))
+    await act(() => result.current.startTimeRecord())
+    act(() => result.current.selectProject(プロジェクトA))
+
+    let 終了操作 = Promise.resolve()
+    act(() => { 終了操作 = result.current.endTimeRecord() })
+    endTimeRecord.should.have.been.calledOnceWith(記録ID)
+    act(() => result.current.selectProject(プロジェクトB))
+    await act(async () => {
+      応答.resolve(Aの終了済み記録)
+      await 終了操作
+    })
+
+    result.current.state.records.should.toStrictEqual([Aの終了済み記録, Bの記録])
+    endTimeRecord.mockResolvedValue(presentedRecord(次の記録ID, 終了時刻, timestamp('2026-08-01T10:31:00Z')))
+    await act(() => result.current.endTimeRecord())
+    const Bの終了操作直後の要求 = endTimeRecord.mock.calls.slice()
+
+    act(() => result.current.selectProject(プロジェクトA))
+    endTimeRecord.mockResolvedValue(Aの終了済み記録)
+    await act(() => result.current.endTimeRecord())
+    Bの終了操作直後の要求.should.deep.equal([[記録ID], [次の記録ID]])
+    endTimeRecord.mock.calls.should.deep.equal(Bの終了操作直後の要求)
+  })
+
   it('記録中でなければ終了を要求しません', async () => {
     const { result } = renderRecorder()
 

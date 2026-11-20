@@ -13,7 +13,7 @@ export type TimeRecorderAction =
   | { type: 'projectSelected', project: Project | undefined }
   | { type: 'recordsLoaded', records: readonly TimeRecordPresentation[], updatedRecords?: readonly TimeRecordPresentation[] }
   | { type: 'recordStarted', record: TimeRecordPresentation, project?: Project }
-  | { type: 'recordEnded', record: TimeRecordPresentation }
+  | { type: 'recordEnded', record: TimeRecordPresentation, project?: Project }
 
 export const initialTimeRecorderState: TimeRecorderState = {
   records: [],
@@ -57,14 +57,22 @@ export function timeRecorderReducer(
         timeRecordId: action.record.record.id,
         displayedRecord: action.record,
       }
-    case 'recordEnded':
+    case 'recordEnded': {
+      const records = state.records.map(record =>
+        record.record.id === action.record.record.id ? action.record : record)
+      const displayedRecord = state.displayedRecord === null ? null : action.record
+      if ('project' in action && action.project !== state.selectedProject) {
+        const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
+        projectTimeRecordIds.set(action.project, null)
+        return { ...state, records, projectTimeRecordIds, displayedRecord }
+      }
       return {
         ...state,
-        records: state.records.map(record =>
-          record.record.id === action.record.record.id ? action.record : record),
+        records,
         timeRecordId: null,
-        displayedRecord: state.displayedRecord === null ? null : action.record,
+        displayedRecord,
       }
+    }
   }
 }
 

@@ -164,6 +164,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     public Task EndTimeRecordAsync()
     {
         if (!CanOperate || CurrentId is not { } id) return Task.CompletedTask;
+        var project = selectedProject;
         return RunRecordOperationAsync(() => service.EndTimeRecordAsync(id), record =>
         {
             records[records.FindIndex(it => it.Id == record.Id)] = record;
@@ -172,7 +173,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
             {
                 DisplayedRecord = record;
             }
-            CurrentId = null;
+            SetCurrentId(project, null);
         });
     }
 

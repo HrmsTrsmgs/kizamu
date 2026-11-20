@@ -12,6 +12,7 @@ public sealed class TimeRecorderViewModelTests
     static readonly DateTimeOffset 開始時刻 = DateTimeOffset.Parse("2026-08-01T09:00:00Z");
     static readonly DateTimeOffset 終了時刻 = DateTimeOffset.Parse("2026-08-01T10:30:00Z");
     readonly Project プロジェクトA = new("プロジェクトA");
+    readonly Project プロジェクトB = new("プロジェクトB");
     readonly TimeRecord 過去の記録 = new(別の記録ID, 開始時刻, 終了時刻);
     readonly StubTimeRecordService service = new(new(記録ID, 開始時刻, null), new(記録ID, 開始時刻, 終了時刻));
     readonly TimeRecorderViewModel tested;
@@ -219,6 +220,32 @@ public sealed class TimeRecorderViewModelTests
         tested.IsRecording.Should().BeFalse();
         tested.SelectProject(プロジェクトA);
         tested.IsRecording.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task 利用者がプロジェクトAの記録の終了応答を待つ間にBを選ぶとAだけが終了済みになりBの記録は引き続き終了できます()
+    {
+        await プロジェクトAとBで記録を開始する();
+        var Aの終了済み記録 = new TimeRecord(記録ID, 開始時刻.AddMinutes(1), 終了時刻);
+        var 応答 = service.DelayEndResponse();
+        tested.SelectProject(プロジェクトA);
+
+        var 終了操作 = tested.EndTimeRecordAsync();
+        service.EndedIds.Should().Equal(記録ID);
+        tested.SelectProject(プロジェクトB);
+        応答.SetResult(Aの終了済み記録);
+        await 終了操作;
+
+        tested.Records.Should().Equal(Aの終了済み記録, service.StartedRecord);
+        service.EndResponse = Task.FromResult(service.StartedRecord.End(終了時刻.AddMinutes(1)));
+        await tested.EndTimeRecordAsync();
+        var Bの終了操作直後の要求 = service.EndedIds.ToArray();
+
+        tested.SelectProject(プロジェクトA);
+        service.EndResponse = 応答.Task;
+        await tested.EndTimeRecordAsync();
+        Bの終了操作直後の要求.Should().Equal(記録ID, 別の記録ID);
+        service.EndedIds.Should().Equal(Bの終了操作直後の要求);
     }
 
     [Theory]
@@ -1104,7 +1131,7 @@ public sealed class TimeRecorderViewModelTests
     {
         tested.SelectProject(プロジェクトA);
         await tested.StartTimeRecordAsync();
-        tested.SelectProject(new("プロジェクトB"));
+        tested.SelectProject(プロジェクトB);
         service.StartedRecord = new(別の記録ID, 終了時刻, null);
         await tested.StartTimeRecordAsync();
     }
