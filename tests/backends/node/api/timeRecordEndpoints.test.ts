@@ -1,6 +1,6 @@
 import { generateKeyPairSync, sign } from 'node:crypto'
 import { GoogleIdTokenVerifier } from '../../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
-import { afterEach, beforeEach, describe, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import Fastify from 'fastify'
 import { createApp } from '../../../../src/backends/node/app.js'
 import { registerTimeRecordEndpoints } from '../../../../src/backends/node/api/timeRecordEndpoints.js'
@@ -62,6 +62,24 @@ test('有効なBearer認証の方式名が小文字でも記録一覧を取得�
   response.statusCode.should.equal(200)
 })
 
+
+test('公開鍵の配信元が401を返すと記録一覧の取得要求には500が返されます', async () => {
+  const fetchPublicKeys = vi.fn(async () => new Response(null, { status: 401 }))
+  const endpointApp = createApp(new GoogleIdTokenVerifier('kizamu-client', fetchPublicKeys))
+
+  try {
+    const response = await endpointApp.inject({
+      method: 'GET',
+      url: '/api/time-records',
+      headers: { authorization: 'Bearer placeholder' },
+    })
+
+    expect(fetchPublicKeys).toHaveBeenCalled()
+    response.statusCode.should.equal(500)
+  } finally {
+    await endpointApp.close()
+  }
+})
 
 test('認証情報のない記録一覧の取得要求には401が返されます', async () => {
   const response = await app.inject({ method: 'GET', url: '/api/time-records' })

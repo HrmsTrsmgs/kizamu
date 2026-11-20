@@ -374,7 +374,7 @@ TS Domainの不変性、.NETの値等価、通信でのクラス復元、参照�
 - **修正済み。同じ対象で記録中なら開始要求を送らない。** BlazorのViewModelとReactのhookは、選択中のプロジェクトまたは未指定の対象が記録中と分かっている場合、開始要求を送らず完了する。初回一覧取得中の扱いは別途決める。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L170) · [React](../src/frontends/react/src/presentation/useTimeRecorder.ts#L79) · [MVPの同時記録の条件](../docs/roadmap.md#ステップ1-プロジェクト単位の複数同時記録)
 - **修正済み。終了応答のIDと終了時刻を通信境界で検証する。** BlazorとReactは、指定IDの終了済み記録を受け取ったときだけ終了結果を返し、別IDや終了時刻の `null`・欠落は呼び出し元にエラーで伝える。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordApi.cs#L33) · [React](../src/frontends/react/src/infrastructure/timeRecordService.ts#L27)
 - **修正済み。保存APIの差し替えで対象の不在を通知する。** ASP.NET Coreの `Update` とNodeの `replace` は、未保存IDの更新時に既存の専用例外を投げる。保存テストで、失敗時に既存記録と保存順が保たれ、新規追加もないことを確かめた。 [C#](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/ITimeRecordState.cs#L33) · [Node](../src/backends/node/application/timeRecords.ts#L4)
-- **認証期限を両バックエンドで揃えた。** Google IDトークンは有効期限に達した時点から拒否する。本人識別子は、両バックエンドで空でないJSON文字列のsubをそのまま使う。ASP.NET Coreの本人識別子の差分はレビュー待ち。公開鍵取得失敗時の契約を引き続き確認する。 [D014](../docs/decisions.md#d014ベータ版はgoogleのidトークンで本人を識別する) · [Node検証器](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L14)
+- **認証期限を両バックエンドで揃えた。** Google IDトークンは有効期限に達した時点から拒否する。本人識別子は、両バックエンドで空でないJSON文字列のsubをそのまま使う。公開鍵取得の失敗は記録APIで500として扱う。Node側の鍵取得エラーの差分はレビュー待ち。 [D014](../docs/decisions.md#d014ベータ版はgoogleのidトークンで本人を識別する) · [Node検証器](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L14)
 - **起動確認が待機せず失敗する条件がある。** 項目30を、204のあと待機を挟めば200を返す代役で確認した。現行は待機0回で60回照会し失敗を返す。項目31の起動失敗時の診断表示も確認した。修正箇所とテスト案は項目30・31に記載済み。 [Wait-HealthEndpoint.ps1](../scripts/Wait-HealthEndpoint.ps1#L7)
 
 ### 修正と検証
@@ -415,7 +415,13 @@ ASP.NET Coreソリューションの非増分ビルドは警告・エラー0、S
 
 2026-11-20、基準は `73d7957`。Nodeは既にsubの欠落、空文字列、数値を拒否する。ASP.NET CoreではGoogleライブラリの既定のJSON型でダミーの数値が文字列に変換され、空文字列も返ることをテストで確認した。検証ライブラリが提供するペイロード拡張を使い、空でないJSON文字列だけを本人識別子に使う。先頭ゼロのある文字列と日付に見える文字列の元の表記を保つ。 [境界テスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs#L97)
 
-ASP.NET Coreソリューションで全92テスト、非増分ビルドとformatが成功。本人識別子の差分は未コミットでレビュー待ち。次の着手点は公開鍵の取得に失敗した場合の契約の照合。
+ASP.NET Coreソリューションで全92テスト、非増分ビルドとformatが成功。本人識別子の修正は `66cd22e` に記録済み。
+
+### 公開鍵取得に失敗したときの応答
+
+2026-11-21、基準は `66cd22e`。Nodeの公開鍵取得に固定の401応答を返し、記録一覧の取得も401になることを確認した。ASP.NET Coreでは公開鍵の取得時に発生したHTTP例外が伝播し、応答開始前のサーバー例外は500になる。Nodeは公開鍵取得の失敗を通常のエラーとして返し、診断用に元の例外を原因として保持する。鍵取得失敗は500、利用者のトークンの拒否は401で区別できる。 [記録APIの回帰テスト](../tests/backends/node/api/timeRecordEndpoints.test.ts#L66)
+
+Node・React・Domainの全240テスト、npmのビルドとLint、差分検査が成功。Nodeの変更は未コミットでレビュー待ち。次の着手点は修正18の開始応答待ち中の終了抑止テスト。
 
 ## TypeScriptの型と実行時検査
 

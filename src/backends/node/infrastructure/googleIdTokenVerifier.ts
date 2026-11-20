@@ -13,7 +13,9 @@ export class GoogleIdTokenVerifier {
 
   /** 署名、発行元、対象アプリ、有効期限を検証し、検証済みsubまたは不正時のnullを返します。 */
   async verify(idToken: string): Promise<string | null> {
-    const { certs } = await this.#client.getFederatedSignonCertsAsync()
+    const { certs } = await this.#client.getFederatedSignonCertsAsync().catch((cause: unknown) => {
+      throw new Error('Failed to fetch Google public keys.', { cause })
+    })
     try {
       const ticket = await this.#client.verifySignedJwtWithCertsAsync(
         idToken, certs, this.#clientId, ['https://accounts.google.com', 'accounts.google.com'],
