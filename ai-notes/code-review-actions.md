@@ -210,6 +210,8 @@ TSの開始・復元を検証するケースは操作自体が `beforeEach` に�
 
 開始・復元そのものを検証する二件は本文から `TimeRecord.start` とコンストラクタを呼ぶ。開始済み・復元済みが前提の他のケースは共通準備のままとする。通信側は一覧の `toStrictEqual` でクラス、順序、各値を保証していること、Domain側は終了時刻・ID・新インスタンス・元の不変性を保証することを確認し、通信経由の終了テストだけを取り除く。 [timeRecord.test.ts 24行](../tests/domains/typescript/timeRecord.test.ts#L24) · [timeRecord.test.ts 53行](../tests/domains/typescript/timeRecord.test.ts#L53) · [timeRecordService.test.ts 33行](../tests/frontends/react/infrastructure/timeRecordService.test.ts#L33) · [timeRecordService.test.ts 104行](../tests/frontends/react/infrastructure/timeRecordService.test.ts#L104)
 
+2026-11-21、基準は `91dd339`。開始・復元の2件を共通準備から分け、それぞれ本文で対象の操作を呼ぶ。Reactの通信テストからDomainの終了を確認する重複は `5ef1933` で削除済みで、一覧の復元は `toStrictEqual` でクラス・順序・値を検証する。TypeScript全241件、ビルド、Lint、差分検査が成功。項目22の整理を反映した。 [Domainのテスト](../tests/domains/typescript/timeRecord.test.ts#L11) · [通信テスト](../tests/frontends/react/infrastructure/timeRecordService.test.ts#L34)
+
 ### 23　再取得の成否を検証する画面テストから重複した状態遷移を外す
 
 開始失敗と一覧失敗を画面から重ねて、復旧後の可否と再失敗を繰り返している。hookと操作状態Reducerに同じ遷移の直接テストがある。
