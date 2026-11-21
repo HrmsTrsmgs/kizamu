@@ -15,13 +15,7 @@ export function createTimeRecordService(token?: string): TimeRecordService {
   const headers = token === undefined ? undefined : { Authorization: `Bearer ${token}` }
   return {
     async getTimeRecords() {
-      const response = headers
-        ? await fetch('/api/time-records', { headers })
-        : await fetch('/api/time-records')
-      if (!response.ok) {
-        throw new Error()
-      }
-      const body: unknown = await response.json()
+      const body = await requestJson('/api/time-records', headers ? { headers } : undefined)
       if (!Array.isArray(body) || !body.every(isTimeRecordResponse)) {
         throw new Error()
       }
@@ -42,15 +36,19 @@ export function createTimeRecordService(token?: string): TimeRecordService {
 }
 
 async function postTimeRecord(path: string, headers: Record<string, string> | undefined): Promise<TimeRecordPresentation> {
-  const response = await fetch(path, headers ? { method: 'POST', headers } : { method: 'POST' })
-  if (!response.ok) {
-    throw new Error()
-  }
-  const body: unknown = await response.json()
+  const body = await requestJson(path, headers ? { method: 'POST', headers } : { method: 'POST' })
   if (!isTimeRecordResponse(body)) {
     throw new Error()
   }
   return toTimeRecord(body)
+}
+
+async function requestJson(path: string, options?: RequestInit): Promise<unknown> {
+  const response = options ? await fetch(path, options) : await fetch(path)
+  if (!response.ok) {
+    throw new Error()
+  }
+  return response.json()
 }
 
 function isTimeRecordResponse(value: unknown): value is TimeRecordResponse {

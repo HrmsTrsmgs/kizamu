@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 
@@ -16,10 +17,8 @@ public sealed partial class TimeRecordApi(HttpClient client, string? token = nul
     /// <returns>記録中と終了済みの記録を含む一覧。</returns>
     public async Task<ImmutableArray<TimeRecord>> GetTimeRecordsAsync()
     {
-        using var request = CreateRequest(HttpMethod.Get, "api/time-records");
-        using var response = await client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        var responseRecords = await response.Content.ReadFromJsonAsync(TimeRecordJsonContext.Default.ImmutableArrayTimeRecordResponse);
+        var responseRecords = await RequestJsonAsync(
+            HttpMethod.Get, "api/time-records", TimeRecordJsonContext.Default.ImmutableArrayTimeRecordResponse);
         var records =
             from record in responseRecords
             select record.ToDomain();
@@ -36,16 +35,20 @@ public sealed partial class TimeRecordApi(HttpClient client, string? token = nul
     /// <exception cref="InvalidDataException">成功応答が指定した記録と一致しないか、終了時刻を含まない場合。</exception>
     public Task<TimeRecord> EndTimeRecordAsync(Guid id) => PostTimeRecordAsync($"api/time-records/{id}/end", id);
 
-    /// <summary>開始・終了で共通するHTTP応答の成功確認、読み取り、破棄を一か所で行います。</summary>
     async Task<TimeRecord> PostTimeRecordAsync(string endpoint, Guid? endingRecordId = null)
     {
-        using var request = CreateRequest(HttpMethod.Post, endpoint);
-        using var response = await client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        var record = await response.Content.ReadFromJsonAsync(TimeRecordJsonContext.Default.TimeRecordResponse);
+        var record = await RequestJsonAsync(HttpMethod.Post, endpoint, TimeRecordJsonContext.Default.TimeRecordResponse);
         if (endingRecordId is not null && (record.Id != endingRecordId || record.EndedAt is null))
             throw new InvalidDataException("終了応答に指定した記録の終了時刻が含まれていません。");
         return record.ToDomain();
+    }
+
+    async Task<T?> RequestJsonAsync<T>(HttpMethod method, string endpoint, JsonTypeInfo<T> jsonTypeInfo)
+    {
+        using var request = CreateRequest(method, endpoint);
+        using var response = await client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync(jsonTypeInfo);
     }
 
     HttpRequestMessage CreateRequest(HttpMethod method, string endpoint)

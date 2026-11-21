@@ -443,6 +443,12 @@ ASP.NET Coreソリューションで全92テスト、非増分ビルドとformat
 
 Node・React・Domainの全240テスト、npmのビルドとLint、差分検査が成功。Nodeの修正は `fdc31ec` に記録済み。
 
+### 作業記録クライアントのHTTP処理
+
+2026-11-21、基準は `fdb41bc`。BlazorとReactの作業記録API内で、送信、HTTP成功の確認、JSON読み取りを共通化した。各操作が応答型を指定または検証する。Blazorの要求と応答の破棄は共通メソッドが行う。正常性確認はHTTP失敗をfalseで返すため、作業記録APIと処理を共有する親クラスは設けない。 [Blazorの実装](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordApi.cs#L46) · [Reactの実装](../src/frontends/react/src/infrastructure/timeRecordService.ts#L46)
+
+両ビルド、.NET全316件、再実行したTypeScript全241件、Lintと変更C#のformat、差分検査が成功。TypeScriptの初回はESLint依存の読み取りエラーでReactの依存境界テストが実行できず、再実行で再現しなかった。全体の.NET formatは既存の `GoogleSignIn.cs` のBL0016で終了2。未コミットでレビュー待ち。
+
 ## TypeScriptの型と実行時検査
 
 2026-11-20、基準は `ae8482a`。TypeScript・JavaScriptの70ファイルと型設定8件を精査した。Mapの有無を一度だけ判定し、開始・終了のアクションでは操作元を必須にした。オブジェクトの有無は真偽値で判定し、記録IDのnull判定は維持した。プロジェクト選択テストには既知のProjectを渡す。
