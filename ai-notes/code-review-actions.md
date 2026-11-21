@@ -184,13 +184,15 @@ Blazorは `.recorder-panel button` のテキスト列を `Equal("記録を終了
 
 許可例はESLintの生の `report.messages` が空であることを比較する。Domainの補助がルール名だけを返す場合は許可側で生の診断を受ける。確認した許可例6件は全て診断0件。禁止例は無関係な診断が併発し得るので期待するルールIDを引き続き個別に確認する。 [dependencyBoundaries.test.ts 54行](../tests/domains/typescript/dependencyBoundaries.test.ts#L54) · [eslintBoundaries.test.ts 46行](../tests/frontends/react/architecture/eslintBoundaries.test.ts#L46)
 
-2026-11-21、修正19の基準は `2e5a863`。Domainの許可例2件とReactの許可例4件で、ESLintの診断一覧が空であることを検証した。禁止例のルールIDの検証を維持した。Reactの許可例1件に構文エラーを一時的に入れると旧条件では成功し、新条件では構文エラーの診断でその1件だけが失敗した。元の例に戻した版でTypeScript全241テスト、ビルド・Lint・差分検査が成功。未コミットでレビュー待ち。次の着手点は項目20。
+2026-11-21、修正19の基準は `2e5a863`。Domainの許可例2件とReactの許可例4件で、ESLintの診断一覧が空であることを検証した。禁止例のルールIDの検証を維持した。Reactの許可例1件に構文エラーを一時的に入れると旧条件では成功し、新条件では構文エラーの診断でその1件だけが失敗した。元の例に戻した版でTypeScript全241テスト、ビルド・Lint・差分検査が成功。修正は `4fdb50e` に記録済み。
 
 ### 20　ログインボタンとログアウトボタンの位置を同じ基準で比較する
 
 Reactのテストは `parentElement` の一致だけで、同じ `main` の末尾に移動しても成功する。Blazor側に表示位置を比較する例がある。
 
 両ボタンをそれぞれ含む `main` 直下の子要素の位置を、ログイン前後で比較する。ログイン前の位置が見つかったことも確認する。ボタンにラッパーがあっても同じ位置なら通り、フッターの前まで移すと失敗する。 [App.test.tsx 37行](../tests/frontends/react/App.test.tsx#L37) · [AppTests.cs 72行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L72)
+
+2026-11-21、修正20の基準は `4fdb50e`。Reactの既存テストでログイン前後のボタンを含むmain直下の要素の位置を比較した。一時的に同じ位置でログアウトボタンをdivで包むと成功し、フッターの直前へ移すと期待位置1に対して位置3で失敗した。製品コードを元に戻し、TypeScript全241テスト、ビルド・Lint・差分検査が成功。未コミットでレビュー待ち。次の着手点は項目21。 [認証ボタンの位置テスト](../tests/frontends/react/App.test.tsx#L37)
 
 ## 読みやすさ・責務・開発用スクリプト
 

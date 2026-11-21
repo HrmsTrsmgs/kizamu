@@ -35,12 +35,18 @@ describe('未ログインのApp', () => {
     })
 
     it('Googleログインに成功すると、ログインボタンがあった場所にログアウトボタンが表示されます', async () => {
+      const positionInMain = (button: HTMLElement) => {
+        const children = screen.getByRole('main').children
+        return Array.from(children).findIndex(child => child.contains(button))
+      }
       const login = screen.getByRole('button', { name: 'Googleでログイン' })
-      const loginPlace = login.parentElement
+      const loginPosition = positionInMain(login)
+      loginPosition.should.be.at.least(0)
 
       fireEvent.click(login)
 
-      ;(await screen.findByRole('button', { name: 'ログアウト' })).should.have.property('parentElement', loginPlace)
+      const logout = await screen.findByRole('button', { name: 'ログアウト' })
+      positionInMain(logout).should.equal(loginPosition)
     })
 
     it('ログイン後にログアウトすると作業記録一覧を隠してログインボタンを表示します', async () => {
