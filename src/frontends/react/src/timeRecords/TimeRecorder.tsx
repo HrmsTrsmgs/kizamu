@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from '../presentation/timeRecordService'
 import { useTimeRecorder } from '../presentation/useTimeRecorder'
@@ -52,6 +52,22 @@ type RecorderPanelProps = Omit<TimeRecorderViewProps, 'state'> & {
 
 function RecorderPanel({ state, controls, startTimeRecord, endTimeRecord, reloadTimeRecords }: RecorderPanelProps) {
   const isRecording = state.timeRecordId !== null
+  let notice: ReactNode
+  switch (controls.notice) {
+    case 'stateUnconfirmed':
+      notice = (
+        <>
+          <p role="alert">最新状態を確認できません。再取得してください。</p>
+          <button type="button" disabled={!controls.canReload} onClick={reloadTimeRecords}>再取得</button>
+        </>
+      )
+      break
+    case 'operationFailed':
+      notice = <p role="alert">記録操作に失敗しました。</p>
+      break
+    default:
+      notice = null
+  }
 
   return (
     <section className="recorder-panel" aria-labelledby="recorder-title">
@@ -71,13 +87,7 @@ function RecorderPanel({ state, controls, startTimeRecord, endTimeRecord, reload
         >
           {isRecording ? '記録を終了' : '記録を開始'}
         </button>
-        {controls.notice === 'stateUnconfirmed' && (
-          <>
-            <p role="alert">最新状態を確認できません。再取得してください。</p>
-            <button type="button" disabled={!controls.canReload} onClick={reloadTimeRecords}>再取得</button>
-          </>
-        )}
-        {controls.notice === 'operationFailed' && <p role="alert">記録操作に失敗しました。</p>}
+        {notice}
         {state.displayedRecord !== null && (
           <TimeRecordTimes record={state.displayedRecord.record} labelled />
         )}

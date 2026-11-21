@@ -202,7 +202,7 @@ Reactのテストは `parentElement` の一致だけで、同じ `main` の末�
 
 748・756・796・804行付近のケースでは、共通準備は応答が保留された時点で終え、応答と読込Taskをタプルで返す。本文に `SetResult(古い一覧)` → `await 読み込み` → 期待結果を並べる。受信後さらに別操作を検証するケースの準備は共有できる。467行の状態確認は古い応答の直後に行い、追加の開始・終了の禁止は直後の専用テストに残す。 [TimeRecorderViewModelTests.cs 467行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L467) · [TimeRecorderViewModelTests.cs 748行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L748) · [TimeRecorderViewModelTests.cs 796行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L796) · [TimeRecorderViewModelTests.cs 1059行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L1059)
 
-2026-11-21、修正21の基準は `4636704`。Blazorの4件は、共通準備から保留中の応答と読み込みTaskを受け取り、本文で古い一覧を返して読み込み完了を待つ。応答後の別操作が主題のケースは、応答済みまでを共通準備で用意する。Reactの対応箇所は既に本文で応答を返していた。Blazorの対象106件とソリューション全316件、非増分ビルド、変更ファイル限定format、差分検査が成功。全体formatは既存の `GoogleSignIn.cs` のBL0016で終了2。未コミットでレビュー待ち。次の着手点は項目22。 [Blazorの一覧テスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L813)
+2026-11-21、修正21の基準は `4636704`。Blazorの4件は、共通準備から保留中の応答と読み込みTaskを受け取り、本文で古い一覧を返して読み込み完了を待つ。応答後の別操作が主題のケースは、応答済みまでを共通準備で用意する。Reactの対応箇所は既に本文で応答を返していた。Blazorの対象106件とソリューション全316件、非増分ビルド、変更ファイル限定format、差分検査が成功。全体formatは既存の `GoogleSignIn.cs` のBL0016で終了2。修正は `61c4b9b` に記録済み。 [Blazorの一覧テスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L813)
 
 ### 22　Domainの生成・終了の仕様をDomainのテストで読めるようにする
 
@@ -221,6 +221,16 @@ TSの開始・復元を検証するケースは操作自体が `beforeEach` に�
 Reactは日本語の操作名を複数の `if` で解釈する。Blazorは一つのTheory本文にハンドラー、応答JSON、クライアント寿命、操作の選択が並ぶ。
 
 Reactは各ケースに表示名・操作関数・応答・期待URL・メソッドを持たせ、本文は操作を一度呼ぶ。呼出し一回・URL・メソッド・ヘッダーを維持する。Blazorはハンドラー・クライアントをテスト単位で初期化・破棄し、一覧／単一記録の応答準備を補助へ移す。三つの操作と期待 `Bearer id-token` が読み取れる形にする。 [timeRecordAuthorization.test.ts 16行](../tests/frontends/react/infrastructure/timeRecordAuthorization.test.ts#L16) · [TimeRecordAuthorizationTests.cs 15行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordAuthorizationTests.cs#L15)
+
+2026-11-21、基準は `61c4b9b`。項目24のReactの認証テストを、表示名・操作・JSON応答・期待する通信を列挙するケース表にした。Blazorは共通のHTTP準備をコンストラクターへ移し、一覧・開始・終了の各テストからAPIを直接呼ぶ。認証ヘッダーに関する期待値とケース数は維持した。
+
+追跡対象のTypeScript・JavaScript 70ファイルを通読した。Reactの接続状態と記録通知は、それぞれを表示するコンポーネントの関数本文で `switch` を使って表示内容を決め、その結果をJSXで展開する。Googleのボタン種別にリテラル型を付けた。IDやトークンなど取り得る値が決まっていない文字列は既存の型を維持。 [Reactの接続状態](../src/frontends/react/src/health/HealthStatus.tsx) · [Reactの記録通知](../src/frontends/react/src/timeRecords/TimeRecorder.tsx) · [Googleボタン](../src/frontends/react/src/googleSignIn.ts)
+
+TypeScriptの分岐・型付け・テストケースの方針を共通Skillと[リポジトリ内の参照版](../docs/ai-instructions/typescript-react.md#コードとテスト)に明記した。
+
+TypeScript全241件とBlazorソリューション全316件、両ビルド、npmのLint、変更C#のformatと対象プロジェクトの静的解析、差分検査が成功。ソリューション全体のformatは既存の `GoogleSignIn.cs` のBL0016で終了2。分岐・型付けと項目24の修正を反映した。項目23は対応済み。
+
+Nodeの `/api/health` は、応答オブジェクトを一箇所に定義し、その `typeof` を `Reply` に使う。値と型の二重記述を省き、HTTP契約テストは期待するJSON本文を引き続き独立して検証する。`app.ts` の修正は別コミット `91dd339` に記録済み。
 
 ### 25　通常起動テストでGoogleボタンの代役を準備メソッドに移す
 

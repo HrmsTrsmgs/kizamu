@@ -8,12 +8,17 @@ type HealthStatusProps = {
 export default function HealthStatus({ health }: HealthStatusProps) {
   const isHealthy = useHealthStatus(health)
 
-  let status = '確認中'
-  if (isHealthy === true) {
-    status = '正常'
-  } else if (isHealthy === false) {
-    status = '失敗'
+  let statusText: string
+  switch (isHealthy) {
+    case true:
+      statusText = '正常'
+      break
+    case false:
+      statusText = '失敗'
+      break
+    default:
+      statusText = '確認中'
   }
 
-  return <p aria-live="polite">サーバー接続: {status}</p>
+  return <p aria-live="polite">サーバー接続: {statusText}</p>
 }

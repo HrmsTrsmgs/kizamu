@@ -1,7 +1,7 @@
 declare const google: {
   accounts: { id: {
     initialize: (options: { client_id: string, callback: (response: { credential: string }) => void }) => void
-    renderButton: (container: HTMLElement, options: { type: string }) => void
+    renderButton: (container: HTMLElement, options: { type: 'standard' | 'icon' }) => void
   } }
 }
 
