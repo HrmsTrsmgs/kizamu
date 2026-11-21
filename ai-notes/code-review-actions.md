@@ -176,13 +176,15 @@ Blazorは `.recorder-panel button` のテキスト列を `Equal("記録を終了
 
 同じイベント内での二重開始のテストは保持する。追加終了のケースではAの開始を完了、Bで開始応答を保留、Aへ戻ってAのIDがあることを確かめてから終了を試す。終了APIは0回、Bの開始応答を解決した後にはAを終了できることを確認する。 [useTimeRecorder.test.ts 30行](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L30) · [useTimeRecorder.ts 87行](../src/frontends/react/src/presentation/useTimeRecorder.ts#L87)
 
-2026-11-21、修正18の基準は `fdc31ec`。同時の二重開始のテストを維持し、Aの終了対象IDがある状態で、Bの開始応答が保留中ならAの終了要求は0回、応答後はAのIDで1回になることを別のテストで確認した。操作中のガードを一時的に外した検査では、保留中に終了要求が1回送られ、テストが意図どおり失敗した。ガードを復元した版でTypeScript全241テストとビルド・Lint・差分検査が成功。製品コードの差分なし。未コミットでレビュー待ち。次の着手点は項目19。 [終了抑止のテスト](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L456)
+2026-11-21、修正18の基準は `fdc31ec`。同時の二重開始のテストを維持し、Aの終了対象IDがある状態で、Bの開始応答が保留中ならAの終了要求は0回、応答後はAのIDで1回になることを別のテストで確認した。操作中のガードを一時的に外した検査では、保留中に終了要求が1回送られ、テストが意図どおり失敗した。ガードを復元した版でTypeScript全241テストとビルド・Lint・差分検査が成功。製品コードの差分なし。修正は `2e5a863` に記録済み。 [終了抑止のテスト](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L456)
 
 ### 19　依存境界の許可例が構文エラーでも成功する穴を閉じる
 
 許可例が禁止ルールIDだけを絞り込むため、構文エラーなど別の診断で参照解析自体が失敗しても成功する。
 
 許可例はESLintの生の `report.messages` が空であることを比較する。Domainの補助がルール名だけを返す場合は許可側で生の診断を受ける。確認した許可例6件は全て診断0件。禁止例は無関係な診断が併発し得るので期待するルールIDを引き続き個別に確認する。 [dependencyBoundaries.test.ts 54行](../tests/domains/typescript/dependencyBoundaries.test.ts#L54) · [eslintBoundaries.test.ts 46行](../tests/frontends/react/architecture/eslintBoundaries.test.ts#L46)
+
+2026-11-21、修正19の基準は `2e5a863`。Domainの許可例2件とReactの許可例4件で、ESLintの診断一覧が空であることを検証した。禁止例のルールIDの検証を維持した。Reactの許可例1件に構文エラーを一時的に入れると旧条件では成功し、新条件では構文エラーの診断でその1件だけが失敗した。元の例に戻した版でTypeScript全241テスト、ビルド・Lint・差分検査が成功。未コミットでレビュー待ち。次の着手点は項目20。
 
 ### 20　ログインボタンとログアウトボタンの位置を同じ基準で比較する
 

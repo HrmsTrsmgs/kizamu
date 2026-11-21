@@ -46,6 +46,6 @@ describe('Reactに適用するESLintの依存制約', () => {
   ])('$from から $to への静的参照（$code）を許可します', async ({ file, code }) => {
     const [report] = await lint.lintText(code, { filePath: file })
 
-    report.messages.filter(message => message.ruleId?.startsWith('no-restricted')).should.deep.equal([])
+    report.messages.should.deep.equal([])
   })
 })
