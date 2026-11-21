@@ -192,7 +192,7 @@ Reactのテストは `parentElement` の一致だけで、同じ `main` の末�
 
 両ボタンをそれぞれ含む `main` 直下の子要素の位置を、ログイン前後で比較する。ログイン前の位置が見つかったことも確認する。ボタンにラッパーがあっても同じ位置なら通り、フッターの前まで移すと失敗する。 [App.test.tsx 37行](../tests/frontends/react/App.test.tsx#L37) · [AppTests.cs 72行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs#L72)
 
-2026-11-21、修正20の基準は `4fdb50e`。Reactの既存テストでログイン前後のボタンを含むmain直下の要素の位置を比較した。一時的に同じ位置でログアウトボタンをdivで包むと成功し、フッターの直前へ移すと期待位置1に対して位置3で失敗した。製品コードを元に戻し、TypeScript全241テスト、ビルド・Lint・差分検査が成功。未コミットでレビュー待ち。次の着手点は項目21。 [認証ボタンの位置テスト](../tests/frontends/react/App.test.tsx#L37)
+2026-11-21、修正20の基準は `4fdb50e`。Reactの既存テストでログイン前後のボタンを含むmain直下の要素の位置を比較した。一時的に同じ位置でログアウトボタンをdivで包むと成功し、フッターの直前へ移すと期待位置1に対して位置3で失敗した。製品コードを元に戻し、TypeScript全241テスト、ビルド・Lint・差分検査が成功。修正は `4636704` に記録済み。 [認証ボタンの位置テスト](../tests/frontends/react/App.test.tsx#L37)
 
 ## 読みやすさ・責務・開発用スクリプト
 
@@ -201,6 +201,8 @@ Reactのテストは `parentElement` の一致だけで、同じ `main` の末�
 古い一覧が届くこと自体を検証するテストで、応答の内容も到着時点も準備メソッドに隠れている。
 
 748・756・796・804行付近のケースでは、共通準備は応答が保留された時点で終え、応答と読込Taskをタプルで返す。本文に `SetResult(古い一覧)` → `await 読み込み` → 期待結果を並べる。受信後さらに別操作を検証するケースの準備は共有できる。467行の状態確認は古い応答の直後に行い、追加の開始・終了の禁止は直後の専用テストに残す。 [TimeRecorderViewModelTests.cs 467行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L467) · [TimeRecorderViewModelTests.cs 748行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L748) · [TimeRecorderViewModelTests.cs 796行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L796) · [TimeRecorderViewModelTests.cs 1059行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L1059)
+
+2026-11-21、修正21の基準は `4636704`。Blazorの4件は、共通準備から保留中の応答と読み込みTaskを受け取り、本文で古い一覧を返して読み込み完了を待つ。応答後の別操作が主題のケースは、応答済みまでを共通準備で用意する。Reactの対応箇所は既に本文で応答を返していた。Blazorの対象106件とソリューション全316件、非増分ビルド、変更ファイル限定format、差分検査が成功。全体formatは既存の `GoogleSignIn.cs` のBL0016で終了2。未コミットでレビュー待ち。次の着手点は項目22。 [Blazorの一覧テスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L813)
 
 ### 22　Domainの生成・終了の仕様をDomainのテストで読めるようにする
 

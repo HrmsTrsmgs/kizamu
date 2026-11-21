@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using AwesomeAssertions;
 using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
@@ -812,7 +813,10 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 記録の開始後に古い初回一覧が届いても過去の記録の後に新しく開始した記録が並びます()
     {
-        await 記録開始後に古い初回一覧を受け取る();
+        var (初期一覧の応答, 初期一覧の読み込み) = await 初回一覧の応答を保留して記録を開始する();
+
+        初期一覧の応答.SetResult([過去の記録]);
+        await 初期一覧の読み込み;
 
         tested.Records.Should().Equal(過去の記録, service.StartedRecord);
     }
@@ -820,7 +824,10 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 記録の開始後に古い初回一覧が届いても操作欄には新しく開始した記録が残ります()
     {
-        await 記録開始後に古い初回一覧を受け取る();
+        var (初期一覧の応答, 初期一覧の読み込み) = await 初回一覧の応答を保留して記録を開始する();
+
+        初期一覧の応答.SetResult([過去の記録]);
+        await 初期一覧の読み込み;
 
         tested.DisplayedRecord.Should().BeSameAs(service.StartedRecord);
     }
@@ -860,7 +867,10 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 一覧の取得中に終了した記録が応答では未終了でも同じIDの記録は終了済みの一件だけが残ります()
     {
-        await 記録の更新と別の記録の開始後に古い一覧を受け取る();
+        var (応答, 読み込み, 先に開始した記録) = await 一覧の応答を保留して記録を終了し別の記録を開始する();
+
+        応答.SetResult([先に開始した記録]);
+        await 読み込み;
 
         var 同じIDの記録 =
             from record in tested.Records
@@ -872,7 +882,10 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 一覧の取得中に開始した記録が応答に含まれなければ一覧の末尾に加えます()
     {
-        await 記録の更新と別の記録の開始後に古い一覧を受け取る();
+        var (応答, 読み込み, 先に開始した記録) = await 一覧の応答を保留して記録を終了し別の記録を開始する();
+
+        応答.SetResult([先に開始した記録]);
+        await 読み込み;
 
         var 記録ID一覧 =
             from record in tested.Records
@@ -1140,26 +1153,30 @@ public sealed class TimeRecorderViewModelTests
 
     async Task 記録開始後に古い初回一覧を受け取る()
     {
-        var 初期一覧の応答 = service.DelayListResponse();
-
-        var 初期一覧の読み込み = tested.LoadAsync();
-        await tested.StartTimeRecordAsync();
+        var (初期一覧の応答, 初期一覧の読み込み) = await 初回一覧の応答を保留して記録を開始する();
         初期一覧の応答.SetResult([過去の記録]);
         await 初期一覧の読み込み;
     }
 
-    async Task 記録の更新と別の記録の開始後に古い一覧を受け取る()
+    async Task<(TaskCompletionSource<ImmutableArray<TimeRecord>> 応答, Task 読み込み)>
+        初回一覧の応答を保留して記録を開始する()
+    {
+        var 応答 = service.DelayListResponse();
+        var 読み込み = tested.LoadAsync();
+        await tested.StartTimeRecordAsync();
+        return (応答, 読み込み);
+    }
+
+    async Task<(TaskCompletionSource<ImmutableArray<TimeRecord>> 応答, Task 読み込み, TimeRecord 先に開始した記録)>
+        一覧の応答を保留して記録を終了し別の記録を開始する()
     {
         var 先に開始した記録 = service.StartedRecord;
         var 応答 = service.DelayListResponse();
         var 読み込み = tested.LoadAsync();
-        await tested.StartTimeRecordAsync();
-        await tested.EndTimeRecordAsync();
-        service.StartedRecord = new(別の記録ID, 終了時刻, null);
+        await 記録を終了して次に別の記録を開始できるようにする();
         await tested.StartTimeRecordAsync();
 
-        応答.SetResult([先に開始した記録]);
-        await 読み込み;
+        return (応答, 読み込み, 先に開始した記録);
     }
 
     async Task 記録を終了して次に別の記録を開始できるようにする()
