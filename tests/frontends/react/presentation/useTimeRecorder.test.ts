@@ -27,7 +27,7 @@ describe('useTimeRecorder', () => {
     service = { getTimeRecords, startTimeRecord, endTimeRecord }
   })
 
-  describe('開始要求と同時に開始と終了を追加で要求したとき', () => {
+  describe('同じイベント内で二度の開始を要求したとき', () => {
     let recorder: ReturnType<typeof 開始応答を保留する>
     let operation: Promise<void>
 
@@ -36,13 +36,11 @@ describe('useTimeRecorder', () => {
       act(() => {
         operation = recorder.result.current.startTimeRecord()
         void recorder.result.current.startTimeRecord()
-        void recorder.result.current.endTimeRecord()
       })
     })
 
-    it('記録の開始応答を待つ間は、追加の開始要求も終了要求も送りません', async () => {
+    it('同じイベント内で記録の開始を二度要求しても、開始要求は一度だけ送ります', async () => {
       startTimeRecord.should.have.callCount(1)
-      endTimeRecord.should.have.callCount(0)
 
       await act(async () => {
         recorder.response.resolve(記録)
@@ -453,6 +451,34 @@ describe('useTimeRecorder', () => {
     result.current.state.should.have.property('timeRecordId', null)
     act(() => result.current.selectProject(プロジェクトA))
     result.current.state.should.have.property('timeRecordId', 記録ID)
+  })
+
+  it('プロジェクトBの開始応答を待つ間はAの終了要求を送らず、応答後はAの記録を指定して終了を要求できます', async () => {
+    const プロジェクトA = new Project('プロジェクトA')
+    const プロジェクトB = new Project('プロジェクトB')
+    const Bの開始応答 = deferred<typeof 記録>()
+    const { result } = renderRecorder()
+
+    act(() => result.current.selectProject(プロジェクトA))
+    await act(() => result.current.startTimeRecord())
+    act(() => result.current.selectProject(プロジェクトB))
+    startTimeRecord.mockReturnValueOnce(Bの開始応答.promise)
+    let Bの開始操作 = Promise.resolve()
+    act(() => { Bの開始操作 = result.current.startTimeRecord() })
+    startTimeRecord.should.have.callCount(2)
+
+    act(() => result.current.selectProject(プロジェクトA))
+    result.current.state.should.have.property('timeRecordId', 記録ID)
+    await act(() => result.current.endTimeRecord())
+    endTimeRecord.should.have.callCount(0)
+
+    await act(async () => {
+      Bの開始応答.resolve(presentedRecord(次の記録ID, 終了時刻))
+      await Bの開始操作
+    })
+    await act(() => result.current.endTimeRecord())
+
+    endTimeRecord.should.have.been.calledOnceWith(記録ID)
   })
 
   it('Aで記録を開始して未開始のBを選んだ後に空の初回一覧が届いても、Aに戻ってその記録だけを終了できます', async () => {

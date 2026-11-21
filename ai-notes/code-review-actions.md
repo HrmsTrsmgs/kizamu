@@ -176,6 +176,8 @@ Blazorは `.recorder-panel button` のテキスト列を `Equal("記録を終了
 
 同じイベント内での二重開始のテストは保持する。追加終了のケースではAの開始を完了、Bで開始応答を保留、Aへ戻ってAのIDがあることを確かめてから終了を試す。終了APIは0回、Bの開始応答を解決した後にはAを終了できることを確認する。 [useTimeRecorder.test.ts 30行](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L30) · [useTimeRecorder.ts 87行](../src/frontends/react/src/presentation/useTimeRecorder.ts#L87)
 
+2026-11-21、修正18の基準は `fdc31ec`。同時の二重開始のテストを維持し、Aの終了対象IDがある状態で、Bの開始応答が保留中ならAの終了要求は0回、応答後はAのIDで1回になることを別のテストで確認した。操作中のガードを一時的に外した検査では、保留中に終了要求が1回送られ、テストが意図どおり失敗した。ガードを復元した版でTypeScript全241テストとビルド・Lint・差分検査が成功。製品コードの差分なし。未コミットでレビュー待ち。次の着手点は項目19。 [終了抑止のテスト](../tests/frontends/react/presentation/useTimeRecorder.test.ts#L456)
+
 ### 19　依存境界の許可例が構文エラーでも成功する穴を閉じる
 
 許可例が禁止ルールIDだけを絞り込むため、構文エラーなど別の診断で参照解析自体が失敗しても成功する。
@@ -333,7 +335,7 @@ HTTP 200なら即成功、プロセス終了なら即失敗とし、そのどち
 
 **反映結果（2026-11-20）**
 
-基準は `21bf4a6`。12項目をテストへ反映し、バックエンド・Domainを `f33b9df`、フロントエンドと本記録を `5ef1933` でコミットした。変更時点の.NET全300テスト、非増分ビルド、format、TypeScript全221テスト、ビルド、lintが成功。項目13〜17は対応済み。修正一覧の次は項目18。
+基準は `21bf4a6`。12項目をテストへ反映し、バックエンド・Domainを `f33b9df`、フロントエンドと本記録を `5ef1933` でコミットした。変更時点の.NET全300テスト、非増分ビルド、format、TypeScript全221テスト、ビルド、lintが成功。この時点で項目13〜17まで対応した。
 
 C# 15への更新の基準は `5ef1933`。.NET 11にプロジェクト・依存パッケージ・起動スクリプト・READMEを更新した。一時領域のSDK 11.0.100で全.NETテスト300件とビルドが成功。既存の `GoogleSignIn.cs` に新しいBL0016警告が1件あり、format検査は終了コード2。Visual Studioを18.10から18.12へ更新し、付属MSBuildでnet11.0・C# 15.0とDomainのビルドを確認した。インストーラーは再起動が必要な正常終了（3010）を返した。通常環境へのSDK 11.0.100インストールは成功し、dotnetコマンドでC# 15.0を確認済み。
 
@@ -374,7 +376,7 @@ TS Domainの不変性、.NETの値等価、通信でのクラス復元、参照�
 - **修正済み。同じ対象で記録中なら開始要求を送らない。** BlazorのViewModelとReactのhookは、選択中のプロジェクトまたは未指定の対象が記録中と分かっている場合、開始要求を送らず完了する。初回一覧取得中の扱いは別途決める。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L170) · [React](../src/frontends/react/src/presentation/useTimeRecorder.ts#L79) · [MVPの同時記録の条件](../docs/roadmap.md#ステップ1-プロジェクト単位の複数同時記録)
 - **修正済み。終了応答のIDと終了時刻を通信境界で検証する。** BlazorとReactは、指定IDの終了済み記録を受け取ったときだけ終了結果を返し、別IDや終了時刻の `null`・欠落は呼び出し元にエラーで伝える。 [Blazor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordApi.cs#L33) · [React](../src/frontends/react/src/infrastructure/timeRecordService.ts#L27)
 - **修正済み。保存APIの差し替えで対象の不在を通知する。** ASP.NET Coreの `Update` とNodeの `replace` は、未保存IDの更新時に既存の専用例外を投げる。保存テストで、失敗時に既存記録と保存順が保たれ、新規追加もないことを確かめた。 [C#](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/ITimeRecordState.cs#L33) · [Node](../src/backends/node/application/timeRecords.ts#L4)
-- **認証期限を両バックエンドで揃えた。** Google IDトークンは有効期限に達した時点から拒否する。本人識別子は、両バックエンドで空でないJSON文字列のsubをそのまま使う。公開鍵取得の失敗は記録APIで500として扱う。Node側の鍵取得エラーの差分はレビュー待ち。 [D014](../docs/decisions.md#d014ベータ版はgoogleのidトークンで本人を識別する) · [Node検証器](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L14)
+- **認証期限を両バックエンドで揃えた。** Google IDトークンは有効期限に達した時点から拒否する。本人識別子は、両バックエンドで空でないJSON文字列のsubをそのまま使う。公開鍵取得の失敗は記録APIで500として扱う。Nodeの鍵取得エラーの修正はコミット済み。 [D014](../docs/decisions.md#d014ベータ版はgoogleのidトークンで本人を識別する) · [Node検証器](../src/backends/node/infrastructure/googleIdTokenVerifier.ts#L14)
 - **起動確認が待機せず失敗する条件がある。** 項目30を、204のあと待機を挟めば200を返す代役で確認した。現行は待機0回で60回照会し失敗を返す。項目31の起動失敗時の診断表示も確認した。修正箇所とテスト案は項目30・31に記載済み。 [Wait-HealthEndpoint.ps1](../scripts/Wait-HealthEndpoint.ps1#L7)
 
 ### 修正と検証
@@ -421,7 +423,7 @@ ASP.NET Coreソリューションで全92テスト、非増分ビルドとformat
 
 2026-11-21、基準は `66cd22e`。Nodeの公開鍵取得に固定の401応答を返し、記録一覧の取得も401になることを確認した。ASP.NET Coreでは公開鍵の取得時に発生したHTTP例外が伝播し、応答開始前のサーバー例外は500になる。Nodeは公開鍵取得の失敗を通常のエラーとして返し、診断用に元の例外を原因として保持する。鍵取得失敗は500、利用者のトークンの拒否は401で区別できる。 [記録APIの回帰テスト](../tests/backends/node/api/timeRecordEndpoints.test.ts#L66)
 
-Node・React・Domainの全240テスト、npmのビルドとLint、差分検査が成功。Nodeの変更は未コミットでレビュー待ち。次の着手点は修正18の開始応答待ち中の終了抑止テスト。
+Node・React・Domainの全240テスト、npmのビルドとLint、差分検査が成功。Nodeの修正は `fdc31ec` に記録済み。
 
 ## TypeScriptの型と実行時検査
 
