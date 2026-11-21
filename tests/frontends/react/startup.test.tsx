@@ -8,19 +8,8 @@ describe('通常起動', () => {
   })
 
   it('Googleログイン後に記録一覧を取得すると、取得したIDトークンをBearer形式で送ります', async () => {
-    let receiveCredential: ((response: { credential: string }) => void) | undefined
-    vi.stubGlobal('google', {
-      accounts: { id: {
-        initialize: ({ callback }: { callback: (response: { credential: string }) => void }) => { receiveCredential = callback },
-        renderButton: (container: HTMLElement) => {
-          const button = document.createElement('button')
-          button.textContent = 'Googleアカウントでログイン'
-          button.onclick = () => receiveCredential?.({ credential: 'google-id-token' })
-          container.appendChild(button)
-        },
-      } },
-    })
-    const fetchMock = vi.fn<typeof fetch>(async (input) => Response.json(input === '/api/time-records' ? [] : { status: 'healthy' }))
+    stubGoogleSignIn('google-id-token')
+    const fetchMock = vi.fn<typeof fetch>(async (input) => Response.json(input === '/api/time-records' ? [] : { status: 'ok' }))
     vi.stubGlobal('fetch', fetchMock)
     document.body.innerHTML = '<div id="root"></div>'
 
@@ -28,10 +17,32 @@ describe('通常起動', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Googleアカウントでログイン' }))
 
     await waitFor(() => {
-      fetchMock.mock.calls.some(([url, init]) =>
-        url === '/api/time-records' && new Headers(init?.headers).get('Authorization') === 'Bearer google-id-token',
-      ).should.equal(true)
+      const requests = fetchMock.mock.calls.map(([url, init]) => ({
+        url,
+        authorization: new Headers(init?.headers).get('Authorization'),
+      }))
+      requests.should.toContainEqual({
+        url: '/api/time-records',
+        authorization: 'Bearer google-id-token',
+      })
     })
     screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
   })
 })
+
+function stubGoogleSignIn(token: string) {
+  let receiveCredential: ((response: { credential: string }) => void) | undefined
+  vi.stubGlobal('google', {
+    accounts: { id: {
+      initialize: ({ callback }: { callback: (response: { credential: string }) => void }) => {
+        receiveCredential = callback
+      },
+      renderButton: (container: HTMLElement) => {
+        const button = document.createElement('button')
+        button.textContent = 'Googleアカウントでログイン'
+        button.onclick = () => receiveCredential?.({ credential: token })
+        container.appendChild(button)
+      },
+    } },
+  })
+}

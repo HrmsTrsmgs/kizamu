@@ -240,6 +240,8 @@ Google SDKのコールバック保存とDOMボタン生成が、通常起動→�
 
 SDKの代役を同ファイルの名前付き準備へ移し、ヘルス応答は `{ status: 'ok' }` にする。本文には本物の起動入口、ログイン、期待する一覧要求を残す。`some(...).should.equal(true)` は観測したURLとAuthorization値の組に期待値が含まれることを `waitFor` で比較し、失敗時に実際の要求を読めるようにする。 [startup.test.tsx 10行](../tests/frontends/react/startup.test.tsx#L10) · [healthService.ts 12行](../src/frontends/react/src/infrastructure/healthService.ts#L12)
 
+2026-11-21、基準は `1312b3b`。Google SDKの代役を補助関数で用意し、正常性確認の応答を実APIと同じ `ok` に揃えた。本文で起動・ログイン・認証付き一覧要求・記録開始ボタンの表示を確認する。URLとAuthorizationの組を構造比較し、失敗時に観測した要求が表示される。全体のビルド、TypeScript全241テスト、Lintに加え、比較方法を調整した最終版でReactの型検査、全167テスト、Lintが成功。未コミットでレビュー待ち。 [起動テスト](../tests/frontends/react/startup.test.tsx#L10)
+
 ### 26　各言語内でテスト用の署名鍵と検証用公開鍵の準備を共有する
 
 APIテストと検証器テストが、同じ技術内でテスト資格情報の生成と偽の鍵配信を別々に実装している。ASP.NETのAPIテストの静的RSA鍵には破棄する持ち主がいない。
@@ -447,7 +449,7 @@ Node・React・Domainの全240テスト、npmのビルドとLint、差分検査�
 
 2026-11-21、基準は `fdb41bc`。BlazorとReactの作業記録API内で、送信、HTTP成功の確認、JSON読み取りを共通化した。各操作が応答型を指定または検証する。Blazorの要求と応答の破棄は共通メソッドが行う。正常性確認はHTTP失敗をfalseで返すため、作業記録APIと処理を共有する親クラスは設けない。 [Blazorの実装](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordApi.cs#L46) · [Reactの実装](../src/frontends/react/src/infrastructure/timeRecordService.ts#L46)
 
-両ビルド、.NET全316件、再実行したTypeScript全241件、Lintと変更C#のformat、差分検査が成功。TypeScriptの初回はESLint依存の読み取りエラーでReactの依存境界テストが実行できず、再実行で再現しなかった。全体の.NET formatは既存の `GoogleSignIn.cs` のBL0016で終了2。未コミットでレビュー待ち。
+両ビルド、.NET全316件、再実行したTypeScript全241件、Lintと変更C#のformat、差分検査が成功。TypeScriptの初回はESLint依存の読み取りエラーでReactの依存境界テストが実行できず、再実行で再現しなかった。全体の.NET formatは既存の `GoogleSignIn.cs` のBL0016で終了2。修正は `1312b3b` に記録済み。
 
 ## TypeScriptの型と実行時検査
 
