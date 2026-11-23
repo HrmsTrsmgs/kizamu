@@ -258,13 +258,15 @@ Reactの `App` に認証、Googleボタンの描画、タブ、登録ダイア�
 
 2026-11-24、基準は `5a3ec37`。ReactのAppからタブ・記録欄・登録ダイアログの描画と既存Reducerの呼び出しを抽出した。Appは認証と画面全体の構成を担当する。認証表示を一時的に切り替える間もタブ状態を保持し、ログアウトで初期化する。BlazorはSDKの認証通知と代替ログイン後の記録用ViewModel設定を共通化し、SDK通知側の明示的な再描画を維持した。 [Reactの認証済み画面](../src/frontends/react/src/timeRecords/AuthenticatedTimeRecords.tsx) · [BlazorのApp](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L80)
 
-全TypeScript 241件、Blazorソリューション全316件、両ビルド、Lint、変更ファイル限定のformat、差分検査が成功。全体の.NET formatは既存の `GoogleSignIn.cs` のBL0016で終了2。未コミットでレビュー待ち。次の着手点は項目28。
+全TypeScript 241件、Blazorソリューション全316件、両ビルド、Lint、変更ファイル限定のformat、差分検査が成功。全体の.NET formatは既存の `GoogleSignIn.cs` のBL0016で終了2。修正は `dde3ade` に記録済み。
 
 ### 28　ISOの元表記、日時点、HTMLの文字列をテストとコメントで区別する
 
 Presentationのコメントは「HTML timeに元のISO表記を使う」とするが、ビューはDomainの日時点からHTML向けの表記を生成する。画面テストでは時刻取得と形式の正規表現が二重になっている。
 
 コメントを通信で受けた元表記を保持する説明に直す。画面テストは開始・終了をラベルと入力の表にし、各要素の `datetime` の文法と表す日時点を一回ずつ検査する。UTCミリ秒への切り捨ては既存の文字列期待値のまま残す。通信テストは元の文字列と `Temporal.Instant` の比較、更新テストは元表記と参照同一性を引き続き区別する。 [timeRecordPresentation.ts 3行](../src/frontends/react/src/presentation/timeRecordPresentation.ts#L3) · [TimeRecordTimes.tsx 20行](../src/frontends/react/src/timeRecords/TimeRecordTimes.tsx#L20) · [TimeRecordTimes.test.tsx 16行](../tests/frontends/react/timeRecords/TimeRecordTimes.test.tsx#L16) · [timeRecordService.test.ts 124行](../tests/frontends/react/infrastructure/timeRecordService.test.ts#L124) · [timeRecorderState.test.ts 195行](../tests/frontends/react/presentation/timeRecorderState.test.ts#L195)
+
+2026-11-24、基準は `dde3ade`。開始・終了の画面テストはラベル・元のISO表記・期待するHTML文字列を表にし、datetime属性の完全一致と元の日時点との一致を確認する。ミリ秒への切り捨てテストを維持した。既存実装に合わせてPresentationのコメント、README、D003を訂正した。TypeScript全242テスト、ビルド、Lint、差分検査が成功。項目28の整理を反映した。次の着手点は項目29。 [日時テスト](../tests/frontends/react/timeRecords/TimeRecordTimes.test.tsx#L16) · [D003](../docs/decisions.md#d003画面の状態はdomainで扱いdtoは通信境界で変換する)
 
 ### 29　ダイアログの配置に効かないCSSを外す
 

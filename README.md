@@ -102,7 +102,7 @@ TypeScriptの作業記録モデルと期間計算は `src/domains/typescript/` �
 
 Node版は同じ製品パッケージ内の `api/`（HTTPルート・応答DTO変換）、`application/`（開始・指定IDでの終了・一覧と依存契約）、`infrastructure/`（メモリ上の記録保持・時刻とIDの取得）に分けています。`app.ts` で依存を組み立て、記録操作は共有Domainを利用します。依存方向は `api → application / domain`、`infrastructure → application / domain`、`application → domain` です。ApplicationとInfrastructureの単体テストに加え、既存のHTTP経路の接続確認を維持しています。レイヤーは同じnpmパッケージ内のモジュールとして分けており、Node側にレイヤー間の依存を禁止する自動検査はまだありません。
 
-React版は同じ製品パッケージ内の `src/presentation/`（画面状態・操作のフック、Reducer、サービス契約）と `src/infrastructure/`（HTTP通信・DTO変換）に責務を分けています。既存の `App`、`timeRecords/`、`health/` は表示とイベント接続を担当し、`main.tsx` で通信サービスを渡します。通信の時刻文字列は境界で共有Domainの日時点へ変換します。HTMLの `datetime` 属性に使う元のISO表記はReactのPresentation側の包みに保持し、共有Domainへ持ち込みません。
+React版は同じ製品パッケージ内の `src/presentation/`（画面状態・操作のフック、Reducer、サービス契約）と `src/infrastructure/`（HTTP通信・DTO変換）に責務を分けています。既存の `App`、`timeRecords/`、`health/` は表示とイベント接続を担当し、`main.tsx` で通信サービスを渡します。通信の時刻文字列は境界で共有Domainの日時点へ変換します。受信した元のISO表記はReactのPresentation側に保持します。HTMLの `datetime` 属性には、Domainの日時点から生成したUTC・ミリ秒3桁の文字列を使います。
 
 依存方向は `表示 → presentation / domain`、`infrastructure → presentation / domain`、`presentation → domain` です。状態を持つクラスやDIコンテナではなく、Reactのフックと純粋なReducerを使用します。ESLintで型専用・未使用を含む静的importと再exportの逆依存、内側からの動的import、直接の通信・DOMグローバル参照を検出します。この検査は記載したパスと構文を対象とし、パス別名や別モジュール経由の間接呼出しを完全に追跡するものではありません。
 

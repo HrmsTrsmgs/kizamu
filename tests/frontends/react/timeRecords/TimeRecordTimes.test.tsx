@@ -13,9 +13,15 @@ describe('TimeRecordTimes', () => {
       render(<TimeRecordTimes record={presentedRecord('記録', timestamp(開始時刻), timestamp(終了時刻)).record} labelled />)
     })
 
-    it('開始と終了のdatetime属性に元の日時点をHTMLの日時形式で設定します', () => {
-      screen.getByLabelText('開始時刻').should.toHaveAttribute('datetime', '2026-08-01T09:00:00.000Z')
-      screen.getByLabelText('終了時刻').should.toHaveAttribute('datetime', '2026-08-01T10:30:00.000Z')
+    it.each([
+      { label: '開始時刻', originalIsoText: 開始時刻, expectedHtmlDateTime: '2026-08-01T09:00:00.000Z' },
+      { label: '終了時刻', originalIsoText: 終了時刻, expectedHtmlDateTime: '2026-08-01T10:30:00.000Z' },
+    ])('$label のdatetime属性に元の日時点をHTMLの日時形式で設定します', ({ label, originalIsoText, expectedHtmlDateTime }) => {
+      const timeElement = screen.getByLabelText<HTMLTimeElement>(label)
+      timeElement.should.toHaveAttribute('datetime', expectedHtmlDateTime)
+      timestamp(timeElement.dateTime).instant.epochNanoseconds.should.equal(
+        timestamp(originalIsoText).instant.epochNanoseconds,
+      )
     })
 
     it('開始と終了を日本時間の分単位で表示します', () => {
