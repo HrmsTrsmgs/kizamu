@@ -240,13 +240,15 @@ Google SDKのコールバック保存とDOMボタン生成が、通常起動→�
 
 SDKの代役を同ファイルの名前付き準備へ移し、ヘルス応答は `{ status: 'ok' }` にする。本文には本物の起動入口、ログイン、期待する一覧要求を残す。`some(...).should.equal(true)` は観測したURLとAuthorization値の組に期待値が含まれることを `waitFor` で比較し、失敗時に実際の要求を読めるようにする。 [startup.test.tsx 10行](../tests/frontends/react/startup.test.tsx#L10) · [healthService.ts 12行](../src/frontends/react/src/infrastructure/healthService.ts#L12)
 
-2026-11-21、基準は `1312b3b`。Google SDKの代役を補助関数で用意し、正常性確認の応答を実APIと同じ `ok` に揃えた。本文で起動・ログイン・認証付き一覧要求・記録開始ボタンの表示を確認する。URLとAuthorizationの組を構造比較し、失敗時に観測した要求が表示される。全体のビルド、TypeScript全241テスト、Lintに加え、比較方法を調整した最終版でReactの型検査、全167テスト、Lintが成功。未コミットでレビュー待ち。 [起動テスト](../tests/frontends/react/startup.test.tsx#L10)
+2026-11-21、基準は `1312b3b`。Google SDKの代役を補助関数で用意し、正常性確認の応答を実APIと同じ `ok` に揃えた。本文で起動・ログイン・認証付き一覧要求・記録開始ボタンの表示を確認する。URLとAuthorizationの組を構造比較し、失敗時に観測した要求が表示される。全体のビルド、TypeScript全241テスト、Lintに加え、比較方法を調整した最終版でReactの型検査、全167テスト、Lintが成功。修正は `202375f` に記録済み。 [起動テスト](../tests/frontends/react/startup.test.tsx#L10)
 
 ### 26　各言語内でテスト用の署名鍵と検証用公開鍵の準備を共有する
 
 APIテストと検証器テストが、同じ技術内でテスト資格情報の生成と偽の鍵配信を別々に実装している。ASP.NETのAPIテストの静的RSA鍵には破棄する持ち主がいない。
 
 C#はテスト側の共有ソースと寿命を持つfixture、Nodeはバックエンドのテスト用モジュールへ、同じ鍵から資格情報と公開鍵応答を作る共通部分を移す。所有者・期限・発行元・異なる署名鍵など、各テストが変える値は本文に残し、既存の鍵IDと時刻条件を保つ。各言語で正常・期限切れ・不正署名、利用者間の分離テストを通す。 [TimeRecordEndpointTests.cs 241行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L241) · [GoogleIdTokenVerifierTests.cs 80行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs#L80) · [timeRecordEndpoints.test.ts 15行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L15) · [googleIdTokenVerifier.test.ts 41行](../tests/backends/node/infrastructure/googleIdTokenVerifier.test.ts#L41)
+
+2026-11-21、基準は `202375f`。C#とNodeの各バックエンドで、テスト用の鍵、IDトークン、公開鍵応答の準備をAPIテストと検証器テストで共有した。C#の鍵はxUnitのクラスフィクスチャが所有して破棄する。各テストが指定する既存の条件を維持した。ASP.NET Core全92テストとTypeScript全241テスト、両ビルド、Lint、.NET format、差分検査が成功。未コミットでレビュー待ち。 [C#の補助](../tests/backends/aspnetcore/TestSupport/GoogleIdTokenFixture.cs) · [Nodeの補助](../tests/backends/node/test/googleIdTokenFixture.ts)
 
 ### 27　通常起動のAppからプロジェクト画面の責務を分ける
 

@@ -1,4 +1,3 @@
-import { generateKeyPairSync, sign } from 'node:crypto'
 import { GoogleIdTokenVerifier } from '../../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import Fastify from 'fastify'
@@ -7,6 +6,7 @@ import { registerTimeRecordEndpoints } from '../../../../src/backends/node/api/t
 import { TimeRecords } from '../../../../src/backends/node/application/timeRecords.js'
 import { timeRecordSources } from '../../../../src/backends/node/infrastructure/timeRecordSources.js'
 import { InMemoryTimeRecordState } from '../../../../src/backends/node/infrastructure/timeRecordState.js'
+import { createGoogleIdTokenFixture } from '../test/googleIdTokenFixture.js'
 
 interface TimeRecordResponse {
   id: string
@@ -17,17 +17,14 @@ interface TimeRecordResponse {
 const 開始時刻 = new Date('2026-08-01T09:00:00.000Z')
 const 終了時刻 = new Date('2026-08-01T10:30:00.000Z')
 const 同一オリジンを示さないヘッダー値 = ['same-site', 'cross-site', 'none', 'unknown', undefined]
-const key = generateKeyPairSync('rsa', { modulusLength: 2048 })
-const publicKeyFetch: typeof fetch = async () => Response.json({
-  'endpoint-test-key': key.publicKey.export({ type: 'spki', format: 'pem' }).toString(),
-})
+const googleTokens = createGoogleIdTokenFixture('endpoint-test-key')
+const publicKeyFetch: typeof fetch = async () => googleTokens.publicKeyResponse()
 function createTestApp() { return createApp(new GoogleIdTokenVerifier('kizamu-client', publicKeyFetch)) }
 function authorization(user = 'google-user', expiresInSeconds = 3600) {
   const now = Math.floor(Date.now() / 1000)
-  const header = Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'endpoint-test-key' })).toString('base64url')
-  const payload = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', aud: 'kizamu-client', sub: user, iat: now - 7200, exp: now + expiresInSeconds })).toString('base64url')
-  const content = header + '.' + payload
-  return 'Bearer ' + content + '.' + sign('RSA-SHA256', Buffer.from(content), key.privateKey).toString('base64url')
+  return 'Bearer ' + googleTokens.createToken({
+    iss: 'https://accounts.google.com', aud: 'kizamu-client', sub: user, iat: now - 7200, exp: now + expiresInSeconds,
+  })
 }
 let app: ReturnType<typeof createApp>
 

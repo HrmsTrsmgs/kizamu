@@ -1,14 +1,13 @@
-import { generateKeyPairSync, sign, type KeyObject } from 'node:crypto'
+import { generateKeyPairSync, type KeyObject } from 'node:crypto'
 import { LoginTicket, OAuth2Client } from 'google-auth-library'
 import { beforeEach, test, vi } from 'vitest'
 import { GoogleIdTokenVerifier } from '../../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
+import { createGoogleIdTokenFixture } from '../test/googleIdTokenFixture.js'
 
-const googleKey = generateKeyPairSync('rsa', { modulusLength: 2048 })
+const googleTokens = createGoogleIdTokenFixture('test-key')
 const attackerKey = generateKeyPairSync('rsa', { modulusLength: 2048 })
 // 外部通信だけを差し替え、JWTの検証は実際の検証器へ渡します。
-const publicKeyFetch: typeof fetch = async () => Response.json({
-  'test-key': googleKey.publicKey.export({ type: 'spki', format: 'pem' }).toString(),
-})
+const publicKeyFetch: typeof fetch = async () => googleTokens.publicKeyResponse()
 
 let tested: GoogleIdTokenVerifier
 
@@ -53,9 +52,9 @@ test('公開鍵の有効期間内は再利用し、期限後は再取得してGo
   vi.useFakeTimers()
   try {
     vi.setSystemTime(new Date('2026-01-01T00:00:00Z'))
-    const fetchPublicKey = vi.fn<typeof fetch>(async () => Response.json({
-      'test-key': googleKey.publicKey.export({ type: 'spki', format: 'pem' }).toString(),
-    }, { headers: { 'Cache-Control': 'public, max-age=60' } }))
+    const fetchPublicKey = vi.fn<typeof fetch>(async () =>
+      googleTokens.publicKeyResponse({ headers: { 'Cache-Control': 'public, max-age=60' } }),
+    )
     const tested = new GoogleIdTokenVerifier('kizamu-client', fetchPublicKey)
     const token = createToken()
 
@@ -95,7 +94,7 @@ function createToken({
   audience = 'kizamu-client',
   email = 'user@example.test',
   expired = false,
-  signingKey = googleKey.privateKey,
+  signingKey,
 }: {
   subject?: string | number | null
   issuer?: string
@@ -105,11 +104,8 @@ function createToken({
   signingKey?: KeyObject
 } = {}): string {
   const now = Math.floor(Date.now() / 1000)
-  const header = Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'test-key', typ: 'JWT' })).toString('base64url')
-  const payload = Buffer.from(JSON.stringify({
+  return googleTokens.createToken({
     iss: issuer, aud: audience, email, iat: now - 7200, exp: now + (expired ? -3600 : 3600),
     ...(subject === null ? {} : { sub: subject }),
-  })).toString('base64url')
-  const content = `${header}.${payload}`
-  return `${content}.${sign('RSA-SHA256', Buffer.from(content), signingKey).toString('base64url')}`
+  }, { type: 'JWT', signingKey })
 }

@@ -1,11 +1,9 @@
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Kizamu.Backend.AspNetCore.Application.TimeRecords;
 using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
 using Kizamu.Backend.AspNetCore.Infrastructure.TimeRecords;
+using Kizamu.Backend.AspNetCore.TestSupport;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Net;
 using System.Net.Http.Json;
@@ -18,19 +16,22 @@ namespace Kizamu.Backend.AspNetCore.Api.Tests.Endpoints.TimeRecords;
 
 using static Kizamu.Tests.TestCancellation;
 
-public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
+public sealed class TimeRecordEndpointTests :
+    IClassFixture<WebApplicationFactory<Program>>, IClassFixture<TimeRecordEndpointTests.SigningKey>, IDisposable
 {
     static readonly DateTimeOffset 早い時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
     static readonly DateTimeOffset 遅い時刻 = new(2026, 8, 1, 11, 0, 0, TimeSpan.Zero);
 
-    static readonly RSA googleKey = RSA.Create(2048);
-    readonly HttpClient publicKeyClient = new(new PublicKeyHandler());
+    readonly SigningKey signingKey;
+    readonly HttpClient publicKeyClient;
     readonly FakeTimeProvider timeProvider;
     readonly WebApplicationFactory<Program> configuredFactory;
     readonly HttpClient client;
 
-    public TimeRecordEndpointTests(WebApplicationFactory<Program> factory)
+    public TimeRecordEndpointTests(WebApplicationFactory<Program> factory, SigningKey signingKey)
     {
+        this.signingKey = signingKey;
+        publicKeyClient = signingKey.CreatePublicKeyClient();
         timeProvider = new FakeTimeProvider();
         configuredFactory = factory.WithWebHostBuilder(builder =>
             builder.ConfigureServices(services =>
@@ -237,11 +238,10 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         return await client.SendAsync(request, CancellationToken);
     }
 
-    static AuthenticationHeaderValue 認証情報を用意する(string user = "google-user", DateTimeOffset? expiresAt = null)
+    AuthenticationHeaderValue 認証情報を用意する(string user = "google-user", DateTimeOffset? expiresAt = null)
     {
         var now = DateTimeOffset.UtcNow;
-        var header = Encode(JsonSerializer.SerializeToUtf8Bytes(new { alg = "RS256", kid = "endpoint-test-key" }));
-        var payload = Encode(JsonSerializer.SerializeToUtf8Bytes(new
+        return new AuthenticationHeaderValue("Bearer", signingKey.CreateToken(new
         {
             iss = "https://accounts.google.com",
             aud = "kizamu-client",
@@ -249,27 +249,6 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
             iat = now.AddHours(-2).ToUnixTimeSeconds(),
             exp = (expiresAt ?? now.AddHours(1)).ToUnixTimeSeconds()
         }));
-        var content = $"{header}.{payload}";
-        var signature = googleKey.SignData(Encoding.ASCII.GetBytes(content), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        return new AuthenticationHeaderValue("Bearer", $"{content}.{Encode(signature)}");
-    }
-
-    static string Encode(ReadOnlySpan<byte> bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-
-    sealed class PublicKeyHandler : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            var parameters = googleKey.ExportParameters(false);
-            var jwks = JsonSerializer.Serialize(new
-            {
-                keys = new[] { new { kty = "RSA", alg = "RS256", use = "sig", kid = "endpoint-test-key", n = Encode(parameters.Modulus), e = Encode(parameters.Exponent) } }
-            });
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(jwks, Encoding.UTF8, "application/json")
-            });
-        }
     }
 
     static HttpRequestMessage 同一オリジンの未認証POST要求を用意する(string requestUri)
@@ -279,10 +258,10 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         return request;
     }
 
-    static HttpRequestMessage 同一オリジンのPOST要求を用意する(string requestUri, string user = "google-user") =>
+    HttpRequestMessage 同一オリジンのPOST要求を用意する(string requestUri, string user = "google-user") =>
         認証済みのPOST要求を用意する(requestUri, "same-origin", user);
 
-    static HttpRequestMessage 認証済みのPOST要求を用意する(string requestUri, string? secFetchSite, string user = "google-user")
+    HttpRequestMessage 認証済みのPOST要求を用意する(string requestUri, string? secFetchSite, string user = "google-user")
     {
         var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
         request.Headers.Authorization = 認証情報を用意する(user);
@@ -329,6 +308,8 @@ public sealed class TimeRecordEndpointTests : IClassFixture<WebApplicationFactor
         configuredFactory.Dispose();
         publicKeyClient.Dispose();
     }
+
+    public sealed class SigningKey() : GoogleIdTokenFixture("endpoint-test-key") { }
 
     sealed record TimeRecordResponse(
         Guid Id,

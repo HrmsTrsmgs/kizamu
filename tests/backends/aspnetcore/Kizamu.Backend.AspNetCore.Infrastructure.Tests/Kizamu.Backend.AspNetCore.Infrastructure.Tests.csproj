@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Compile Include="..\TestSupport\GoogleIdTokenFixture.cs" Link="TestSupport\GoogleIdTokenFixture.cs" />
   </ItemGroup>
 
   <ItemGroup>
