@@ -168,3 +168,10 @@
 * 理由：仮機能として実装を簡単にし、独自のユーザー情報管理を避け、本人識別と利用者ごとの記録分離を優先したいという開発者の指示による。ログイン維持の利便性より実装の簡単さを優先する。
 * 検討した別案：サーバー側セッションとCookieによるログイン管理、Firebase Authentication等を介する方式も比較した。当面はトークンの失効管理や別の利用者管理サービスを増やさず、上記の制約を受け入れる方式を選んだ。将来の変更を禁止する判断ではない。
 * 根拠：開発者のGoogleのみ・初回ログインで利用開始・ユーザー情報管理を避ける指示と、画面メモリ保持／即時失効なしの提案への了承。[GoogleのIDトークン検証手順](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token) は署名・発行元・対象・期限の検証と、本人識別へのsubの利用を案内している。
+
+## D015：一覧に補う記録は開始した順に追加する
+
+* 確認日・状態：2026-11-24、開発者から両実装で揃える順序の選択を委ねられ、Blazorの既存動作を採用してReactに反映した。
+* 決定：一覧取得中の更新を合成するとき、応答に含まれない記録は、各IDが更新に最初に現れた順に最新値を一件ずつ末尾へ追加する。A開始、B開始、A終了の順なら、Aの終了済み記録、Bの未終了記録の順になる。応答に含まれる記録は応答順で表示し、同じIDの取得中の更新を値に反映する。
+* 理由：記録を開始したときの並びを保ち、終了の更新後も同じ位置で記録を追えるようにする。Reactが採っていた最終更新順では、この場合に終了したAがBの後ろに移動する。
+* 根拠：開発者の順序統一の指示と、[BlazorのViewModelテスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L898)、[ReactのReducerテスト](../tests/frontends/react/presentation/timeRecorderState.test.ts#L208)。

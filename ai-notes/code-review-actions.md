@@ -377,9 +377,10 @@ C# 15への更新の基準は `5ef1933`。.NET 11にプロジェクト・依存�
 
 | 条件 | 現在の結果 | 決まった後の変更単位 |
 | --- | --- | --- |
-| 初回一覧の応答に含まれない記録を、取得中にA開始→B開始→A終了の順に操作する | BlazorはA・Bの開始順。ReactはB・Aの最終更新順。両側にそれぞれの順序を固定するテストがある。 | 順序の決定が必要。開始順ならReactの更新Mapへの再挿入をやめ、最終更新順ならBlazorの合成順を変える。どちらもAは最新の終了済み一件、Bは未終了一件となることを同じ入力で確認する。[TimeRecorderViewModel.cs 111行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L111) · [TimeRecorderViewModelTests.cs 813行](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L813) · [timeRecorderState.ts 73行](../src/frontends/react/src/presentation/timeRecorderState.ts#L73) · [timeRecorderState.test.ts 206行](../tests/frontends/react/presentation/timeRecorderState.test.ts#L206) |
 | サーバーから初めて受けた未終了記録にプロジェクト情報がない | この版の通信契約には記録の所属がない。02で再現したのは、画面自身がAで開始し、既に所属が分かる記録。 | 再ログインや再読込をまたぐ所属の復元は、プロジェクトと記録の保存の仕様が決まってから扱う。02は独立して修正できる。 [ロードマップ](../docs/roadmap.md) |
 | 開始・終了の応答待ちにタブを切り替えたとき、操作欄にどの時刻を表示するか | Aを終了したときの開始・終了時刻は共にAの記録から取る方針が確定済み。終了対象IDと直近の表示記録は別の値。選択中のプロジェクトだけの履歴を表示するか、直近の操作結果を表示するかで期待結果が変わる。Reactには別タブで開始応答を受けた例もある。 | 表示方針を決める場合は、Aの応答をBで受けた時点とAに戻った時点の期待表示を別途指定する。01・02はどちらの表示方針でも必要。 |
+
+初回一覧の応答にない記録の追加順は、[開始順に決定](../docs/decisions.md#d015一覧に補う記録は開始した順に追加する)した。 2026-11-24、基準は `bb4b679`。Blazorの既存テストが成功し、Reactで変更した期待順のテストは順序の違いで失敗した。Reactの合成を修正すると対象テストが成功し、`npm test`、`npm run lint`、`npm run build`、差分検査も通った。
 
 初回一覧取得自体の失敗後の表示はD012の対象外。サービス差し替え後に届いた古い一覧の扱いは既存候補C003を参照する。[判断記録](../docs/decisions.md) · [開発候補](development-candidates.md)
 

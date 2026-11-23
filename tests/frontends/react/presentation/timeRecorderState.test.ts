@@ -205,7 +205,7 @@ describe('timeRecorderReducer', () => {
     })
   })
 
-  it('取得した一覧にない記録は各IDの最後の更新順に一度ずつ追加します', () => {
+  it('取得した一覧にない記録は、一覧取得中の更新に最初に現れた順に一度ずつ追加します', () => {
     const 過去の記録 = presentedRecord('保存済み', 開始時刻, 終了時刻)
     const 別の記録 = presentedRecord('別の記録', 開始時刻)
     const 次の記録 = presentedRecord('次の記録', 開始時刻)
@@ -216,8 +216,8 @@ describe('timeRecorderReducer', () => {
       updatedRecords: [記録, 別の記録, 記録, 次の記録, 終了済み記録, 終了済み記録],
     })
 
-    state.records.should.toStrictEqual([過去の記録, 別の記録, 次の記録, 終了済み記録])
-    state.records[3].should.equal(終了済み記録)
+    state.records.should.toStrictEqual([過去の記録, 終了済み記録, 別の記録, 次の記録])
+    state.records[1].should.equal(終了済み記録)
   })
 
   it('記録を開始すると、新しい記録が一覧に加わり、操作欄の表示対象と終了対象になります', () => {

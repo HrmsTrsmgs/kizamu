@@ -89,8 +89,7 @@ function mergeLoadedRecords(
   const latestUpdates = new Map<string, TimeRecordPresentation>()
   for (const update of updates) {
     const id = update.record.id
-    // Records absent from the snapshot follow the order of their last update.
-    latestUpdates.delete(id)
+    // Records absent from the snapshot follow the order of their first update.
     latestUpdates.set(id, update)
   }
 
