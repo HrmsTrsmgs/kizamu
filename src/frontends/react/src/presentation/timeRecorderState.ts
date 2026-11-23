@@ -46,7 +46,7 @@ export function timeRecorderReducer(
 
       const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
       for (const [project, id] of projectTimeRecordIds) {
-        if (id !== null && records.some(({ record }) => record.id === id && record.endedAt)) {
+        if (id !== null && !records.some(({ record }) => record.id === id && record.endedAt === null)) {
           projectTimeRecordIds.set(project, null)
         }
       }

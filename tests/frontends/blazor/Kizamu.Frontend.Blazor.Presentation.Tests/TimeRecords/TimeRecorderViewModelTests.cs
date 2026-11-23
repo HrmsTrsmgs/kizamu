@@ -272,9 +272,8 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 終了通信の失敗を待つ間に別のプロジェクトを選んでも再取得で確認した終了済み記録の終了は再要求しません()
     {
-        var Aの記録 = service.StartedRecord;
-        await プロジェクトAとBで記録を開始する();
-        var Bの終了済み記録 = service.StartedRecord.End(終了時刻.AddMinutes(1));
+        var (Aの記録, Bの記録) = await プロジェクトAとBで記録を開始する();
+        var Bの終了済み記録 = Bの記録.End(終了時刻.AddMinutes(1));
         service.Records = [Aの記録, Bの終了済み記録];
         var 応答 = service.DelayEndResponse();
 
@@ -977,6 +976,24 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
+    public async Task Aを選択中に再取得した一覧からBの記録が消えるとBに戻っても終了を要求せず新しい記録を開始できます()
+    {
+        var (Aの記録, _) = await プロジェクトAとBで記録を開始する();
+        service.Records = [Aの記録];
+        tested.SelectProject(プロジェクトA);
+
+        await tested.LoadAsync();
+        tested.SelectProject(プロジェクトB);
+
+        await tested.EndTimeRecordAsync();
+        service.EndedIds.Should().BeEmpty();
+
+        service.StartedRecord = new(Guid.Parse("019cdeac-b600-7000-8000-000000000003"), 終了時刻, null);
+        await tested.StartTimeRecordAsync();
+        service.StartCount.Should().Be(3);
+    }
+
+    [Fact]
     public async Task 開始した記録が再読み込みした一覧で終了済みなら選択中の作業は記録中ではなくなります()
     {
         await 履歴がある状態で記録を開始する();
@@ -1215,13 +1232,17 @@ public sealed class TimeRecorderViewModelTests
         }
     }
 
-    async Task プロジェクトAとBで記録を開始する()
+    async Task<(TimeRecord Aの記録, TimeRecord Bの記録)> プロジェクトAとBで記録を開始する()
     {
+        var Aの記録 = service.StartedRecord;
         tested.SelectProject(プロジェクトA);
         await tested.StartTimeRecordAsync();
+
         tested.SelectProject(プロジェクトB);
         service.StartedRecord = new(別の記録ID, 終了時刻, null);
         await tested.StartTimeRecordAsync();
+
+        return (Aの記録, service.StartedRecord);
     }
 
     async Task 未指定とプロジェクトの記録を開始する(Project project)

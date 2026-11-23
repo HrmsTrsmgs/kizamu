@@ -97,7 +97,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
             records = MergeLoadedRecords(loadedRecords, updatesDuringLoad);
             DisplayedRecord = records.FirstOrDefault(record => record.Id == DisplayedRecord?.Id) ?? DisplayedRecord;
             var currentId = FindCurrentIdAfterLoad(updatesDuringLoad);
-            ClearEndedCurrentIds();
+            ClearUnavailableCurrentIds();
             CurrentId = currentId;
             IsStateUnconfirmed = false;
         }
@@ -124,20 +124,20 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         return [.. recordsFromResponse, .. recordsMissingFromResponse];
     }
 
-    void ClearEndedCurrentIds()
+    void ClearUnavailableCurrentIds()
     {
-        var endedIds =
+        var activeIds =
             (from record in records
-             where record.EndedAt is not null
+             where record.EndedAt is null
              select record.Id).ToHashSet();
-        if (unspecifiedCurrentId is { } id && endedIds.Contains(id)) unspecifiedCurrentId = null;
+        if (unspecifiedCurrentId is { } id && !activeIds.Contains(id)) unspecifiedCurrentId = null;
 
-        var endedProjects =
+        var unavailableProjects =
             from project in projectCurrentIds.Keys.ToArray()
             let currentId = projectCurrentIds[project]
-            where currentId.HasValue && endedIds.Contains(currentId.Value)
+            where currentId.HasValue && !activeIds.Contains(currentId.Value)
             select project;
-        foreach (var project in endedProjects)
+        foreach (var project in unavailableProjects)
         {
             projectCurrentIds[project] = null;
         }

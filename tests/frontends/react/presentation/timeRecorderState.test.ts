@@ -99,6 +99,13 @@ describe('timeRecorderReducer', () => {
         tested = timeRecorderReducer(tested, { type: 'recordStarted', project: プロジェクトA, record: プロジェクトの記録 })
       })
 
+      it('プロジェクトAを表示中に再取得した一覧から未指定の記録が消えると、未指定に戻っても終了対象はありません', () => {
+        tested = timeRecorderReducer(tested, { type: 'recordsLoaded', records: [プロジェクトの記録] })
+        tested = timeRecorderReducer(tested, { type: 'projectSelected', project: undefined })
+
+        tested.should.have.property('timeRecordId', null)
+      })
+
       it('プロジェクトの記録を終了しても未指定の記録は記録中のままです', () => {
         const 終了済みのプロジェクトの記録 = presentedRecord(プロジェクトの記録ID, 開始時刻, 終了時刻)
 
