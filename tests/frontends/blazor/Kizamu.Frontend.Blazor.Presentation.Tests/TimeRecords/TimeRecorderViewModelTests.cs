@@ -491,6 +491,22 @@ public sealed class TimeRecorderViewModelTests
         tested.IsRecording.Should().Be(!終了操作);
     }
 
+    [Fact]
+    public async Task この画面で開始した記録の終了通信に失敗しても再取得で終了を確認すると一覧と操作欄に同じ終了時刻を表示し終了対象を解除します()
+    {
+        tested.SelectProject(プロジェクトA);
+        var 終了操作 = await 再取得で結果を確認できる通信失敗を用意する(終了操作: true, new HttpRequestException());
+        tested.DisplayedRecord.Should().Be(service.StartedRecord);
+
+        await Assert.ThrowsAsync<HttpRequestException>(終了操作);
+
+        service.EndedIds.Should().Equal(記録ID);
+        service.ListCount.Should().Be(1);
+        tested.Records.Should().Equal(service.EndedRecord);
+        tested.IsRecording.Should().BeFalse();
+        tested.DisplayedRecord.Should().BeEquivalentTo(service.EndedRecord);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

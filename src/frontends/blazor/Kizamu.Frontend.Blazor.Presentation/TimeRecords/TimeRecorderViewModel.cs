@@ -95,6 +95,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
             var loadedRecords = await service.GetTimeRecordsAsync();
             if (version != loadVersion) return;
             records = MergeLoadedRecords(loadedRecords, updatesDuringLoad);
+            DisplayedRecord = records.FirstOrDefault(record => record.Id == DisplayedRecord?.Id) ?? DisplayedRecord;
             var currentId = FindCurrentIdAfterLoad(updatesDuringLoad);
             ClearEndedCurrentIds();
             CurrentId = currentId;

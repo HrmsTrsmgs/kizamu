@@ -39,8 +39,9 @@ export function timeRecorderReducer(
     case 'recordsLoaded': {
       const updates = action.updatedRecords ?? []
       const records = mergeLoadedRecords(action.records, updates)
+      const displayedRecord = records.find(({ record }) => record.id === state.displayedRecord?.record.id) ?? state.displayedRecord
       const timeRecordId = getEndTargetAfterLoad(state, records, updates)
-      const nextState = { ...state, records, timeRecordId }
+      const nextState = { ...state, records, timeRecordId, displayedRecord }
       if (!state.projectTimeRecordIds) return nextState
 
       const projectTimeRecordIds = new Map(state.projectTimeRecordIds)

@@ -571,6 +571,28 @@ describe('useTimeRecorder', () => {
     })
   })
 
+  it('この画面で開始した記録の終了通信に失敗しても、再取得で終了を確認すると一覧と操作欄に同じ終了時刻を表示し、終了対象を解除します', async () => {
+    const プロジェクトA = new Project('プロジェクトA')
+    const 終了失敗 = new Error('終了通信の失敗')
+    getTimeRecords.mockResolvedValueOnce([]).mockResolvedValueOnce([終了済み記録])
+    endTimeRecord.mockRejectedValueOnce(終了失敗)
+    const { result } = renderRecorder()
+    act(() => result.current.selectProject(プロジェクトA))
+    await act(() => result.current.startTimeRecord())
+    result.current.state.should.have.property('displayedRecord', 記録)
+
+    await act(async () => {
+      await expect(result.current.endTimeRecord()).rejects.toBe(終了失敗)
+    })
+
+    endTimeRecord.should.have.been.calledOnceWith(記録ID)
+    getTimeRecords.should.have.callCount(2)
+    result.current.state.records.should.toStrictEqual([終了済み記録])
+    result.current.state.should.have.property('timeRecordId', null)
+    const 操作欄 = { displayedRecord: result.current.state.displayedRecord }
+    操作欄.should.toStrictEqual({ displayedRecord: 終了済み記録 })
+  })
+
   it('利用者がプロジェクトAの記録の終了応答を待つ間にBを選ぶと、Aだけが終了済みになり、Bの記録は引き続き終了できます', async () => {
     const プロジェクトA = new Project('プロジェクトA')
     const プロジェクトB = new Project('プロジェクトB')
