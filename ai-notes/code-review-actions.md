@@ -248,13 +248,17 @@ APIテストと検証器テストが、同じ技術内でテスト資格情報�
 
 C#はテスト側の共有ソースと寿命を持つfixture、Nodeはバックエンドのテスト用モジュールへ、同じ鍵から資格情報と公開鍵応答を作る共通部分を移す。所有者・期限・発行元・異なる署名鍵など、各テストが変える値は本文に残し、既存の鍵IDと時刻条件を保つ。各言語で正常・期限切れ・不正署名、利用者間の分離テストを通す。 [TimeRecordEndpointTests.cs 241行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L241) · [GoogleIdTokenVerifierTests.cs 80行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs#L80) · [timeRecordEndpoints.test.ts 15行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L15) · [googleIdTokenVerifier.test.ts 41行](../tests/backends/node/infrastructure/googleIdTokenVerifier.test.ts#L41)
 
-2026-11-21、基準は `202375f`。C#とNodeの各バックエンドで、テスト用の鍵、IDトークン、公開鍵応答の準備をAPIテストと検証器テストで共有した。C#の鍵はxUnitのクラスフィクスチャが所有して破棄する。各テストが指定する既存の条件を維持した。ASP.NET Core全92テストとTypeScript全241テスト、両ビルド、Lint、.NET format、差分検査が成功。未コミットでレビュー待ち。 [C#の補助](../tests/backends/aspnetcore/TestSupport/GoogleIdTokenFixture.cs) · [Nodeの補助](../tests/backends/node/test/googleIdTokenFixture.ts)
+2026-11-21、基準は `202375f`。C#とNodeの各バックエンドで、テスト用の鍵、IDトークン、公開鍵応答の準備をAPIテストと検証器テストで共有した。C#の鍵はxUnitのクラスフィクスチャが所有して破棄する。各テストが指定する既存の条件を維持した。ASP.NET Core全92テストとTypeScript全241テスト、両ビルド、Lint、.NET format、差分検査が成功。修正は `5a3ec37` に記録済み。 [C#の補助](../tests/backends/aspnetcore/TestSupport/GoogleIdTokenFixture.cs) · [Nodeの補助](../tests/backends/node/test/googleIdTokenFixture.ts)
 
 ### 27　通常起動のAppからプロジェクト画面の責務を分ける
 
 Reactの `App` に認証、Googleボタンの描画、タブ、登録ダイアログが集中している。BlazorはSDK通知と代替ログインで、トークンから記録サービスとViewModelを作る部分が重なる。
 
 項目04を先に確認する。Reactは認証状態とログイン入口をAppに残し、認証済み画面と既存のタブReducerをまとめて抽出する。登録直前の入力・キャンセル・選択を既存テストで維持する。Blazorは二つの経路で共有する「認証結果から記録用ViewModelを作る」部分を一か所にする。SDK通知で必要な再描画と、代替ボタンのイベント完了に伴う再描画の違いを保つ。 [App.tsx 18行](../src/frontends/react/src/App.tsx#L18) · [App.razor 81行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L81) · [projectTabsState.ts 24行](../src/frontends/react/src/presentation/projectTabsState.ts#L24) · [App.test.tsx 95行](../tests/frontends/react/App.test.tsx#L95)
+
+2026-11-24、基準は `5a3ec37`。ReactのAppからタブ・記録欄・登録ダイアログの描画と既存Reducerの呼び出しを抽出した。Appは認証と画面全体の構成を担当する。認証表示を一時的に切り替える間もタブ状態を保持し、ログアウトで初期化する。BlazorはSDKの認証通知と代替ログイン後の記録用ViewModel設定を共通化し、SDK通知側の明示的な再描画を維持した。 [Reactの認証済み画面](../src/frontends/react/src/timeRecords/AuthenticatedTimeRecords.tsx) · [BlazorのApp](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L80)
+
+全TypeScript 241件、Blazorソリューション全316件、両ビルド、Lint、変更ファイル限定のformat、差分検査が成功。全体の.NET formatは既存の `GoogleSignIn.cs` のBL0016で終了2。未コミットでレビュー待ち。次の着手点は項目28。
 
 ### 28　ISOの元表記、日時点、HTMLの文字列をテストとコメントで区別する
 

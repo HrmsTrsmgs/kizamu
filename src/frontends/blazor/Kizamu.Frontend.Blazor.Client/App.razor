@@ -81,7 +81,7 @@
     {
         var create = CreateTimeRecords ?? (value => new Kizamu.Frontend.Blazor.Infrastructure.TimeRecords.TimeRecordApi(
             (HttpClient)Services.GetService(typeof(HttpClient))!, value));
-        timeRecorder = new(create(token));
+        SetTimeRecorder(token, create);
         _ = InvokeAsync(StateHasChanged);
     }
 
@@ -106,9 +106,12 @@
         if (SignInWithGoogle is not null && CreateTimeRecords is not null)
         {
             var token = await SignInWithGoogle();
-            timeRecorder = new(CreateTimeRecords(token));
+            SetTimeRecorder(token, CreateTimeRecords);
         }
     }
+
+    void SetTimeRecorder(string token, Func<string, ITimeRecordService> createTimeRecords) =>
+        timeRecorder = new(createTimeRecords(token));
 
     /// <summary>記録画面を表示する認証済み状態を取得または設定します。</summary>
     [Parameter]
