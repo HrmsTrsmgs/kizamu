@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\..\TestSupport\AssemblyReferences.cs" Link="TestSupport\AssemblyReferences.cs" />
     <ProjectReference Include="..\..\..\..\src\backends\aspnetcore\Kizamu.Backend.AspNetCore.Api\Kizamu.Backend.AspNetCore.Api.csproj" />
   </ItemGroup>
 

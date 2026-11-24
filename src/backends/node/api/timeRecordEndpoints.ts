@@ -36,6 +36,8 @@ export function registerTimeRecordEndpoints(app: FastifyInstance, timeRecords: T
   })
 }
 
-function getOwner(authorization: string | undefined, verifier: GoogleIdTokenVerifier): Promise<string | null> {
-  return authorization?.slice(0, 7).toLowerCase() === 'bearer ' ? verifier.verify(authorization.slice(7)) : Promise.resolve(null)
+async function getOwner(authorization: string | undefined, verifier: GoogleIdTokenVerifier): Promise<string | null> {
+  const prefix = 'bearer '
+  if (authorization?.slice(0, prefix.length).toLowerCase() !== prefix) return null
+  return verifier.verify(authorization.slice(prefix.length))
 }

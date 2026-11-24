@@ -10,26 +10,13 @@ describe('共有Domainに適用するESLintの依存制約', () => {
     await lint.lintText('export {}', lintOptions)
   }, 30_000)
 
-  it('フロントエンドへの型専用importを検出します', async () => {
-    const rules = await reportedRules("import type { TimeRecordService } from '../../frontends/react/src/presentation/timeRecordService'")
-
-    rules.should.include('no-restricted-imports')
-  })
-
-  it('Reactからの再エクスポートを検出します', async () => {
-    const rules = await reportedRules("export { useState } from 'react'")
-
-    rules.should.include('no-restricted-imports')
-  })
-
-  it('Node固有APIへの未使用のimportを検出します', async () => {
-    const rules = await reportedRules("import { randomUUID } from 'node:crypto'")
-
-    rules.should.include('no-restricted-imports')
-  })
-
-  it('Fastifyへのimportを検出します', async () => {
-    const rules = await reportedRules("import Fastify from 'fastify'")
+  it.each([
+    ['フロントエンドへの型専用import', "import type { TimeRecordService } from '../../frontends/react/src/presentation/timeRecordService'"],
+    ['Reactからの再エクスポート', "export { useState } from 'react'"],
+    ['Node固有APIへの未使用のimport', "import { randomUUID } from 'node:crypto'"],
+    ['Fastifyへのimport', "import Fastify from 'fastify'"],
+  ])('%sを依存違反として検出します', async (_, code) => {
+    const rules = await reportedRules(code)
 
     rules.should.include('no-restricted-imports')
   })
@@ -37,7 +24,7 @@ describe('共有Domainに適用するESLintの依存制約', () => {
   it('型importによるReactへの依存を検出します', async () => {
     const rules = await reportedRules("export type Example = import('react').ReactNode")
 
-    rules.filter(rule => rule?.startsWith('no-restricted')).should.not.deep.equal([])
+    rules.should.include('no-restricted-syntax')
   })
 
   it('fetchによる直接通信を検出します', async () => {

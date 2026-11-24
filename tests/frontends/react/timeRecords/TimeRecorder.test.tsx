@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, it, vi, type Mock } from 'vitest'
 import type { TimeRecordService } from '../../../../src/frontends/react/src/presentation/timeRecordService'
 import { should } from '../../../should.mjs'
-import { createTimeRecordServiceStub } from '../test/createTimeRecordServiceStub'
 import { presentedRecord, timestamp } from '../test/timeRecords'
 import AuthenticatedTimeRecords from '../../../../src/frontends/react/src/timeRecords/AuthenticatedTimeRecords'
 import { TimeRecorderView } from '../../../../src/frontends/react/src/timeRecords/TimeRecorder'
@@ -43,7 +42,7 @@ describe('AuthenticatedTimeRecordsの記録操作', () => {
     getTimeRecords = vi.fn<TimeRecordService['getTimeRecords']>().mockResolvedValue([])
     startTimeRecord = vi.fn<TimeRecordService['startTimeRecord']>().mockResolvedValue(記録)
     endTimeRecord = vi.fn<TimeRecordService['endTimeRecord']>().mockResolvedValue(終了済み記録)
-    timeRecords = createTimeRecordServiceStub({ getTimeRecords, startTimeRecord, endTimeRecord })
+    timeRecords = { getTimeRecords, startTimeRecord, endTimeRecord }
   })
 
   it('記録の開始に失敗すると、記録画面に失敗を知らせるメッセージが表示されます', async () => {

@@ -106,33 +106,33 @@ public sealed class TimeRecordApiTests : IDisposable
     }
 
     [Fact]
-    public async Task 記録終了APIが指定と異なる記録IDを返すと例外が発生します()
+    public async Task 記録終了APIが指定と異なる記録IDを返すとInvalidDataExceptionが発生します()
     {
         handler.RespondWithJson(終了した記録 with { Id = 別の記録ID });
 
         var 操作 = () => tested.EndTimeRecordAsync(記録ID);
 
-        await 操作.Should().ThrowAsync<Exception>();
+        await 操作.Should().ThrowAsync<InvalidDataException>();
     }
 
     [Fact]
-    public async Task 記録終了APIが終了時刻にnullを返すと例外が発生します()
+    public async Task 記録終了APIが終了時刻にnullを返すとInvalidDataExceptionが発生します()
     {
         handler.RespondWithJson(開始した記録);
 
         var 操作 = () => tested.EndTimeRecordAsync(記録ID);
 
-        await 操作.Should().ThrowAsync<Exception>();
+        await 操作.Should().ThrowAsync<InvalidDataException>();
     }
 
     [Fact]
-    public async Task 記録終了APIの応答に終了時刻がないと例外が発生します()
+    public async Task 記録終了APIの応答に終了時刻がないとInvalidDataExceptionが発生します()
     {
         handler.RespondWithJson(new { id = 記録ID, startedAt = 開始時刻 });
 
         var 操作 = () => tested.EndTimeRecordAsync(記録ID);
 
-        await 操作.Should().ThrowAsync<Exception>();
+        await 操作.Should().ThrowAsync<InvalidDataException>();
     }
 
     [Fact]

@@ -15,6 +15,8 @@ describe('Reactに適用するESLintの依存制約', () => {
     { from: 'Presentation', to: 'Infrastructure', file: 'src/presentation/example.ts', code: "import { timeRecordService } from '../infrastructure/timeRecordService'" },
     { from: 'Presentation', to: '画面', file: 'src/presentation/example.ts', code: "import TimeRecorder from '../timeRecords/TimeRecorder'" },
     { from: 'Presentation', to: '画面', file: 'src/presentation/example.ts', code: "export { default } from '../App.js'" },
+    { from: 'Presentation', to: 'プロジェクト画面', file: 'src/presentation/example.ts', code: "export { default } from '../projects/ProjectTabs'" },
+    { from: 'プロジェクト画面', to: 'Infrastructure', file: 'src/projects/Example.tsx', code: "import { timeRecordService } from '../infrastructure/timeRecordService'" },
     { from: 'Infrastructure', to: '画面', file: 'src/infrastructure/example.ts', code: "import HealthStatus from '../health/HealthStatus'" },
     { from: '画面', to: 'Infrastructure', file: 'src/timeRecords/Example.tsx', code: "import { timeRecordService } from '../infrastructure/timeRecordService'" },
   ])('$from から $to への静的参照（$code）を依存違反として検出します', async ({ file, code }) => {

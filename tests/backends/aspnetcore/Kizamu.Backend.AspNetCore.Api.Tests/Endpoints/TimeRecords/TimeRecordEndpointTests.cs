@@ -1,15 +1,15 @@
 using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
 using Kizamu.Backend.AspNetCore.Application.TimeRecords;
-using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Hosting;
 using Kizamu.Backend.AspNetCore.Infrastructure.TimeRecords;
 using Kizamu.Backend.AspNetCore.TestSupport;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kizamu.Backend.AspNetCore.Api.Tests.Endpoints.TimeRecords;
@@ -34,11 +34,10 @@ public sealed class TimeRecordEndpointTests :
         publicKeyClient = signingKey.CreatePublicKeyClient();
         timeProvider = new FakeTimeProvider();
         configuredFactory = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureServices(services =>
+            builder.UseSetting("GOOGLE_CLIENT_ID", "kizamu-client").ConfigureServices(services =>
             {
                 services.AddSingleton<TimeProvider>(timeProvider);
-                services.RemoveAll<GoogleIdTokenVerifier>();
-                services.AddSingleton(new GoogleIdTokenVerifier("kizamu-client", publicKeyClient));
+                services.AddSingleton(publicKeyClient);
             }));
         client = configuredFactory.CreateClient();
     }
@@ -65,7 +64,7 @@ public sealed class TimeRecordEndpointTests :
     }
 
     [Fact]
-    public async Task 未認証で記録の開始を要求すると401が返り一覧は空のままです()
+    public async Task 未認証で開始を要求すると401が返り認証済み利用者の一覧は空のままです()
     {
         using var request = 同一オリジンの未認証POST要求を用意する("/api/time-records/start");
 
@@ -76,7 +75,7 @@ public sealed class TimeRecordEndpointTests :
     }
 
     [Fact]
-    public async Task 未認証で記録の終了を要求すると401が返り一覧の記録は開始時のままです()
+    public async Task 未認証で終了を要求すると401が返り所有者の一覧では記録の終了時刻は未設定のままです()
     {
         var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
         using var request = 同一オリジンの未認証POST要求を用意する($"/api/time-records/{startedRecord.Id}/end");
@@ -84,6 +83,7 @@ public sealed class TimeRecordEndpointTests :
         using var response = await client.SendAsync(request, CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        startedRecord.EndedAt.Should().BeNull();
         (await 記録一覧を取得する()).Should().Equal(startedRecord);
     }
 
@@ -97,9 +97,8 @@ public sealed class TimeRecordEndpointTests :
         using var response = await client.SendAsync(request, CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        var record = (await 記録一覧を取得する()).Should().ContainSingle().Which;
-        record.Should().Be(startedRecord);
-        record.EndedAt.Should().BeNull();
+        startedRecord.EndedAt.Should().BeNull();
+        (await 記録一覧を取得する()).Should().Equal(startedRecord);
     }
 
     [Fact]

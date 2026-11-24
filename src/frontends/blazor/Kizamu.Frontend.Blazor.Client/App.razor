@@ -1,4 +1,5 @@
 @using Kizamu.Frontend.Blazor.Client.Projects
+@using Kizamu.Frontend.Blazor.Infrastructure.TimeRecords
 @inject ProjectTabsViewModel ViewModel
 @inject IServiceProvider Services
 
@@ -8,20 +9,17 @@
         <p class="app-description">作業時間を記録します。</p>
     </header>
     <div>
-        @if (!ShowAuthenticatedContent)
+        @if (ShowAuthenticatedContent)
         {
-            @if (Services.GetService(typeof(IGoogleSignIn)) is not null)
-            {
-                <div @ref="googleButton"></div>
-            }
-            else
-            {
-                <button type="button" @onclick="SignInAsync">Googleでログイン</button>
-            }
+            <button type="button" @onclick="SignOut">ログアウト</button>
+        }
+        else if (GoogleSignIn is not null)
+        {
+            <div @ref="googleButton"></div>
         }
         else
         {
-            <button type="button" @onclick="SignOut">ログアウト</button>
+            <button type="button" @onclick="SignInAsync">Googleでログイン</button>
         }
     </div>
     @if (ActiveTimeRecorder is { } recorder)
@@ -49,13 +47,14 @@
     bool renderGoogleButton = true;
     bool hasSignedOut;
 
+    IGoogleSignIn? GoogleSignIn => Services.GetService<IGoogleSignIn>();
     ITimeRecorderViewModel? ActiveTimeRecorder => timeRecorder ?? (hasSignedOut ? null : InitialTimeRecorder);
     bool ShowAuthenticatedContent => ActiveTimeRecorder is not null;
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (renderGoogleButton && !ShowAuthenticatedContent && Services.GetService(typeof(IGoogleSignIn)) is IGoogleSignIn google)
+        if (renderGoogleButton && !ShowAuthenticatedContent && GoogleSignIn is { } google)
         {
             renderGoogleButton = false;
             await google.RenderButtonAsync(googleButton, OnCredential);
@@ -64,11 +63,11 @@
 
     void OnCredential(string token)
     {
-        var create = CreateTimeRecords ?? (value => new Kizamu.Frontend.Blazor.Infrastructure.TimeRecords.TimeRecordApi(
-            (HttpClient)Services.GetService(typeof(HttpClient))!, value));
-        SetTimeRecorder(token, create);
+        SetTimeRecorder(token, CreateTimeRecords ?? CreateAuthenticatedService);
         _ = InvokeAsync(StateHasChanged);
     }
+
+    ITimeRecordService CreateAuthenticatedService(string token) => new TimeRecordApi(Services.GetRequiredService<HttpClient>(), token);
 
     /// <summary>Google認証を開始する操作を取得または設定します。</summary>
     [Parameter]

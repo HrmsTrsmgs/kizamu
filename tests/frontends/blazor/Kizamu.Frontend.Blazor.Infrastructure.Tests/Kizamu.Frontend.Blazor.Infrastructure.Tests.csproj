@@ -16,6 +16,7 @@
     </ItemGroup>
     <ItemGroup>
         <Using Include="Xunit" />
+        <Compile Include="../../../TestSupport/AssemblyReferences.cs" Link="TestSupport/AssemblyReferences.cs" />
         <ProjectReference Include="../../../../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/Kizamu.Frontend.Blazor.Infrastructure.csproj" />
         <Compile Include="../TestSupport/TestHttpMessageHandler.cs" Link="TestSupport/TestHttpMessageHandler.cs" />
     </ItemGroup>

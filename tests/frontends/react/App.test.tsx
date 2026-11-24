@@ -6,6 +6,7 @@ import type { HealthService } from '../../../src/frontends/react/src/presentatio
 import type { TimeRecordService } from '../../../src/frontends/react/src/presentation/timeRecordService'
 import { createTimeRecordServiceStub } from './test/createTimeRecordServiceStub'
 import { deferred } from './test/deferred'
+import { presentedRecord, timestamp } from './test/timeRecords'
 
 let health: HealthService
 
@@ -73,7 +74,7 @@ describe('未ログインのApp', () => {
     })
 
     it('ログアウト前の開始応答が再ログイン後に届いても、作業記録一覧に追加しません', async () => {
-      const 記録 = await createTimeRecordServiceStub().startTimeRecord()
+      const 記録 = presentedRecord('record', timestamp('2026-08-01T09:00:00Z'))
       const ログアウト前の応答 = deferred<typeof 記録>()
       const startTimeRecord = vi.fn(() => ログアウト前の応答.promise)
       createTimeRecords.mockReturnValueOnce(createTimeRecordServiceStub({ startTimeRecord }))
@@ -92,7 +93,7 @@ describe('未ログインのApp', () => {
       within(list).queryAllByRole('listitem').should.have.length(0)
     })
 
-    it('記録中にログアウトして再ログインすると前回の記録中状態を引き継ぎません', async () => {
+    it('再ログイン後の一覧が空なら操作欄は待機中になり開始ボタンを表示します', async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
       fireEvent.click(await screen.findByRole('button', { name: '記録を開始' }))
       await screen.findByRole('button', { name: '記録を終了' })
@@ -102,6 +103,7 @@ describe('未ログインのApp', () => {
 
       const startButton = await screen.findByRole('button', { name: '記録を開始' })
       startButton.should.toBeInTheDocument()
+      screen.getByText('待機中', { selector: '.status-badge' }).should.toBeInTheDocument()
       should.not.exist(screen.queryByText('記録中', { selector: '.status-badge' }))
     })
   })

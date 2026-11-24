@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using AwesomeAssertions;
 using Google.Apis.Auth;
-using Google.Apis.Json;
 using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
 using Kizamu.Backend.AspNetCore.TestSupport;
 
@@ -25,8 +24,8 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     [InlineData("accounts.google.com")]
     public async Task GoogleのIDトークンを更新してメールアドレスが変わっても同じsubを本人識別子として取得できます(string issuer)
     {
-        var 初回トークン = CreateToken(issuer: issuer, email: "before@example.test");
-        var 更新後トークン = CreateToken(issuer: issuer, email: "after@example.test");
+        var 初回トークン = CreateToken("google-user", issuer: issuer, email: "before@example.test");
+        var 更新後トークン = CreateToken("google-user", issuer: issuer, email: "after@example.test");
 
         (await tested.VerifyAsync(初回トークン)).Should().Be("google-user");
         (await tested.VerifyAsync(更新後トークン)).Should().Be("google-user");
@@ -35,8 +34,12 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     [Fact]
     public async Task GoogleのIDトークンのメールアドレスが同じでもsubが異なれば本人識別子も異なります()
     {
-        (await tested.VerifyAsync(CreateToken(subject: "first-user"))).Should().Be("first-user");
-        (await tested.VerifyAsync(CreateToken(subject: "second-user"))).Should().Be("second-user");
+        const string 同じメールアドレス = "user@example.test";
+        var 最初のトークン = CreateToken("first-user", email: 同じメールアドレス);
+        var 別のトークン = CreateToken("second-user", email: 同じメールアドレス);
+
+        (await tested.VerifyAsync(最初のトークン)).Should().Be("first-user");
+        (await tested.VerifyAsync(別のトークン)).Should().Be("second-user");
     }
 
     [Fact]
@@ -44,25 +47,25 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     {
         using var attackerKey = RSA.Create(2048);
 
-        (await tested.VerifyAsync(CreateToken(signingKey: attackerKey))).Should().BeNull();
+        (await tested.VerifyAsync(CreateToken("google-user", signingKey: attackerKey))).Should().BeNull();
     }
 
     [Fact]
     public async Task 発行者がGoogle以外のIDトークンからは本人識別子を取得できません()
     {
-        (await tested.VerifyAsync(CreateToken(issuer: "https://attacker.example.test"))).Should().BeNull();
+        (await tested.VerifyAsync(CreateToken("google-user", issuer: "https://attacker.example.test"))).Should().BeNull();
     }
 
     [Fact]
     public async Task 別のクライアント向けのGoogleのIDトークンからは本人識別子を取得できません()
     {
-        (await tested.VerifyAsync(CreateToken(audience: "another-client"))).Should().BeNull();
+        (await tested.VerifyAsync(CreateToken("google-user", audience: "another-client"))).Should().BeNull();
     }
 
     [Fact]
     public async Task 有効期限を過ぎたGoogleのIDトークンからは本人識別子を取得できません()
     {
-        (await tested.VerifyAsync(CreateToken(expired: true))).Should().BeNull();
+        (await tested.VerifyAsync(CreateToken("google-user", expired: true))).Should().BeNull();
     }
 
     [Theory]
@@ -86,17 +89,15 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     }
 
     [Theory]
-    [InlineData("123", null)]
-    [InlineData("\"\"", null)]
-    [InlineData("\"00123\"", "00123")]
-    [InlineData("\"2026-01-01T00:00:00Z\"", "2026-01-01T00:00:00Z")]
+    [InlineData(123, null)]
+    [InlineData("", null)]
+    [InlineData("00123", "00123")]
+    [InlineData("2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z")]
     public async Task Googleのsubが空でないJSON文字列のときだけ元の値を本人識別子として取得できます(
-        string subjectJson,
+        object subject,
         string? expectedSubject)
     {
-        var verifier = 本人識別子のJSONを指定した検証器を用意する(subjectJson);
-
-        (await verifier.VerifyAsync("verified-token-placeholder")).Should().Be(expectedSubject);
+        (await tested.VerifyAsync(CreateToken(subject))).Should().Be(expectedSubject);
     }
 
     [Fact]
@@ -116,17 +117,8 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
             }),
             timeProvider: new FixedTimeProvider(utcNow));
 
-    static GoogleIdTokenVerifier 本人識別子のJSONを指定した検証器を用意する(string subjectJson)
-    {
-        var claimsJson = $$"""{"sub":{{subjectJson}},"exp":60}""";
-        return new(
-            verifySignedToken: _ => Task.FromResult<JsonWebToken.Payload>(
-                NewtonsoftJsonSerializer.Instance.Deserialize<GoogleIdentityPayload>(claimsJson)),
-            timeProvider: new FixedTimeProvider(DateTimeOffset.UnixEpoch));
-    }
-
     string CreateToken(
-        string? subject = "google-user",
+        object? subject,
         string issuer = "https://accounts.google.com",
         string audience = "kizamu-client",
         string email = "user@example.test",

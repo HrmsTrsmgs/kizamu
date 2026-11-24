@@ -58,7 +58,7 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void Googleログインで取得したIDトークンを記録の通信サービスに渡します()
+    public void ログインボタンで取得したIDトークンを記録サービスの生成処理に渡します()
     {
         string? 記録通信に渡されたトークン = null;
         var tested = ログイン可能な画面を表示する(token =>
@@ -119,12 +119,12 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
-    public void 再ログインすると前の記録が一覧から消えて記録欄のボタンが開始に戻ります()
+    public void 再ログイン後の一覧が空なら前の記録行が消えて記録欄に開始ボタンを表示します()
     {
         var ログインごとの記録サービス = new Queue<StubTimeRecordService>(
         [
             new(未終了の記録, 未終了の記録) { Records = [未終了の記録] },
-            new(未終了の記録, 未終了の記録),
+            new(未終了の記録, 未終了の記録) { Records = [] },
         ]);
         var tested = ログイン可能な画面を表示する(_ => ログインごとの記録サービス.Dequeue());
         ログインする(tested);

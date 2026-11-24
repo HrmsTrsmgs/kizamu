@@ -8,7 +8,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
 {
     readonly TimeRecorderState state = new();
     readonly List<List<TimeRecord>> pendingLoads = [];
-    int loadVersion;
+    int operationFailureVersion;
 
     /// <summary>取得した順序に、新たに開始した記録を追加した一覧を取得します。</summary>
     public IReadOnlyList<TimeRecord> Records => state.Records;
@@ -70,7 +70,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     /// <returns>読み込みと画面状態の更新の完了。</returns>
     public async Task LoadAsync()
     {
-        var version = loadVersion;
+        var versionAtLoadStart = operationFailureVersion;
         var isRecovery = IsStateUnconfirmed;
         if (isRecovery)
         {
@@ -82,7 +82,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         try
         {
             var loadedRecords = await service.GetTimeRecordsAsync();
-            if (version != loadVersion) return;
+            if (versionAtLoadStart != operationFailureVersion) return;
             state.ApplyLoadedRecords(loadedRecords, updatesDuringLoad);
             IsStateUnconfirmed = false;
         }
@@ -96,6 +96,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     /// <summary>操作の成否を一覧で確認し、再取得できなければ未確認状態として操作を止めます。</summary>
     async Task ReloadAfterOperationFailureAsync()
     {
+        operationFailureVersion++;
         try
         {
             await LoadAsync();
@@ -137,7 +138,6 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         }
         catch
         {
-            loadVersion++;
             await ReloadAfterOperationFailureAsync();
             throw;
         }

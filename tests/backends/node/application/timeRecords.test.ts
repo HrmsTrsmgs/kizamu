@@ -16,7 +16,8 @@ function createState(): TimeRecordState {
     find: (id) => records.find((record) => record.id === id),
     replace: (record) => {
       const index = records.findIndex((existing) => existing.id === record.id)
-      if (index !== -1) records[index] = record
+      if (index === -1) throw new TimeRecordNotFoundError()
+      records[index] = record
     },
     all: () => records,
   }
@@ -75,9 +76,7 @@ describe.each([
   })
 
   test('先に保存した記録を終了すると、その識別子と開始時刻と今回の終了時刻が返されます', () => {
-    const 終了結果 = { ended: tested.end(最初の記録.id) }
-
-    終了結果.should.toStrictEqual({ ended: new TimeRecord(最初の記録.id, 開始時刻, requestedAt) })
+    tested.end(最初の記録.id).should.toStrictEqual(new TimeRecord(最初の記録.id, 開始時刻, requestedAt))
   })
 
   test('先に保存した記録を終了すると、一覧ではその記録だけに今回の終了時刻が反映されます', () => {

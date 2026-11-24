@@ -8,8 +8,7 @@ test('GET /api/health は HTTP 200 と status が ok の JSON を返します', 
 
     response.statusCode.should.equal(200)
     response.headers.should.have.property('content-type').that.include('application/json')
-    const content = { body: response.json() }
-    content.should.have.property('body').that.deep.equal({ status: 'ok' })
+    response.json<{ status: string }>().should.deep.equal({ status: 'ok' })
   } finally {
     await app.close()
   }

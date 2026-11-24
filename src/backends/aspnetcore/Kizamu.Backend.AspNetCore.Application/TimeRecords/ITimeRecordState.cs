@@ -13,7 +13,7 @@ public interface ITimeRecordState
     TimeRecord? Current { get; }
 
     /// <summary>
-    /// 保持しているすべての作業記録を取得します。
+    /// 保存順の一覧を取得します。取得後の追加も、この一覧の件数とインデクサーに反映されます。
     /// </summary>
     IReadOnlyList<TimeRecord> All { get; }
 

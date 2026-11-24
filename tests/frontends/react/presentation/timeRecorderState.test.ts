@@ -4,6 +4,7 @@ import { beforeEach, describe, it } from 'vitest'
 import {
   initialTimeRecorderState,
   timeRecorderReducer,
+  type TimeRecorderAction,
   type TimeRecorderState,
 } from '../../../../src/frontends/react/src/presentation/timeRecorderState'
 import { presentedRecord, timestamp } from '../test/timeRecords'
@@ -191,12 +192,14 @@ describe('timeRecorderReducer', () => {
     const 別表記の開始時刻 = timestamp('2026-08-01T18:00:00.0000000+09:00')
     const 最後の更新 = presentedRecord(記録ID, 別表記の開始時刻, 終了時刻)
 
+    const 一覧取得 = {
+      type: 'recordsLoaded',
+      records: [記録, 変更しない記録, 記録],
+      updatedRecords: [記録, 最後の更新],
+    } satisfies TimeRecorderAction
+
     it('一覧の各位置を保ち同じIDの記録だけを最後に受け取った記録で置き換えます', () => {
-      const state = timeRecorderReducer(initialTimeRecorderState, {
-        type: 'recordsLoaded',
-        records: [記録, 変更しない記録, 記録],
-        updatedRecords: [記録, 最後の更新],
-      })
+      const state = timeRecorderReducer(initialTimeRecorderState, 一覧取得)
 
       state.records.should.toStrictEqual([最後の更新, 変更しない記録, 最後の更新])
       state.records[0].should.equal(最後の更新)
@@ -205,11 +208,7 @@ describe('timeRecorderReducer', () => {
     })
 
     it('置き換えた記録の開始時刻は最後の更新のISO表記を保持します', () => {
-      const state = timeRecorderReducer(initialTimeRecorderState, {
-        type: 'recordsLoaded',
-        records: [記録, 変更しない記録, 記録],
-        updatedRecords: [記録, 最後の更新],
-      })
+      const state = timeRecorderReducer(initialTimeRecorderState, 一覧取得)
 
       state.records[0].isoText.startedAt.should.equal(別表記の開始時刻.isoText)
     })

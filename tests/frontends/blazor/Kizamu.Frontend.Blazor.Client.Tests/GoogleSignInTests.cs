@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Json;
 using AwesomeAssertions;
 using Bunit;
 using Kizamu.Domain;
@@ -13,28 +15,27 @@ public sealed class GoogleSignInTests : IDisposable
 {
     readonly BunitContext context = new();
     readonly StubGoogleSignIn google = new();
-    readonly IRenderedComponent<Client.App> tested;
-    string? 記録通信に渡されたトークン;
+    readonly TestHttpMessageHandler handler;
+    readonly HttpClient client;
+    string? 一覧要求の認証情報;
 
     public GoogleSignInTests()
     {
-        var 記録 = new TimeRecord(Guid.Parse("019cde5b-4c00-7000-8000-000000000001"), DateTimeOffset.Parse("2026-08-01T09:00:00Z"), null);
+        handler = new() { Respond = 一覧要求の認証情報を記録して空の一覧を返す };
+        client = new(handler) { BaseAddress = new("http://localhost/") };
+        context.Services.AddSingleton(client);
         context.Services.AddSingleton<Client.IGoogleSignIn>(google);
         context.Services.AddSingleton(new HealthStatusViewModel(new StubHealthService()));
         context.Services.AddSingleton(new ProjectTabsViewModel());
         context.Services.AddSingleton(TimeProvider.System);
-        tested = context.Render<Client.App>(parameters => parameters.Add(it => it.CreateTimeRecords, token =>
-        {
-            記録通信に渡されたトークン = token;
-            return new StubTimeRecordService(記録, 記録);
-        }));
-        google.OnCredential.Should().NotBeNull();
     }
 
     [Fact]
     public async Task Googleのログイン結果を受け取ると記録画面を表示します()
     {
-        await tested.InvokeAsync(() => google.OnCredential?.Invoke("google-id-token"));
+        var tested = context.Render<Client.App>();
+
+        await tested.InvokeAsync(() => google.SignIn("google-id-token"));
 
         tested.WaitForAssertion(() =>
         {
@@ -46,22 +47,80 @@ public sealed class GoogleSignInTests : IDisposable
     }
 
     [Fact]
-    public async Task Googleから受け取ったIDトークンを記録の通信サービスに渡します()
+    public async Task Googleの認証コールバックで受け取ったIDトークンを記録サービスの生成処理に渡します()
     {
-        await tested.InvokeAsync(() => google.OnCredential?.Invoke("google-id-token"));
+        string? 記録通信に渡されたトークン = null;
+        var tested = 記録サービスの生成を差し替えて画面を表示する(token => 記録通信に渡されたトークン = token);
+
+        await tested.InvokeAsync(() => google.SignIn("google-id-token"));
 
         記録通信に渡されたトークン.Should().Be("google-id-token");
     }
 
-    public void Dispose() => context.Dispose();
+    [Fact]
+    public async Task Google認証後の初回一覧取得では受け取ったIDトークンをBearer認証で送ります()
+    {
+        var tested = context.Render<Client.App>();
+
+        await tested.InvokeAsync(() => google.SignIn("google-id-token"));
+
+        tested.WaitForAssertion(() =>
+        {
+            handler.Requests.Should().Equal((HttpMethod.Get, "/api/time-records"));
+            一覧要求の認証情報.Should().Be("Bearer google-id-token");
+        });
+    }
+
+    [Fact]
+    public async Task ログアウトするとGoogleのログインボタンを再描画します()
+    {
+        var tested = context.Render<Client.App>();
+        await tested.InvokeAsync(() => google.SignIn("google-id-token"));
+        google.RenderCount.Should().Be(1);
+
+        tested.FindAll("button").Single(button => button.TextContent == "ログアウト").Click();
+
+        tested.WaitForAssertion(() => google.RenderCount.Should().Be(2));
+    }
+
+    IRenderedComponent<Client.App> 記録サービスの生成を差し替えて画面を表示する(Action<string> トークンを記録する)
+    {
+        var 記録 = new TimeRecord(Guid.Empty, DateTimeOffset.UnixEpoch, null);
+        return context.Render<Client.App>(parameters => parameters.Add(it => it.CreateTimeRecords, token =>
+        {
+            トークンを記録する(token);
+            return new StubTimeRecordService(記録, 記録);
+        }));
+    }
+
+    Task<HttpResponseMessage> 一覧要求の認証情報を記録して空の一覧を返す(HttpRequestMessage request)
+    {
+        一覧要求の認証情報 = request.Headers.Authorization?.ToString();
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(Array.Empty<object>()) });
+    }
+
+    public void Dispose()
+    {
+        context.Dispose();
+        client.Dispose();
+    }
 
     sealed class StubGoogleSignIn : Client.IGoogleSignIn
     {
-        public Action<string>? OnCredential { get; private set; }
+        Action<string>? onCredential;
+
+        public int RenderCount { get; private set; }
+
+        public void SignIn(string token)
+        {
+            onCredential.Should().NotBeNull();
+            onCredential(token);
+        }
 
         public Task RenderButtonAsync(ElementReference container, Action<string> onCredential)
         {
-            OnCredential = onCredential;
+            RenderCount++;
+            this.onCredential = onCredential;
             return Task.CompletedTask;
         }
     }

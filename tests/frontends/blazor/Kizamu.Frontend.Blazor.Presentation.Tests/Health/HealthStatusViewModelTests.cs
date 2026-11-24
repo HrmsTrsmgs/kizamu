@@ -24,7 +24,7 @@ public sealed class HealthStatusViewModelTests
     }
 
     [Fact]
-    public async Task サーバーの接続確認の応答を待つ間は接続状態が未確定です()
+    public async Task サーバー接続を初めて確認すると応答が届くまで接続状態は未確定です()
     {
         var 応答 = new TaskCompletionSource<bool>();
         service.Response = 応答.Task;

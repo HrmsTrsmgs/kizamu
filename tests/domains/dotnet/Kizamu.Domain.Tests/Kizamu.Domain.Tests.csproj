@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\..\TestSupport\AssemblyReferences.cs" Link="TestSupport\AssemblyReferences.cs" />
     <ProjectReference Include="..\..\..\..\src\domains\dotnet\Kizamu.Domain\Kizamu.Domain.csproj" />
   </ItemGroup>
 

@@ -9,8 +9,7 @@ namespace Kizamu.Frontend.Blazor.TestSupport;
 /// <param name="endedRecord">終了操作で返す記録。</param>
 sealed class StubTimeRecordService(TimeRecord startedRecord, TimeRecord endedRecord) : ITimeRecordService
 {
-    TaskCompletionSource<ImmutableArray<TimeRecord>>? listResponse;
-
+    public Task<ImmutableArray<TimeRecord>>? ListResponse { get; set; }
     public ImmutableArray<TimeRecord> Records { get; set; } = [];
     public TimeRecord StartedRecord { get; set; } = startedRecord;
     public Task<TimeRecord>? StartResponse { get; set; }
@@ -23,8 +22,9 @@ sealed class StubTimeRecordService(TimeRecord startedRecord, TimeRecord endedRec
     /// <summary>一覧の応答を、呼び出し側が完了させるまで保留します。</summary>
     public TaskCompletionSource<ImmutableArray<TimeRecord>> DelayListResponse()
     {
-        listResponse = new();
-        return listResponse;
+        var response = new TaskCompletionSource<ImmutableArray<TimeRecord>>();
+        ListResponse = response.Task;
+        return response;
     }
 
     /// <summary>開始の応答を、呼び出し側が成功または失敗を返すまで保留します。</summary>
@@ -46,7 +46,7 @@ sealed class StubTimeRecordService(TimeRecord startedRecord, TimeRecord endedRec
     public Task<ImmutableArray<TimeRecord>> GetTimeRecordsAsync()
     {
         ListCount++;
-        return listResponse?.Task ?? Task.FromResult(Records);
+        return ListResponse ?? Task.FromResult(Records);
     }
 
     public Task<TimeRecord> StartTimeRecordAsync()

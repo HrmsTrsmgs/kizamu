@@ -30,8 +30,7 @@ export function timeRecorderReducer(
     case 'sessionEnded':
       return { ...initialTimeRecorderState, selectedProject: state.selectedProject }
     case 'projectSelected': {
-      const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
-      projectTimeRecordIds.set(state.selectedProject, state.timeRecordId)
+      const projectTimeRecordIds = new Map(state.projectTimeRecordIds).set(state.selectedProject, state.timeRecordId)
       return {
         ...state,
         selectedProject: action.project,
@@ -39,51 +38,50 @@ export function timeRecorderReducer(
         timeRecordId: projectTimeRecordIds.get(action.project) ?? null,
       }
     }
-    case 'recordsLoaded': {
-      const updates = action.updatedRecords ?? []
-      const records = mergeLoadedRecords(action.records, updates)
-      const displayedRecord = records.find(({ record }) => record.id === state.displayedRecord?.record.id) ?? state.displayedRecord
-      const timeRecordId = getEndTargetAfterLoad(state, records, updates)
-      const nextState = { ...state, records, timeRecordId, displayedRecord }
-      if (!state.projectTimeRecordIds) return nextState
-
-      const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
-      for (const [project, id] of projectTimeRecordIds) {
-        if (id !== null && !records.some(({ record }) => record.id === id && record.endedAt === null)) {
-          projectTimeRecordIds.set(project, null)
-        }
-      }
-      return { ...nextState, projectTimeRecordIds }
-    }
+    case 'recordsLoaded':
+      return applyLoadedRecords(state, action.records, action.updatedRecords ?? [])
     case 'recordStarted':
-      if (action.project !== state.selectedProject) {
-        const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
-        projectTimeRecordIds.set(action.project, action.record.record.id)
-        return { ...state, records: [...state.records, action.record], projectTimeRecordIds }
-      }
       return {
         ...state,
+        ...updateEndTarget(state, action.project, action.record.record.id),
         records: [...state.records, action.record],
-        timeRecordId: action.record.record.id,
-        displayedRecord: action.record,
+        displayedRecord: action.project === state.selectedProject ? action.record : state.displayedRecord,
       }
-    case 'recordEnded': {
-      const records = state.records.map(record =>
-        record.record.id === action.record.record.id ? action.record : record)
-      const displayedRecord = state.displayedRecord === null ? null : action.record
-      if (action.project !== state.selectedProject) {
-        const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
-        projectTimeRecordIds.set(action.project, null)
-        return { ...state, records, projectTimeRecordIds, displayedRecord }
-      }
+    case 'recordEnded':
       return {
         ...state,
-        records,
-        timeRecordId: null,
-        displayedRecord,
+        ...updateEndTarget(state, action.project, null),
+        records: state.records.map(record => record.record.id === action.record.record.id ? action.record : record),
+        displayedRecord: state.displayedRecord === null ? null : action.record,
       }
+  }
+}
+
+// 操作の応答は、完了時に表示されているタブにかかわらず、要求元の終了対象を更新します。
+function updateEndTarget(state: TimeRecorderState, project: Project | undefined, id: string | null) {
+  return project === state.selectedProject
+    ? { timeRecordId: id }
+    : { projectTimeRecordIds: new Map(state.projectTimeRecordIds).set(project, id) }
+}
+
+function applyLoadedRecords(
+  state: TimeRecorderState,
+  loadedRecords: readonly TimeRecordPresentation[],
+  updates: readonly TimeRecordPresentation[],
+): TimeRecorderState {
+  const records = mergeLoadedRecords(loadedRecords, updates)
+  const displayedRecord = records.find(({ record }) => record.id === state.displayedRecord?.record.id) ?? state.displayedRecord
+  const timeRecordId = getEndTargetAfterLoad(state, records, updates)
+  const nextState = { ...state, records, timeRecordId, displayedRecord }
+  if (!state.projectTimeRecordIds) return nextState
+
+  const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
+  for (const [project, id] of projectTimeRecordIds) {
+    if (id !== null && !records.some(({ record }) => record.id === id && record.endedAt === null)) {
+      projectTimeRecordIds.set(project, null)
     }
   }
+  return { ...nextState, projectTimeRecordIds }
 }
 
 function mergeLoadedRecords(

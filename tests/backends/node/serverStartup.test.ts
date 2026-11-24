@@ -11,7 +11,10 @@ test('Node版の業務APIを空きポートで起動すると、出力されたU
   })
 }, 10000)
 
-test('起動URLが分割して出力されると、改行を受信してから完全なURLを返します', async () => {
+test.each([
+  ['最初の行に', ''],
+  ['起動メッセージの次の行に', 'Starting server\n'],
+])('%s起動URLが分割して出力されても、改行を受信してから完全なURLを返します', async (_, 先行出力) => {
   const server = createServerWithWritableOutput()
   let completed = false
   const listeningUrl = waitForListeningUrl(server).then((url) => {
@@ -19,7 +22,7 @@ test('起動URLが分割して出力されると、改行を受信してから�
     return url
   })
 
-  server.stdout.write('Starting server\nhttp://localhost:52')
+  server.stdout.write(`${先行出力}http://localhost:52`)
   await new Promise<void>((resolve) => setImmediate(resolve))
   const completedBeforeNewline = completed
   server.stdout.write('13\n')
@@ -73,7 +76,7 @@ async function waitForListeningUrl(server: ChildProcessByStdio<null, Readable, R
       })
       server.stdout.on('data', (chunk: string) => {
         standardOutput += chunk
-        const completeOutput = standardOutput.slice(0, standardOutput.lastIndexOf('\n'))
+        const completeOutput = standardOutput.slice(0, standardOutput.lastIndexOf('\n') + 1)
         const url = completeOutput.match(/http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):[1-9]\d*/)?.[0]
         if (url) resolve(url)
       })

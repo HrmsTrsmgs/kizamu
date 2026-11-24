@@ -9,13 +9,17 @@ public sealed class ProjectTabsViewModelTests
     readonly ProjectTabsViewModel tested = new();
 
     [Fact]
-    public void プロジェクトを選ぶとそのプロジェクトがタブの選択対象になります()
+    public void プロジェクトを選ぶとそのタブが選択され未指定タブを選ぶと選択対象は未指定に戻ります()
     {
         var プロジェクト = new Project("プロジェクトA");
 
         tested.SelectProject(プロジェクト);
 
         tested.SelectedProject.Should().BeSameAs(プロジェクト);
+
+        tested.SelectProject(null);
+
+        tested.SelectedProject.Should().BeNull();
     }
 
     [Fact]

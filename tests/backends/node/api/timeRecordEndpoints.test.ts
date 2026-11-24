@@ -1,5 +1,5 @@
 import { GoogleIdTokenVerifier } from '../../../../src/backends/node/infrastructure/googleIdTokenVerifier.js'
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, test, vi, type Mock } from 'vitest'
 import Fastify from 'fastify'
 import { createApp } from '../../../../src/backends/node/app.js'
 import { registerTimeRecordEndpoints } from '../../../../src/backends/node/api/timeRecordEndpoints.js'
@@ -29,11 +29,13 @@ function authorization(user = 'google-user', expiresInSeconds = 3600) {
   })
 }
 let app: ReturnType<typeof createApp>
+let fetchPublicKeys: Mock<typeof fetch>
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(開始時刻)
-  app = createTestApp()
+  fetchPublicKeys = vi.fn(publicKeyFetch)
+  app = createTestApp(fetchPublicKeys)
 })
 
 afterEach(async () => {
@@ -41,10 +43,13 @@ afterEach(async () => {
   vi.useRealTimers()
 })
 
-test.each(['GET', 'POST'] as const)('記録APIにBasic認証で%s要求を送ると401が返されます', async (method) => {
+test.each([
+  { method: 'GET', url: '/api/time-records' },
+  { method: 'POST', url: '/api/time-records/start' },
+] as const)('記録APIにBasic認証で$method要求を送ると401が返されます', async ({ method, url }) => {
   const response = await app.inject({
     method,
-    url: method === 'GET' ? '/api/time-records' : '/api/time-records/start',
+    url,
     headers: { authorization: 'Basic token', 'sec-fetch-site': 'same-origin' },
   })
 
@@ -61,23 +66,17 @@ test('有効なBearer認証の方式名が小文字でも記録一覧を取得�
   response.statusCode.should.equal(200)
 })
 
-
 test('公開鍵の配信元が401を返すと記録一覧の取得要求には500が返されます', async () => {
-  const fetchPublicKeys = vi.fn(async () => new Response(null, { status: 401 }))
-  const endpointApp = createTestApp(fetchPublicKeys)
+  fetchPublicKeys.mockResolvedValueOnce(new Response(null, { status: 401 }))
 
-  try {
-    const response = await endpointApp.inject({
-      method: 'GET',
-      url: '/api/time-records',
-      headers: { authorization: 'Bearer placeholder' },
-    })
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/time-records',
+    headers: { authorization: 'Bearer placeholder' },
+  })
 
-    expect(fetchPublicKeys).toHaveBeenCalled()
-    response.statusCode.should.equal(500)
-  } finally {
-    await endpointApp.close()
-  }
+  fetchPublicKeys.should.toHaveBeenCalled()
+  response.statusCode.should.equal(500)
 })
 
 test('認証情報のない記録一覧の取得要求には401が返されます', async () => {
@@ -86,7 +85,7 @@ test('認証情報のない記録一覧の取得要求には401が返されま�
   response.statusCode.should.equal(401)
 })
 
-test('認証情報のない記録開始要求には401が返り、一覧は空のままです', async () => {
+test('未認証で開始を要求すると401が返り、認証済み利用者の一覧は空のままです', async () => {
   const response = await postWithoutAuthorization(app, '/api/time-records/start')
 
   response.statusCode.should.equal(401)
@@ -102,7 +101,7 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
     vi.setSystemTime(終了時刻)
   })
 
-  test('認証情報のない記録終了要求には401が返り、一覧の記録は開始時のままです', async () => {
+  test('未認証で終了を要求すると401が返り、所有者の一覧には開始時の記録が残ります', async () => {
     const response = await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
 
     response.statusCode.should.equal(401)
@@ -136,22 +135,18 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
   test('二件の記録を開始すると異なる識別子が発行され、一覧には開始順で両方が返されます', async () => {
     const secondRecord = await prepareStartedRecord(app)
 
-    const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
+    const records = await readTimeRecords(app)
 
     secondRecord.id.should.not.equal(startedRecord.id)
-    response.statusCode.should.equal(200)
-    const content = { body: response.json() }
-    content.should.have.property('body').that.deep.equal([startedRecord, secondRecord])
+    records.should.deep.equal([startedRecord, secondRecord])
   })
 
   test('記録を終了した後に一覧を取得するとその記録の終了時刻が反映されます', async () => {
     await prepareEndedRecord(app, startedRecord.id)
 
-    const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
+    const records = await readTimeRecords(app)
 
-    response.statusCode.should.equal(200)
-    const content = { body: response.json() }
-    content.should.have.property('body').that.deep.equal([{ ...startedRecord, endedAt: 終了時刻.toISOString() }])
+    records.should.deep.equal([{ ...startedRecord, endedAt: 終了時刻.toISOString() }])
   })
 
   test.each(同一オリジンを示さないヘッダー値)(
@@ -224,23 +219,18 @@ test('記録を開始すると、空でないGUIDとサーバーの現在時刻�
 })
 
 test('まだ記録を開始していない利用者が一覧を取得すると空の配列が返されます', async () => {
-  const response = await app.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
+  const records = await readTimeRecords(app)
 
-  response.statusCode.should.equal(200)
-  const content = { body: response.json() }
-  content.should.have.property('body').that.deep.equal([])
+  records.should.deep.equal([])
 })
 
 test('同じ利用者でも、別に起動したアプリの一覧には元のアプリで開始した記録は含まれません', async () => {
-  const startResponse = await postFromSameOrigin(app, '/api/time-records/start')
-  startResponse.statusCode.should.equal(201)
+  await prepareStartedRecord(app)
   const independentApp = createTestApp()
   try {
-    const response = await independentApp.inject({ method: 'GET', url: '/api/time-records', headers: { authorization: authorization() } })
+    const records = await readTimeRecords(independentApp)
 
-    response.statusCode.should.equal(200)
-    const content = { body: response.json() }
-    content.should.have.property('body').that.deep.equal([])
+    records.should.deep.equal([])
   } finally {
     await independentApp.close()
   }

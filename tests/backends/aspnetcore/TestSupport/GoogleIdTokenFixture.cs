@@ -1,3 +1,4 @@
+using System.Buffers.Text;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -19,12 +20,10 @@ public abstract class GoogleIdTokenFixture(string keyId) : IDisposable
         var header = type is null
             ? JsonSerializer.SerializeToUtf8Bytes(new { alg = "RS256", kid = keyId })
             : JsonSerializer.SerializeToUtf8Bytes(new { alg = "RS256", kid = keyId, typ = type });
-        var content = $"{Encode(header)}.{Encode(JsonSerializer.SerializeToUtf8Bytes(claims))}";
+        var content = $"{Base64Url.EncodeToString(header)}.{Base64Url.EncodeToString(JsonSerializer.SerializeToUtf8Bytes(claims))}";
         var signature = (signingKey ?? key).SignData(Encoding.ASCII.GetBytes(content), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        return $"{content}.{Encode(signature)}";
+        return $"{content}.{Base64Url.EncodeToString(signature)}";
     }
-
-    static string Encode(ReadOnlySpan<byte> bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     public void Dispose()
     {
@@ -42,7 +41,7 @@ public abstract class GoogleIdTokenFixture(string keyId) : IDisposable
             {
                 keys = new[]
                 {
-                    new { kty = "RSA", alg = "RS256", use = "sig", kid = keyId, n = Encode(parameters.Modulus), e = Encode(parameters.Exponent) }
+                    new { kty = "RSA", alg = "RS256", use = "sig", kid = keyId, n = Base64Url.EncodeToString(parameters.Modulus), e = Base64Url.EncodeToString(parameters.Exponent) }
                 }
             });
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)

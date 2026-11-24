@@ -27,21 +27,23 @@ public sealed partial class TimeRecordApi(HttpClient client, string? token = nul
 
     /// <summary>プロジェクト未指定の記録を開始します。</summary>
     /// <returns>サーバーが確定した記録と開始時刻。</returns>
-    public Task<TimeRecord> StartTimeRecordAsync() => PostTimeRecordAsync("api/time-records/start");
+    public async Task<TimeRecord> StartTimeRecordAsync() =>
+        TimeRecordResponseMapper.ToDomain(await PostTimeRecordAsync("api/time-records/start"));
 
     /// <summary>指定した記録を終了します。</summary>
     /// <param name="id">終了する記録の識別子。</param>
     /// <returns>サーバーが確定した終了時刻を含む記録。</returns>
     /// <exception cref="InvalidDataException">成功応答が指定した記録と一致しないか、終了時刻を含まない場合。</exception>
-    public Task<TimeRecord> EndTimeRecordAsync(Guid id) => PostTimeRecordAsync($"api/time-records/{id}/end", id);
-
-    async Task<TimeRecord> PostTimeRecordAsync(string endpoint, Guid? endingRecordId = null)
+    public async Task<TimeRecord> EndTimeRecordAsync(Guid id)
     {
-        var record = await RequestJsonAsync(HttpMethod.Post, endpoint, TimeRecordJsonContext.Default.TimeRecordResponse);
-        if (endingRecordId is not null && (record.Id != endingRecordId || record.EndedAt is null))
+        var record = await PostTimeRecordAsync($"api/time-records/{id}/end");
+        if (record.Id != id || record.EndedAt is null)
             throw new InvalidDataException("終了応答に指定した記録の終了時刻が含まれていません。");
         return TimeRecordResponseMapper.ToDomain(record);
     }
+
+    Task<TimeRecordResponse> PostTimeRecordAsync(string endpoint) =>
+        RequestJsonAsync(HttpMethod.Post, endpoint, TimeRecordJsonContext.Default.TimeRecordResponse);
 
     async Task<T?> RequestJsonAsync<T>(HttpMethod method, string endpoint, JsonTypeInfo<T> jsonTypeInfo)
     {

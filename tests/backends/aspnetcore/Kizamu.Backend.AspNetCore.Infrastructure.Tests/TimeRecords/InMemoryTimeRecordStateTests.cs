@@ -14,10 +14,12 @@ public sealed class InMemoryTimeRecordStateTests
     readonly TimeRecord 次の記録 = TimeRecord.Start(次の開始時刻);
 
     [Fact]
-    public void 作業記録を一件保存すると現在の記録として同じインスタンスを取得できます()
+    public void 作業記録を追加するたびに最後に追加した記録と同じインスタンスを取得できます()
     {
-        tested.Add(最初の記録);
+        tested.Add(次の記録);
+        tested.Current.Should().BeSameAs(次の記録);
 
+        tested.Add(最初の記録);
         tested.Current.Should().BeSameAs(最初の記録);
     }
 
@@ -47,10 +49,10 @@ public sealed class InMemoryTimeRecordStateTests
     [Fact]
     public void 作業記録を二件追加すると一覧には両方の記録が追加順に並びます()
     {
-        tested.Add(最初の記録);
         tested.Add(次の記録);
+        tested.Add(最初の記録);
 
-        tested.All.Should().Equal(最初の記録, 次の記録);
+        tested.All.Should().Equal(次の記録, 最初の記録);
     }
 
     [Fact]

@@ -58,9 +58,6 @@ public sealed class InMemoryTimeRecordState : ITimeRecordState
             timeRecords.Add(timeRecord);
     }
 
-    /// <summary>
-    /// 追加したすべての作業記録を取得します。
-    /// </summary>
-    /// <returns>追加した作業記録。</returns>
+    /// <inheritdoc />
     public IReadOnlyList<TimeRecord> All => timeRecords;
 }

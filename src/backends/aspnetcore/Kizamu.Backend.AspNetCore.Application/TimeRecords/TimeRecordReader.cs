@@ -9,6 +9,7 @@ public sealed class TimeRecordReader(ITimeRecordState timeRecordState)
     /// <summary>
     /// 保存順を保ち、作業記録の識別子と開始・終了時刻を取得します。
     /// </summary>
+    /// <remarks>列挙を始めるたびに一覧を取得します。列挙中に追加された記録は、次の列挙に反映されます。</remarks>
     /// <returns>保存されている作業記録の読取結果。記録中の終了時刻はnullです。</returns>
     public IEnumerable<GetTimeRecordResult> Execute()
     {

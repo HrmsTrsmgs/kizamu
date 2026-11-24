@@ -125,22 +125,14 @@ describe('timeRecordService', () => {
     await tested.endTimeRecord(記録ID).should.rejects.toThrow()
   })
 
-  it('一覧取得の応答がHTTPエラーなら、本文に記録の一覧があっても呼び出し元にエラーを返します', async () => {
-    fetchMock.mockImplementation(async () => Response.json([記録中の応答], { status: 500 }))
+  it.each([
+    { 操作: '一覧取得', 要求: () => tested.getTimeRecords(), 有効な本文: [記録中の応答] },
+    { 操作: '開始', 要求: () => tested.startTimeRecord(), 有効な本文: 記録中の応答 },
+    { 操作: '終了', 要求: () => tested.endTimeRecord(記録ID), 有効な本文: 終了済みの応答 },
+  ])('$操作の応答がHTTP 500なら、本文が有効なJSONでも呼び出し元にエラーを返します', async ({ 要求, 有効な本文 }) => {
+    fetchMock.mockImplementation(async () => Response.json(有効な本文, { status: 500 }))
 
-    await tested.getTimeRecords().should.rejects.toThrow()
-  })
-
-  it('開始応答がHTTPエラーなら、本文に記録中の記録があっても呼び出し元にエラーを返します', async () => {
-    fetchMock.mockImplementation(async () => Response.json(記録中の応答, { status: 500 }))
-
-    await tested.startTimeRecord().should.rejects.toThrow()
-  })
-
-  it('終了応答がHTTPエラーなら、本文に終了済みの記録があっても呼び出し元にエラーを返します', async () => {
-    fetchMock.mockImplementation(async () => Response.json(終了済みの応答, { status: 500 }))
-
-    await tested.endTimeRecord(記録ID).should.rejects.toThrow()
+    await 要求().should.rejects.toThrow()
   })
 
   describe('時差と小数秒を含む記録開始応答', () => {
