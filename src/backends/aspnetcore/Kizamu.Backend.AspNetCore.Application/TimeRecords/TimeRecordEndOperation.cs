@@ -22,7 +22,7 @@ public sealed class TimeRecordEndOperation(
 
         var endedTimeRecord = timeRecord.End(endedAt);
         timeRecordState.Update(endedTimeRecord);
-        return new(endedTimeRecord.Id, endedTimeRecord.StartedAt, endedAt);
+        return TimeRecordResultMapper.ToEndResult(endedTimeRecord, endedAt);
     }
 }
 

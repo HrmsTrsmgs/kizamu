@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Riok.Mapperly" Version="4.3.1" ExcludeAssets="runtime" PrivateAssets="all" />
     <ProjectReference Include="..\..\..\domains\dotnet\Kizamu.Domain\Kizamu.Domain.csproj" />
   </ItemGroup>
 

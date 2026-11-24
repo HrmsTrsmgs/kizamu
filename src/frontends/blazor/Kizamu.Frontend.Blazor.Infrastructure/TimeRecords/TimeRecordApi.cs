@@ -21,7 +21,7 @@ public sealed partial class TimeRecordApi(HttpClient client, string? token = nul
             HttpMethod.Get, "api/time-records", TimeRecordJsonContext.Default.ImmutableArrayTimeRecordResponse);
         var records =
             from record in responseRecords
-            select record.ToDomain();
+            select TimeRecordResponseMapper.ToDomain(record);
         return [.. records];
     }
 
@@ -40,7 +40,7 @@ public sealed partial class TimeRecordApi(HttpClient client, string? token = nul
         var record = await RequestJsonAsync(HttpMethod.Post, endpoint, TimeRecordJsonContext.Default.TimeRecordResponse);
         if (endingRecordId is not null && (record.Id != endingRecordId || record.EndedAt is null))
             throw new InvalidDataException("終了応答に指定した記録の終了時刻が含まれていません。");
-        return record.ToDomain();
+        return TimeRecordResponseMapper.ToDomain(record);
     }
 
     async Task<T?> RequestJsonAsync<T>(HttpMethod method, string endpoint, JsonTypeInfo<T> jsonTypeInfo)

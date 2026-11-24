@@ -180,5 +180,6 @@
 
 * 2026-11-24に導入を決定し、ASP.NET Core APIで開始・終了・一覧のユースケース結果をHTTP応答用のDTOへ変換する処理に適用した。
 * DTOのコンストラクターに同じ項目の転記を書く案と比較した。同名項目の対応付けをビルド時に生成し、対応が見つからない項目をビルド時の診断で追えるようにする。開始応答の終了時刻は `null` を明示する。 [変換の宣言](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Endpoints/TimeRecords/TimeRecordResponseMapper.cs)
-* `Riok.Mapperly` 4.3.1（Apache-2.0）をAPIプロジェクトのビルド時依存にする。Release公開物でMapperlyの実行時依存がゼロであることを確認した。 [パッケージ](https://www.nuget.org/packages/Riok.Mapperly/4.3.1) · [公式の導入手順](https://mapperly.riok.app/docs/getting-started/installation/)
+* `Riok.Mapperly` 4.3.1（Apache-2.0）をASP.NET CoreのAPI・ApplicationとBlazorのInfrastructureのビルド時依存にする。両アプリのRelease公開物でMapperlyの実行時依存がゼロであることを確認した。 [パッケージ](https://www.nuget.org/packages/Riok.Mapperly/4.3.1) · [公式の導入手順](https://mapperly.riok.app/docs/getting-started/installation/)
 * 応答の値と開始応答の `endedAt: null` は既存のHTTPテストで確認した。 [作業記録APIのテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)
+* コンストラクター呼び出しを毎回書く費用と、共通項目の変更時に見直す箇所を減らすため、同じ方針をApplicationの開始・終了・一覧の結果と、BlazorでのHTTP応答からの記録復元にも適用した。開始結果は識別子と開始時刻を持ち、終了結果は操作で確定した終了時刻を受け取る。 [Applicationの変換](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/TimeRecordResultMapper.cs) · [Blazorの変換](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordResponseMapper.cs)

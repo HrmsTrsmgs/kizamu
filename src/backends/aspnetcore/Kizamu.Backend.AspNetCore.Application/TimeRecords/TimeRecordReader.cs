@@ -13,7 +13,7 @@ public sealed class TimeRecordReader(ITimeRecordState timeRecordState)
     public IEnumerable<GetTimeRecordResult> Execute()
     {
         foreach (var record in timeRecordState.CopyAll())
-            yield return new GetTimeRecordResult(record.Id, record.StartedAt, record.EndedAt);
+            yield return TimeRecordResultMapper.ToGetResult(record);
     }
 }
 
