@@ -266,7 +266,7 @@ Presentationのコメントは「HTML timeに元のISO表記を使う」とす�
 
 コメントを通信で受けた元表記を保持する説明に直す。画面テストは開始・終了をラベルと入力の表にし、各要素の `datetime` の文法と表す日時点を一回ずつ検査する。UTCミリ秒への切り捨ては既存の文字列期待値のまま残す。通信テストは元の文字列と `Temporal.Instant` の比較、更新テストは元表記と参照同一性を引き続き区別する。 [timeRecordPresentation.ts 3行](../src/frontends/react/src/presentation/timeRecordPresentation.ts#L3) · [TimeRecordTimes.tsx 20行](../src/frontends/react/src/timeRecords/TimeRecordTimes.tsx#L20) · [TimeRecordTimes.test.tsx 16行](../tests/frontends/react/timeRecords/TimeRecordTimes.test.tsx#L16) · [timeRecordService.test.ts 124行](../tests/frontends/react/infrastructure/timeRecordService.test.ts#L124) · [timeRecorderState.test.ts 195行](../tests/frontends/react/presentation/timeRecorderState.test.ts#L195)
 
-2026-11-24、基準は `dde3ade`。開始・終了の画面テストはラベル・元のISO表記・期待するHTML文字列を表にし、datetime属性の完全一致と元の日時点との一致を確認する。ミリ秒への切り捨てテストを維持した。既存実装に合わせてPresentationのコメント、README、D003を訂正した。TypeScript全242テスト、ビルド、Lint、差分検査が成功。項目28の整理を反映した。次の着手点は項目29。 [日時テスト](../tests/frontends/react/timeRecords/TimeRecordTimes.test.tsx#L16) · [D003](../docs/decisions.md#d003画面の状態はdomainで扱いdtoは通信境界で変換する)
+2026-11-24、基準は `dde3ade`。開始・終了の画面テストはラベル・元のISO表記・期待するHTML文字列を表にし、datetime属性の完全一致と元の日時点との一致を確認する。ミリ秒への切り捨てテストを維持した。既存実装に合わせてPresentationのコメント、README、D003を訂正した。TypeScript全242テスト、ビルド、Lint、差分検査が成功。項目28の整理を反映した。 [日時テスト](../tests/frontends/react/timeRecords/TimeRecordTimes.test.tsx#L16) · [D003](../docs/decisions.md#d003画面の状態はdomainで扱いdtoは通信境界で変換する)
 
 ### 29　ダイアログの配置に効かないCSSを外す
 
@@ -279,6 +279,8 @@ Presentationのコメントは「HTML timeに元のISO表記を使う」とす�
 共有の起動待機はHTTP例外の場合だけ待つ。起動中に204などの応答を受けると、間を空けずに60回問い合わせて正常起動前に失敗と判定し得る。
 
 HTTP 200なら即成功、プロセス終了なら即失敗とし、そのどちらでもなかった試行の後に既存の待機を一度だけ行う。最後の試行後の余分な待ちは省ける。代役で204→200、例外→200、プロセス終了、規定回数まで200なしを確認する。 [Wait-HealthEndpoint.ps1 7行](../scripts/Wait-HealthEndpoint.ps1#L7) · [Check-React.ps1 34行](../scripts/Check-React.ps1#L34) · [Check-Blazor.ps1 1行](../scripts/Check-Blazor.ps1#L1)
+
+2026-11-24、基準は `2ac6616`。204を返す代役で待機なしに再試行する失敗を再現し、待機を未成功の試行の後に移した。HTTP 200、204からの回復、接続例外からの回復、終了済みのプロセス、60回の未成功を `pwsh -NoProfile -File tests/scripts/Wait-HealthEndpoint.Tests.ps1` で検証した。次の着手点は項目31。 [回帰テスト](../tests/scripts/Wait-HealthEndpoint.Tests.ps1)
 
 ### 31　起動失敗時に、Reactの確認スクリプトから原因をたどれるようにする
 
