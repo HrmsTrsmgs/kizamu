@@ -905,22 +905,6 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 一覧の取得中に開始した複数の記録が応答に含まれなくても各記録の最新状態が開始順に残ります()
-    {
-        var (応答, 読み込み) = await 初回一覧の応答を保留して記録を開始する();
-        tested.SelectProject(new("別のプロジェクト"));
-        service.StartedRecord = new(別の記録ID, 開始時刻, null);
-        await tested.StartTimeRecordAsync();
-        tested.SelectProject(null);
-        await tested.EndTimeRecordAsync();
-
-        応答.SetResult([]);
-        await 読み込み;
-
-        tested.Records.Should().Equal(service.EndedRecord, service.StartedRecord);
-    }
-
-    [Fact]
     public async Task Aで記録を開始して未開始のBを選んだ後に空の初回一覧が届いてもAに戻ってその記録だけを終了できます()
     {
         var 応答 = service.DelayListResponse();
@@ -941,18 +925,6 @@ public sealed class TimeRecorderViewModelTests
 
         service.EndedIds.Should().Equal(記録ID);
         tested.Records.Should().Equal(service.EndedRecord);
-    }
-
-    [Fact]
-    public async Task 一覧の取得中に記録を開始すると応答の先頭に別の未終了の記録があっても新しく開始した記録から終了します()
-    {
-        var (応答, 読み込み) = await 初回一覧の応答を保留して記録を開始する();
-        応答.SetResult([new(別の記録ID, 開始時刻, null)]);
-        await 読み込み;
-
-        await tested.EndTimeRecordAsync();
-
-        service.EndedIds.Should().Equal(記録ID);
     }
 
     [Fact]

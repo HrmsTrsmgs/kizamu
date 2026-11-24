@@ -1,6 +1,6 @@
 # ViewとViewModelの部品化 作業一覧
 
-2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜03・08はコミット済み。04は実装・検証済みでレビュー待ち。05〜07・09〜12は未着手。次は05の一覧の合成と終了対象の更新を整理する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
+2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜04・08はコミット済み。05は実装・検証済みでレビュー待ち。06・07・09〜12は未着手。次は06のプロジェクト登録とタブ選択の責務を整理する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
 
 既存の[全コードレビューの項目27](code-review-actions.md#L253)では、Reactの認証済み画面を `App` から抽出し、Blazorの認証後のViewModel生成の重複を減らした。両実装の `TimeRecordTimes` も操作欄と一覧で共用済み。ここでは、各部品が必要とする入力、引き受ける処理、単独で確認できる振る舞いを作業単位にする。
 
@@ -36,11 +36,13 @@ Reactのタブと記録欄は、記録側のReducerが持つ選択を参照す�
 
 BlazorのViewModelとReactのフックが、記録ボタンで実行する開始・終了を選ぶ。操作欄は記録状態、操作可否、通知を描画し、記録操作と手動再取得を呼ぶ。Blazorでは初回取得と手動再取得を別の入口とし、手動操作の失敗はViewModelが通知に変える。 [Blazorの操作](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L63) · [Reactの操作フック](../src/frontends/react/src/presentation/useTimeRecorder.ts#L126)
 
-2026-11-24、基準は `d70d9dd`。既存のViewModel・フックのテストで開始・終了、再取得の可否と失敗通知を、画面テストでボタンと操作の接続を確認した。Blazorソリューションの.NETテスト318件、TypeScriptテスト245件、両ビルド、TypeScriptのLint、変更C#の書式検査、差分検査が成功。.NETビルドは既存のBL0016警告1件。差分はレビュー用に未コミット。
+2026-11-24、基準は `d70d9dd`。既存のViewModel・フックのテストで開始・終了、再取得の可否と失敗通知を、画面テストでボタンと操作の接続を確認した。Blazorソリューションの.NETテスト318件、TypeScriptテスト245件、両ビルド、TypeScriptのLint、変更C#の書式検査、差分検査が成功。.NETビルドは既存のBL0016警告1件。`2368e39` にコミット済み。
 
 ### 05　一覧の合成と終了対象の更新を通信処理から分ける
 
-一覧取得後に、サーバー応答と取得中の操作結果を合成し、各タブの終了対象を更新する。特にBlazorではこの状態更新と通信・復旧を同じViewModelが扱う。合成に必要な一覧、操作結果、既存の割当を明確にし、通信や描画を伴わない状態更新として扱える境界を検討する。Reactの既存Reducerを活かし、遅延応答、終了対象の解除、既存の順序を同じシナリオで確かめる。 [Blazorの一覧取得と合成](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L82) · [Reactの状態更新](../src/frontends/react/src/presentation/timeRecorderState.ts#L39)
+Blazorでは `TimeRecorderState` が、一覧応答と取得中の操作結果の合成、表示中の記録、各タブの終了対象を更新する。ViewModelは通信、応答を採用する条件、失敗時の再取得を扱う。Reactは既存のReducerで状態を更新する。 [Blazorの状態更新](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderState.cs) · [Reactの状態更新](../src/frontends/react/src/presentation/timeRecorderState.ts#L39)
+
+2026-11-24、基準は `2368e39`。Blazorの合成順と取得中に開始した記録の優先を確認する2件を状態の直接テストに移した。Reactと同じく、別タブを表示中に一覧から消えた未指定の記録が終了対象から外れることも直接確認した。ViewModelには遅延応答の接続テストを残した。Blazorソリューションの.NETテスト319件と対象Reactテスト60件、.NETビルド、書式・差分検査が成功。.NETの既存BL0016警告は1件。差分はレビュー用に未コミット。
 
 ### 06　プロジェクトの登録とタブ選択を用途別に渡せるようにする
 

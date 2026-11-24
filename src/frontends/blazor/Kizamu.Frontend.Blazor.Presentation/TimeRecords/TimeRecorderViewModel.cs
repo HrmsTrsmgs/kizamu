@@ -6,36 +6,15 @@ namespace Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 /// <param name="service">確定した作業記録を取得する操作境界。</param>
 public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRecorderViewModel
 {
-    List<TimeRecord> records = [];
+    readonly TimeRecorderState state = new();
     readonly List<List<TimeRecord>> pendingLoads = [];
     int loadVersion;
-    Project? selectedProject;
-    Guid? unspecifiedCurrentId;
-    readonly Dictionary<Project, Guid?> projectCurrentIds = [];
-
-    Guid? CurrentId
-    {
-        get => selectedProject is null ? unspecifiedCurrentId : projectCurrentIds.GetValueOrDefault(selectedProject);
-        set => SetCurrentId(selectedProject, value);
-    }
-
-    void SetCurrentId(Project? project, Guid? id)
-    {
-        if (project is null)
-        {
-            unspecifiedCurrentId = id;
-        }
-        else
-        {
-            projectCurrentIds[project] = id;
-        }
-    }
 
     /// <summary>取得した順序に、新たに開始した記録を追加した一覧を取得します。</summary>
-    public IReadOnlyList<TimeRecord> Records => records;
+    public IReadOnlyList<TimeRecord> Records => state.Records;
 
     /// <summary>終了操作の対象となる記録があるかどうかを取得します。</summary>
-    public bool IsRecording => CurrentId is not null;
+    public bool IsRecording => state.CurrentId is not null;
 
     /// <summary>記録操作または状態確認の通信中かどうかを取得します。</summary>
     public bool IsBusy { get; private set; }
@@ -81,13 +60,13 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     }
 
     /// <summary>操作した直近の記録を取得します。終了後も結果を残し、再開始時に差し替えます。</summary>
-    public TimeRecord? DisplayedRecord { get; private set; }
+    public TimeRecord? DisplayedRecord => state.DisplayedRecord;
 
     /// <summary>記録操作の対象プロジェクトを選択します。nullはプロジェクト未指定を表します。</summary>
     /// <param name="project">対象プロジェクト。未指定の場合はnull。</param>
-    public void SelectProject(Project? project) => selectedProject = project;
+    public void SelectProject(Project? project) => state.SelectedProject = project;
 
-    /// <summary>一覧取得中の操作結果に、応答時の終了対象と同じIDの未終了記録があればその対象を保ちます。それ以外は、別の対象に紐付いた記録を除き、一覧で最初の未終了記録を選びます。</summary>
+    /// <summary>取得した一覧と取得中に確定した操作で表示と終了対象を更新します。</summary>
     /// <returns>読み込みと画面状態の更新の完了。</returns>
     public async Task LoadAsync()
     {
@@ -104,11 +83,7 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         {
             var loadedRecords = await service.GetTimeRecordsAsync();
             if (version != loadVersion) return;
-            records = MergeLoadedRecords(loadedRecords, updatesDuringLoad);
-            DisplayedRecord = records.FirstOrDefault(record => record.Id == DisplayedRecord?.Id) ?? DisplayedRecord;
-            var currentId = FindCurrentIdAfterLoad(updatesDuringLoad);
-            ClearUnavailableCurrentIds();
-            CurrentId = currentId;
+            state.ApplyLoadedRecords(loadedRecords, updatesDuringLoad);
             IsStateUnconfirmed = false;
         }
         finally
@@ -116,50 +91,6 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
             pendingLoads.Remove(updatesDuringLoad);
             if (isRecovery) IsBusy = false;
         }
-    }
-
-    /// <summary>応答の順序を保って同じIDを最新の操作結果に置き換え、応答にないIDは最初に操作した順に加えます。</summary>
-    static List<TimeRecord> MergeLoadedRecords(IReadOnlyList<TimeRecord> loadedRecords, IReadOnlyList<TimeRecord> updatesDuringLoad)
-    {
-        var recordsFromResponse =
-            from record in loadedRecords
-            select updatesDuringLoad.LastOrDefault(update => update.Id == record.Id) ?? record;
-
-        var recordsMissingFromResponse =
-            from update in updatesDuringLoad
-            group update by update.Id into updates
-            where !loadedRecords.Any(record => record.Id == updates.Key)
-            select updates.Last();
-
-        return [.. recordsFromResponse, .. recordsMissingFromResponse];
-    }
-
-    void ClearUnavailableCurrentIds()
-    {
-        var activeIds =
-            (from record in records
-             where record.EndedAt is null
-             select record.Id).ToHashSet();
-        if (unspecifiedCurrentId is { } id && !activeIds.Contains(id)) unspecifiedCurrentId = null;
-
-        var unavailableProjects =
-            from project in projectCurrentIds.Keys.ToArray()
-            let currentId = projectCurrentIds[project]
-            where currentId.HasValue && !activeIds.Contains(currentId.Value)
-            select project;
-        foreach (var project in unavailableProjects)
-        {
-            projectCurrentIds[project] = null;
-        }
-    }
-    /// <summary>一覧取得中に操作した終了対象を優先し、それ以外は、選択中の対象に割り当てられる最初の未終了記録を選びます。</summary>
-    Guid? FindCurrentIdAfterLoad(IReadOnlyList<TimeRecord> updatesDuringLoad)
-    {
-        var currentId = CurrentId;
-        return updatesDuringLoad.Any(record => record.Id == currentId && record.EndedAt is null)
-            ? currentId
-            : records.FirstOrDefault(record => record.EndedAt is null
-                && (record.Id == currentId || (record.Id != unspecifiedCurrentId && !projectCurrentIds.ContainsValue(record.Id))))?.Id;
     }
 
     /// <summary>操作の成否を一覧で確認し、再取得できなければ未確認状態として操作を止めます。</summary>
@@ -181,32 +112,17 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     public Task StartTimeRecordAsync()
     {
         if (!CanOperate || IsRecording) return Task.CompletedTask;
-        var project = selectedProject;
-        return RunRecordOperationAsync(service.StartTimeRecordAsync, record =>
-        {
-            records.Add(record);
-            TrackUpdateForPendingLoads(record);
-            DisplayedRecord = record;
-            SetCurrentId(project, record.Id);
-        });
+        var project = state.SelectedProject;
+        return RunRecordOperationAsync(service.StartTimeRecordAsync, record => state.ApplyStartedRecord(project, record));
     }
 
     /// <summary>操作対象の記録を終了し、一覧と、表示中であれば操作欄を更新します。対象がなければ何もしません。</summary>
     /// <returns>終了と画面状態の更新の完了。</returns>
     public Task EndTimeRecordAsync()
     {
-        if (!CanOperate || CurrentId is not { } id) return Task.CompletedTask;
-        var project = selectedProject;
-        return RunRecordOperationAsync(() => service.EndTimeRecordAsync(id), record =>
-        {
-            records[records.FindIndex(it => it.Id == record.Id)] = record;
-            TrackUpdateForPendingLoads(record);
-            if (DisplayedRecord is not null)
-            {
-                DisplayedRecord = record;
-            }
-            SetCurrentId(project, null);
-        });
+        if (!CanOperate || state.CurrentId is not { } id) return Task.CompletedTask;
+        var project = state.SelectedProject;
+        return RunRecordOperationAsync(() => service.EndTimeRecordAsync(id), record => state.ApplyEndedRecord(project, record));
     }
 
     /// <summary>要求から状態反映まで二重操作を防ぎ、失敗した場合は一覧で結果を確認します。</summary>
@@ -215,7 +131,9 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
         IsBusy = true;
         try
         {
-            applyRecord(await request());
+            var record = await request();
+            applyRecord(record);
+            TrackUpdateForPendingLoads(record);
         }
         catch
         {

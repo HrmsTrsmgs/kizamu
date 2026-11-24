@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
     <ItemGroup>
+        <InternalsVisibleTo Include="Kizamu.Frontend.Blazor.Presentation.Tests" />
         <ProjectReference Include="../../../domains/dotnet/Kizamu.Domain/Kizamu.Domain.csproj" />
     </ItemGroup>
 </Project>
