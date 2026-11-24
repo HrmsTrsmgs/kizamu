@@ -28,19 +28,19 @@
     {
         <ProjectTabs Projects="ViewModel.Projects"
                      SelectedProject="ViewModel.SelectedProject"
-                     OnAddProject="ViewModel.OpenProjectDialog"
+                     OnAddProject="ViewModel.Registration.Open"
                      OnSelectProject="ViewModel.SelectProject" />
         <TimeRecorder SelectedProject="ViewModel.SelectedProject" AuthenticatedViewModel="timeRecorder" />
-        @if (ViewModel.ShowProjectDialog)
+        @if (ViewModel.Registration.IsOpen)
         {
             <div class="project-dialog-overlay">
                 <div class="project-dialog" role="dialog" aria-labelledby="project-dialog-title">
                     <h2 id="project-dialog-title">プロジェクトを追加</h2>
                     <label for="project-name">プロジェクト名</label>
-                    <input id="project-name" @bind="ViewModel.ProjectName" />
+                    <input id="project-name" @bind="ViewModel.Registration.ProjectName" />
                     <div class="project-dialog-actions">
-                        <button class="project-cancel-button" type="button" @onclick="ViewModel.CancelProjectDialog">キャンセル</button>
-                        <button class="project-register-button" type="button" @onclick="ViewModel.RegisterProject">登録</button>
+                        <button class="project-cancel-button" type="button" @onclick="ViewModel.Registration.Cancel">キャンセル</button>
+                        <button class="project-register-button" type="button" @onclick="ViewModel.Registration.Register">登録</button>
                     </div>
                 </div>
             </div>

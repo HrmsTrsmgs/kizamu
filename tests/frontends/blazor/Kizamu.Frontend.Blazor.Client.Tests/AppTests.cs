@@ -105,6 +105,21 @@ public sealed class AppTests : IDisposable
     }
 
     [Fact]
+    public void ログアウトして再ログインするとプロジェクト追加の下書きが空になります()
+    {
+        var tested = ログイン操作用の画面;
+        ログインする(tested);
+        tested.Find(".project-add-button").Click();
+        tested.Find("[role=dialog] input").Change("プロジェクトA");
+
+        ログアウトする(tested);
+        ログインする(tested);
+        tested.Find(".project-add-button").Click();
+
+        tested.Find("[role=dialog] input").GetAttribute("value").Should().BeEmpty();
+    }
+
+    [Fact]
     public void 再ログインすると前の記録が一覧から消えて記録欄のボタンが開始に戻ります()
     {
         var ログインごとの記録サービス = new Queue<StubTimeRecordService>(
@@ -175,7 +190,7 @@ public sealed class AppTests : IDisposable
 
         ログイン済みの画面.Find("[role=dialog] input").Change("プロジェクトA");
 
-        projectTabs.ProjectName.Should().Be("プロジェクトA");
+        projectTabs.Registration.ProjectName.Should().Be("プロジェクトA");
     }
 
     [Fact]
@@ -246,14 +261,14 @@ public sealed class AppTests : IDisposable
 
     void 追加ダイアログを開いておく(string プロジェクト名 = "")
     {
-        projectTabs.OpenProjectDialog();
-        projectTabs.ProjectName = プロジェクト名;
+        projectTabs.Registration.Open();
+        projectTabs.Registration.ProjectName = プロジェクト名;
     }
 
     void プロジェクトを登録する(string name)
     {
-        projectTabs.ProjectName = name;
-        projectTabs.RegisterProject();
+        projectTabs.Registration.ProjectName = name;
+        projectTabs.Registration.Register();
     }
 
     static void プロジェクトを選ぶ(IRenderedComponent<Client.App> tested, string name) =>

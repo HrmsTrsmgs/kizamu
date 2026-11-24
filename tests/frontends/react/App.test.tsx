@@ -60,6 +60,18 @@ describe('未ログインのApp', () => {
       should.not.exist(screen.queryByRole('list', { name: '作業記録一覧' }))
     })
 
+    it('ログアウトして再ログインすると、プロジェクト追加の下書きが空になります', async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      fireEvent.click(await screen.findByRole('button', { name: '追加' }))
+      fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
+
+      fireEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      fireEvent.click(await screen.findByRole('button', { name: '追加' }))
+
+      screen.getByRole('textbox', { name: 'プロジェクト名' }).should.toHaveValue('')
+    })
+
     it('ログアウト前の開始応答が再ログイン後に届いても、作業記録一覧に追加しません', async () => {
       const 記録 = await createTimeRecordServiceStub().startTimeRecord()
       const ログアウト前の応答 = deferred<typeof 記録>()

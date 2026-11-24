@@ -1,6 +1,6 @@
 # ViewとViewModelの部品化 作業一覧
 
-2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜04・08はコミット済み。05は実装・検証済みでレビュー待ち。06・07・09〜12は未着手。次は06のプロジェクト登録とタブ選択の責務を整理する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
+2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜05・08はコミット済み。06は実装・検証済みでレビュー待ち。07・09〜12は未着手。次は07のBlazorの記録画面が使うViewModelと初期化を整理する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
 
 既存の[全コードレビューの項目27](code-review-actions.md#L253)では、Reactの認証済み画面を `App` から抽出し、Blazorの認証後のViewModel生成の重複を減らした。両実装の `TimeRecordTimes` も操作欄と一覧で共用済み。ここでは、各部品が必要とする入力、引き受ける処理、単独で確認できる振る舞いを作業単位にする。
 
@@ -42,11 +42,13 @@ BlazorのViewModelとReactのフックが、記録ボタンで実行する開始
 
 Blazorでは `TimeRecorderState` が、一覧応答と取得中の操作結果の合成、表示中の記録、各タブの終了対象を更新する。ViewModelは通信、応答を採用する条件、失敗時の再取得を扱う。Reactは既存のReducerで状態を更新する。 [Blazorの状態更新](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderState.cs) · [Reactの状態更新](../src/frontends/react/src/presentation/timeRecorderState.ts#L39)
 
-2026-11-24、基準は `2368e39`。Blazorの合成順と取得中に開始した記録の優先を確認する2件を状態の直接テストに移した。Reactと同じく、別タブを表示中に一覧から消えた未指定の記録が終了対象から外れることも直接確認した。ViewModelには遅延応答の接続テストを残した。Blazorソリューションの.NETテスト319件と対象Reactテスト60件、.NETビルド、書式・差分検査が成功。.NETの既存BL0016警告は1件。差分はレビュー用に未コミット。
+2026-11-24、基準は `2368e39`。Blazorの合成順と取得中に開始した記録の優先を確認する2件を状態の直接テストに移した。Reactと同じく、別タブを表示中に一覧から消えた未指定の記録が終了対象から外れることも直接確認した。ViewModelには遅延応答の接続テストを残した。Blazorソリューションの.NETテスト319件と対象Reactテスト60件、.NETビルド、書式・差分検査が成功。.NETの既存BL0016警告は1件。`b1fb9b7` にコミット済み。
 
 ### 06　プロジェクトの登録とタブ選択を用途別に渡せるようにする
 
-既存の `ProjectTabsViewModel` とReducerはプロジェクト一覧・選択と、ダイアログの開閉・入力を扱う。タブ部品には一覧と選択操作、登録部品には入力・登録・キャンセルに必要な情報を渡す。登録後に一覧と選択が更新される仕様、キャンセル時の下書き、ログアウト時の初期化は、既存のPresentationと画面の接続で確かめる。 [BlazorのプロジェクトViewModel](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/Projects/ProjectTabsViewModel.cs#L11) · [ReactのプロジェクトReducer](../src/frontends/react/src/presentation/projectTabsState.ts#L25)
+Blazorは `ProjectRegistrationViewModel` が登録欄の下書きと操作を公開し、登録結果をタブの一覧に渡す。Reactは `useProjectTabs` が既存Reducerにつなぎ、一覧と登録欄の値・操作を分けて画面に返す。登録時はタブを追加し、現在の選択は維持する。キャンセル時は下書きを保持し、ログアウト時は初期化する。 [Blazorの登録ViewModel](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/Projects/ProjectRegistrationViewModel.cs) · [Reactのフック](../src/frontends/react/src/presentation/useProjectTabs.ts)
+
+2026-11-24、基準は `b1fb9b7`。登録・キャンセルの状態はPresentationで、ログアウト時の下書き初期化は両実装の画面テストで確認した。.NET 321件、TypeScript 247件、両ビルド、Lint、書式・差分検査が成功。.NETビルドは既存のBL0016警告1件。差分はレビュー用に未コミット。
 
 ## Viewの部品化
 

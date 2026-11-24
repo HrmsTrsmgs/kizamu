@@ -39,6 +39,15 @@ describe('projectTabsReducer', () => {
       state.projects.should.toStrictEqual([])
     })
 
+    it('プロジェクトの追加をキャンセルして開き直すと、入力中の名前が残ります', () => {
+      const named = projectTabsReducer(opened, { type: 'projectNameChanged', name: 'プロジェクトA' })
+      const cancelled = projectTabsReducer(named, { type: 'dialogCancelled' })
+
+      const reopened = projectTabsReducer(cancelled, { type: 'dialogOpened' })
+
+      reopened.projectName.should.equal('プロジェクトA')
+    })
+
     it('プロジェクトを登録して追加ダイアログを開き直すと、名前の入力欄は空です', () => {
       const named = projectTabsReducer(opened, { type: 'projectNameChanged', name: 'プロジェクトA' })
 
