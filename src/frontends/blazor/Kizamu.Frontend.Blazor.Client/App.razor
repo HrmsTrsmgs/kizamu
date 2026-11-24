@@ -33,17 +33,9 @@
         <TimeRecorder ViewModel="recorder" SelectedProject="ViewModel.SelectedProject" />
         @if (ViewModel.Registration.IsOpen)
         {
-            <div class="project-dialog-overlay">
-                <div class="project-dialog" role="dialog" aria-labelledby="project-dialog-title">
-                    <h2 id="project-dialog-title">プロジェクトを追加</h2>
-                    <label for="project-name">プロジェクト名</label>
-                    <input id="project-name" @bind="ViewModel.Registration.ProjectName" />
-                    <div class="project-dialog-actions">
-                        <button class="project-cancel-button" type="button" @onclick="ViewModel.Registration.Cancel">キャンセル</button>
-                        <button class="project-register-button" type="button" @onclick="ViewModel.Registration.Register">登録</button>
-                    </div>
-                </div>
-            </div>
+            <ProjectRegistrationDialog @bind-ProjectName="ViewModel.Registration.ProjectName"
+                                       OnRegister="ViewModel.Registration.Register"
+                                       OnCancel="ViewModel.Registration.Cancel" />
         }
     }
     <footer class="app-footer">

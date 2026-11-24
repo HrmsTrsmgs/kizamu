@@ -1,6 +1,6 @@
 # ViewとViewModelの部品化 作業一覧
 
-2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜08はコミット済み。次は09のプロジェクト登録ダイアログを切り出す。10〜12は未着手。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
+2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜08はコミット済み。09は実装・検証済みでレビュー待ち。10〜12は未着手。次は10の記録操作欄と記録一覧を切り出す。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
 
 既存の[全コードレビューの項目27](code-review-actions.md#L253)では、Reactの認証済み画面を `App` から抽出し、Blazorの認証後のViewModel生成の重複を減らした。両実装の `TimeRecordTimes` も操作欄と一覧で共用済み。ここでは、各部品が必要とする入力、引き受ける処理、単独で確認できる振る舞いを作業単位にする。
 
@@ -58,7 +58,7 @@ Blazorは `ProjectRegistrationViewModel` が登録欄の下書きと操作を公
 
 2026-11-24、基準は `0a1502a`。Redでは差し替え先への一覧取得が期待1回に対し0回となり、同じViewModelでのタブ切替は合格した。Greenでは初回またはViewModelの参照が変わったときに一覧取得を開始するようにした。.NET 323件、Blazorのビルド、書式・差分検査が成功。既存のBL0016警告は1件。`8cb56f4` にコミット済み。
 
-2026-11-24、基準は `8cb56f4`。明示したViewModelだけで表示するテストは、Redで `ITimeRecorderViewModel` のDI登録がないため失敗し、Greenで合格した。`TimeRecorder` のViewModel引数を必須とし、`App` の初期認証済み表示もViewModelを直接受け取る形に変更した。.NET 324件、Blazorのビルド、書式・差分検査が成功。既存のBL0016警告は1件。ViewModel受け渡しの修正は完了。
+2026-11-24、基準は `8cb56f4`。明示したViewModelだけで表示するテストは、Redで `ITimeRecorderViewModel` のDI登録がないため失敗し、Greenで合格した。`TimeRecorder` のViewModel引数を必須とし、`App` の初期認証済み表示もViewModelを直接受け取る形に変更した。.NET 324件、Blazorのビルド、書式・差分検査が成功。既存のBL0016警告は1件。ViewModel受け渡しの修正は `0584e1a` にコミット済み。
 
 ### 08　プロジェクトタブを認証画面から独立させる
 
@@ -68,7 +68,9 @@ BlazorとReactで `ProjectTabs` を切り出した。部品は一覧と選択を
 
 ### 09　プロジェクト登録ダイアログをタブの描画から独立させる
 
-登録とキャンセルの接続、入力とラベル、ダイアログの見出しを部品単位で確認できるようにする。同じページに複数描画しても固定IDが衝突せず、対応する入力欄と見出しを参照できることを確認する。 [Blazorの登録欄](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L43) · [Reactの登録欄](../src/frontends/react/src/timeRecords/AuthenticatedTimeRecords.tsx#L52)
+Blazor・Reactとも `ProjectRegistrationDialog` が下書きと変更・登録・キャンセルの操作を受け取る。親がダイアログの表示を決める。見出しと名前入力欄のIDは部品ごとに割り当てる。 [Blazorの部品](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/Projects/ProjectRegistrationDialog.razor) · [Reactの部品](../src/frontends/react/src/projects/ProjectRegistrationDialog.tsx)
+
+2026-11-24、基準は `0584e1a`。両実装の部品テストで、同じページに二つ置いたときの見出しとラベルの参照を確認した。既存の画面テストで入力・登録・キャンセルの接続を確認した。.NET 326件とTypeScript 249件のテスト、両ビルド、Lint、書式・差分検査が成功。既存のBL0016警告は1件。差分はレビュー用に未コミット。
 
 ### 10　記録操作欄と記録一覧をそれぞれ配置できるようにする
 

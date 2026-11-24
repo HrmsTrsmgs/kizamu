@@ -1,0 +1,35 @@
+<div class="project-dialog-overlay">
+    <div class="project-dialog" role="dialog" aria-labelledby="@TitleId">
+        <h2 id="@TitleId">プロジェクトを追加</h2>
+        <label for="@NameInputId">プロジェクト名</label>
+        <input id="@NameInputId" @bind:get="ProjectName" @bind:set="ProjectNameChanged.InvokeAsync" />
+        <div class="project-dialog-actions">
+            <button class="project-cancel-button" type="button" @onclick="OnCancel">キャンセル</button>
+            <button class="project-register-button" type="button" @onclick="OnRegister">登録</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    // 見出しと名前入力欄を、ダイアログのインスタンスごとに区別する。
+    readonly string dialogId = $"project-registration-{Guid.NewGuid():N}";
+
+    string TitleId => $"{dialogId}-title";
+    string NameInputId => $"{dialogId}-name";
+
+    /// <summary>名前の入力欄に表示する下書きを取得または設定します。</summary>
+    [Parameter, EditorRequired]
+    public required string ProjectName { get; set; }
+
+    /// <summary>名前の入力欄で確定した値を親に渡す操作を取得または設定します。</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<string> ProjectNameChanged { get; set; }
+
+    /// <summary>登録ボタンを押したときに呼ぶ操作を取得または設定します。</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnRegister { get; set; }
+
+    /// <summary>キャンセルボタンを押したときに呼ぶ操作を取得または設定します。</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnCancel { get; set; }
+}
