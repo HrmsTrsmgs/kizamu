@@ -867,7 +867,7 @@ public sealed class TimeRecorderViewModelTests
     }
 
     [Fact]
-    public async Task 記録の開始後に古い初回一覧が届いても新しく開始した記録のIDで終了を要求します()
+    public async Task 初回一覧の取得中に開始した記録が応答に含まれなくてもそのIDで終了を要求します()
     {
         await 記録開始後に古い初回一覧を受け取る();
 

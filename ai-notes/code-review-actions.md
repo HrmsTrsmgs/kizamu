@@ -306,6 +306,8 @@ HTTP 200なら即成功、プロセス終了なら即失敗とし、そのどち
 | 未認証で開始した後の一覧<br>[TimeRecordEndpointTests.cs 74行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L74) · [timeRecordEndpoints.test.ts 62行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L62) | 未認証で記録の開始を要求した後も認証済み利用者の一覧は空です | 開始を要求した主体と、取得した一覧の所有者が異なる。読取時のテスト用利用者を明示する。 |
 | 未認証で終了した後の一覧<br>[TimeRecordEndpointTests.cs 95行](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs#L95) · [timeRecordEndpoints.test.ts 83行](../tests/backends/node/api/timeRecordEndpoints.test.ts#L83) | 未認証で終了を要求しても所有者の一覧では記録の終了時刻は未設定のままです | Nodeのケースが記録全体を比較する場合は「所有者の一覧には開始時の記録がそのまま残ります」とし、既存の全体比較を維持する。 |
 
+2026-11-24、基準 `fff9dde`。現在のテスト本文と上表を照合した。認証の有無が異なる要求と一覧の参照、Googleのトークンの引き渡し、初回一覧にない記録への終了要求を示す6件の名前を整理した。初期認証済みの画面に関する旧候補では、現在の再ログインのテストが実際にログイン操作を行い、空の一覧と開始ボタンを確認するため、現行名が条件と一致する。.NET 330件、Vitest 254件、両方のビルド、ESLint、変更C#のformat検査は成功した。.NETビルドには既存のBL0016が1件ある。[ASP.NET Core](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)、[Node](../tests/backends/node/api/timeRecordEndpoints.test.ts)、[React](../tests/frontends/react/App.test.tsx)、[Blazor ViewModel](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs)
+
 ## 外部仕様から見たテストの重複と結合
 
 2026-11-20に `21bf4a6` と作業中の修正12を対象に、両バックエンド、両フロントエンド、C#とTypeScriptのDomainのテストを照合した。項目ごとに観測した重複と、反映後の保証を記録した。リンクは反映後のテストを指す。

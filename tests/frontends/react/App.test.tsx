@@ -30,7 +30,7 @@ describe('未ログインのApp', () => {
       should.not.exist(screen.queryByRole('button', { name: 'Googleでログイン' }))
     })
 
-    it('Googleログインで取得したIDトークンを使って記録サービスを作成します', async () => {
+    it('Googleログインで取得したIDトークンを記録サービスの生成処理に渡します', async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
 
       await waitFor(() => createTimeRecords.should.have.been.calledWith('google-id-token'))

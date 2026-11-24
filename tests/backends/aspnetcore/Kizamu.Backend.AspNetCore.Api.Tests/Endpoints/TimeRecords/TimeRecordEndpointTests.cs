@@ -64,7 +64,7 @@ public sealed class TimeRecordEndpointTests :
     }
 
     [Fact]
-    public async Task 未認証で開始を要求すると401が返り認証済み利用者の一覧は空のままです()
+    public async Task 未認証の利用者が記録の開始を要求すると401が返り認証済み利用者の一覧は空のままです()
     {
         using var request = 同一オリジンの未認証POST要求を用意する("/api/time-records/start");
 
@@ -75,7 +75,7 @@ public sealed class TimeRecordEndpointTests :
     }
 
     [Fact]
-    public async Task 未認証で終了を要求すると401が返り所有者の一覧では記録の終了時刻は未設定のままです()
+    public async Task 未認証の利用者が記録の終了を要求すると401が返り所有者の一覧では終了時刻は未設定のままです()
     {
         var startedRecord = await 記録を開始して終了要求の時刻まで進める(早い時刻, 遅い時刻);
         using var request = 同一オリジンの未認証POST要求を用意する($"/api/time-records/{startedRecord.Id}/end");

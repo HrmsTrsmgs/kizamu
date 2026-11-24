@@ -85,7 +85,7 @@ test('認証情報のない記録一覧の取得要求には401が返されま�
   response.statusCode.should.equal(401)
 })
 
-test('未認証で開始を要求すると401が返り、認証済み利用者の一覧は空のままです', async () => {
+test('未認証の利用者が記録の開始を要求すると401が返り、認証済み利用者の一覧は空のままです', async () => {
   const response = await postWithoutAuthorization(app, '/api/time-records/start')
 
   response.statusCode.should.equal(401)
@@ -101,7 +101,7 @@ describe('記録を開始して終了時刻まで進めたとき', () => {
     vi.setSystemTime(終了時刻)
   })
 
-  test('未認証で終了を要求すると401が返り、所有者の一覧には開始時の記録が残ります', async () => {
+  test('未認証の利用者が記録の終了を要求すると401が返り、所有者の一覧には開始時の記録が残ります', async () => {
     const response = await postWithoutAuthorization(app, `/api/time-records/${startedRecord.id}/end`)
 
     response.statusCode.should.equal(401)
