@@ -21,7 +21,7 @@ public sealed class TimeRecorderTests : IDisposable
     readonly BunitContext context = new();
     readonly Mock<ITimeRecorderViewModel> recorder = new();
 
-    IRenderedComponent<TimeRecorder> 画面 => field ??= context.Render<TimeRecorder>();
+    IRenderedComponent<TimeRecorder> 画面 => field ??= 記録画面を表示する(recorder.Object);
     IRenderedComponent<TimeRecorder> 開始後の画面 => field ??= 操作結果のある画面を表示する(開始した記録);
     IRenderedComponent<TimeRecorder> 終了後の画面 => field ??= 操作結果のある画面を表示する(終了した記録);
 
@@ -30,7 +30,6 @@ public sealed class TimeRecorderTests : IDisposable
         記録一覧を用意する([]);
         記録操作の可否を用意する(true);
         再取得の可否を用意する(true);
-        context.Services.AddSingleton(recorder.Object);
         context.Services.AddSingleton<TimeProvider>(new FakeTimeProvider(終了時刻));
     }
 
@@ -41,11 +40,21 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
+    public void 明示したViewModelだけで記録画面を表示してその一覧を取得します()
+    {
+        using var standalone = new BunitContext();
+
+        standalone.Render<TimeRecorder>(parameters => parameters.Add(it => it.ViewModel, recorder.Object));
+
+        一覧読み込みの呼び出しを確認する(Times.Once());
+    }
+
+    [Fact]
     public void 表示中の記録画面に別のViewModelを渡すと差し替え先の一覧を一度取得します()
     {
         var 差し替え先の記録サービス = new StubTimeRecordService(開始した記録, 終了した記録);
 
-        画面.Render(parameters => parameters.Add(it => it.AuthenticatedViewModel, new TimeRecorderViewModel(差し替え先の記録サービス)));
+        画面.Render(parameters => parameters.Add(it => it.ViewModel, new TimeRecorderViewModel(差し替え先の記録サービス)));
 
         差し替え先の記録サービス.ListCount.Should().Be(1);
     }
@@ -91,11 +100,11 @@ public sealed class TimeRecorderTests : IDisposable
     [Fact]
     public async Task 記録の開始ボタンを押して開始に失敗すると画面に失敗を表示します()
     {
-        開始に失敗する記録処理を用意する();
+        var tested = 開始に失敗する記録画面を表示する();
 
-        await 画面.Find("button").ClickAsync(new());
+        await tested.Find("button").ClickAsync(new());
 
-        画面.Find("[role='alert']").TextContent.Should().Contain("失敗");
+        tested.Find("[role='alert']").TextContent.Should().Contain("失敗");
     }
 
     [Fact]
@@ -208,7 +217,7 @@ public sealed class TimeRecorderTests : IDisposable
         記録中の状態を用意する(記録.EndedAt is null);
         操作欄の記録を用意する(記録);
         記録一覧を用意する([記録]);
-        return context.Render<TimeRecorder>();
+        return 記録画面を表示する(recorder.Object);
     }
 
     void 最新状態を未確認にする(bool 記録中)
@@ -218,15 +227,16 @@ public sealed class TimeRecorderTests : IDisposable
         記録操作の可否を用意する(false);
     }
 
-    void 開始に失敗する記録処理を用意する()
-    {
-        context.Services.AddSingleton<ITimeRecorderViewModel>(
+    IRenderedComponent<TimeRecorder> 開始に失敗する記録画面を表示する() =>
+        記録画面を表示する(
             new TimeRecorderViewModel(
                 new StubTimeRecordService(開始した記録, 終了した記録)
                 {
                     StartResponse = Task.FromException<TimeRecord>(new InvalidOperationException())
                 }));
-    }
+
+    IRenderedComponent<TimeRecorder> 記録画面を表示する(ITimeRecorderViewModel viewModel) =>
+        context.Render<TimeRecorder>(parameters => parameters.Add(it => it.ViewModel, viewModel));
 
     void 再取得の案内を用意する() => recorder.SetupGet(it => it.Notice).Returns(TimeRecorderNotice.StateUnconfirmed);
     void 一覧読み込みの呼び出しを確認する(Times times) => recorder.Verify(it => it.LoadAsync(), times);

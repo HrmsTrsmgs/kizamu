@@ -24,13 +24,13 @@
             <button type="button" @onclick="SignOut">ログアウト</button>
         }
     </div>
-    @if (ShowAuthenticatedContent)
+    @if (ActiveTimeRecorder is { } recorder)
     {
         <ProjectTabs Projects="ViewModel.Projects"
                      SelectedProject="ViewModel.SelectedProject"
                      OnAddProject="ViewModel.Registration.Open"
                      OnSelectProject="ViewModel.SelectProject" />
-        <TimeRecorder SelectedProject="ViewModel.SelectedProject" AuthenticatedViewModel="timeRecorder" />
+        <TimeRecorder ViewModel="recorder" SelectedProject="ViewModel.SelectedProject" />
         @if (ViewModel.Registration.IsOpen)
         {
             <div class="project-dialog-overlay">
@@ -57,7 +57,8 @@
     bool renderGoogleButton = true;
     bool hasSignedOut;
 
-    bool ShowAuthenticatedContent => (IsAuthenticated && !hasSignedOut) || timeRecorder is not null;
+    ITimeRecorderViewModel? ActiveTimeRecorder => timeRecorder ?? (hasSignedOut ? null : InitialTimeRecorder);
+    bool ShowAuthenticatedContent => ActiveTimeRecorder is not null;
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -105,7 +106,7 @@
     void SetTimeRecorder(string token, Func<string, ITimeRecordService> createTimeRecords) =>
         timeRecorder = new(createTimeRecords(token));
 
-    /// <summary>記録画面を表示する認証済み状態を取得または設定します。</summary>
+    /// <summary>初期表示が認証済みの場合に使用する記録ViewModelを取得または設定します。</summary>
     [Parameter]
-    public bool IsAuthenticated { get; set; }
+    public ITimeRecorderViewModel? InitialTimeRecorder { get; set; }
 }

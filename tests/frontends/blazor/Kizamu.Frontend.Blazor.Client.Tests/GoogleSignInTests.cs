@@ -3,7 +3,6 @@ using Bunit;
 using Kizamu.Domain;
 using Kizamu.Frontend.Blazor.Presentation.Health;
 using Kizamu.Frontend.Blazor.Presentation.Projects;
-using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 using Kizamu.Frontend.Blazor.TestSupport;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +21,6 @@ public sealed class GoogleSignInTests : IDisposable
         var 記録 = new TimeRecord(Guid.Parse("019cde5b-4c00-7000-8000-000000000001"), DateTimeOffset.Parse("2026-08-01T09:00:00Z"), null);
         context.Services.AddSingleton<Client.IGoogleSignIn>(google);
         context.Services.AddSingleton(new HealthStatusViewModel(new StubHealthService()));
-        context.Services.AddSingleton<ITimeRecorderViewModel>(new TimeRecorderViewModel(new StubTimeRecordService(記録, 記録)));
         context.Services.AddSingleton(new ProjectTabsViewModel());
         context.Services.AddSingleton(TimeProvider.System);
         tested = context.Render<Client.App>(parameters => parameters.Add(it => it.CreateTimeRecords, token =>

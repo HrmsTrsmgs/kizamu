@@ -20,12 +20,11 @@ public sealed class AppTests : IDisposable
     IRenderedComponent<Client.App> 未ログインの画面 => field ??= context.Render<Client.App>();
     IRenderedComponent<Client.App> ログイン操作用の画面 => field ??= ログイン可能な画面を表示する();
     IRenderedComponent<Client.App> ログイン済みの画面 =>
-        field ??= context.Render<Client.App>(parameters => parameters.Add(it => it.IsAuthenticated, true));
+        field ??= context.Render<Client.App>(parameters => parameters.Add(it => it.InitialTimeRecorder, new TimeRecorderViewModel(記録サービス)));
 
     public AppTests()
     {
         context.Services.AddSingleton(new HealthStatusViewModel(new StubHealthService()));
-        context.Services.AddSingleton<ITimeRecorderViewModel>(new TimeRecorderViewModel(記録サービス));
         context.Services.AddSingleton(projectTabs);
         context.Services.AddSingleton(TimeProvider.System);
     }
