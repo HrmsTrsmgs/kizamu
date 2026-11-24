@@ -1,33 +1,7 @@
-import { useEffect, type ReactNode } from 'react'
-import type { Project } from 'kizamu-domain-typescript'
-import type { TimeRecordService } from '../presentation/timeRecordService'
-import { useTimeRecorder } from '../presentation/useTimeRecorder'
+import type { ReactNode } from 'react'
 import type { TimeRecorderControls } from '../presentation/timeRecorderOperationState'
 import type { TimeRecorderState } from '../presentation/timeRecorderState'
 import TimeRecordTimes from './TimeRecordTimes'
-
-type TimeRecorderProps = {
-  timeRecords: TimeRecordService
-  selectedProject?: Project
-}
-
-export default function TimeRecorder({ timeRecords, selectedProject }: TimeRecorderProps) {
-  const { state, selectProject, controls, startTimeRecord, endTimeRecord, reloadTimeRecords } = useTimeRecorder(timeRecords)
-
-  useEffect(() => {
-    selectProject(selectedProject)
-  }, [selectedProject, selectProject])
-
-  return (
-    <TimeRecorderView
-      state={state}
-      controls={controls}
-      startTimeRecord={startTimeRecord}
-      endTimeRecord={endTimeRecord}
-      reloadTimeRecords={reloadTimeRecords}
-    />
-  )
-}
 
 type TimeRecorderViewProps = {
   state: TimeRecorderState

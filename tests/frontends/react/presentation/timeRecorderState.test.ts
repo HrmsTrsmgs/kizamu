@@ -22,6 +22,12 @@ describe('timeRecorderReducer', () => {
       プロジェクトA = new Project('プロジェクトA')
     })
 
+    it('タブからプロジェクトを選ぶと、そのプロジェクトが選択中になります', () => {
+      const state = timeRecorderReducer(initialTimeRecorderState, { type: 'projectSelected', project: プロジェクトA })
+
+      state.should.have.property('selectedProject', プロジェクトA)
+    })
+
     it('記録中に別のプロジェクトへ切り替えて戻ると、元のプロジェクトで始めた記録が再び終了対象になります', () => {
       const プロジェクトB = new Project('プロジェクトB')
       let tested = プロジェクトで記録を開始した状態(プロジェクトA)

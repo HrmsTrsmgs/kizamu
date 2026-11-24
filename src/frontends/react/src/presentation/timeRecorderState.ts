@@ -10,6 +10,7 @@ export type TimeRecorderState = Readonly<{
 }>
 
 export type TimeRecorderAction =
+  | { type: 'sessionEnded' }
   | { type: 'projectSelected', project: Project | undefined }
   | { type: 'recordsLoaded', records: readonly TimeRecordPresentation[], updatedRecords?: readonly TimeRecordPresentation[] }
   | { type: 'recordStarted', record: TimeRecordPresentation, project: Project | undefined }
@@ -26,6 +27,8 @@ export function timeRecorderReducer(
   action: TimeRecorderAction,
 ): TimeRecorderState {
   switch (action.type) {
+    case 'sessionEnded':
+      return { ...initialTimeRecorderState, selectedProject: state.selectedProject }
     case 'projectSelected': {
       const projectTimeRecordIds = new Map(state.projectTimeRecordIds)
       projectTimeRecordIds.set(state.selectedProject, state.timeRecordId)

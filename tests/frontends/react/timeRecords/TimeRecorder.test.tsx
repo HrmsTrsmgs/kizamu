@@ -6,7 +6,8 @@ import type { TimeRecorderControls } from '../../../../src/frontends/react/src/p
 import { should } from '../../../should.mjs'
 import { createTimeRecordServiceStub } from '../test/createTimeRecordServiceStub'
 import { presentedRecord, timestamp } from '../test/timeRecords'
-import TimeRecorder, { TimeRecorderView } from '../../../../src/frontends/react/src/timeRecords/TimeRecorder'
+import AuthenticatedTimeRecords from '../../../../src/frontends/react/src/timeRecords/AuthenticatedTimeRecords'
+import { TimeRecorderView } from '../../../../src/frontends/react/src/timeRecords/TimeRecorder'
 import { initialTimeRecorderState } from '../../../../src/frontends/react/src/presentation/timeRecorderState'
 
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
@@ -123,7 +124,7 @@ describe('TimeRecorderView', () => {
   })
 })
 
-describe('TimeRecorder', () => {
+describe('AuthenticatedTimeRecordsの記録操作', () => {
   let getTimeRecords: Mock<TimeRecordService['getTimeRecords']>
   let startTimeRecord: Mock<TimeRecordService['startTimeRecord']>
   let endTimeRecord: Mock<TimeRecordService['endTimeRecord']>
@@ -138,7 +139,7 @@ describe('TimeRecorder', () => {
 
   it('記録の開始に失敗すると、記録画面に失敗を知らせるメッセージが表示されます', async () => {
     startTimeRecord.mockRejectedValueOnce(new Error('開始失敗'))
-    render(<TimeRecorder timeRecords={timeRecords} />)
+    render(<AuthenticatedTimeRecords timeRecords={timeRecords} onSignOut={() => {}} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
 
@@ -147,7 +148,7 @@ describe('TimeRecorder', () => {
   })
 
   it('開始ボタンで開始要求を送り、応答の記録の開始時刻と終了ボタンを表示します', async () => {
-    render(<TimeRecorder timeRecords={timeRecords} />)
+    render(<AuthenticatedTimeRecords timeRecords={timeRecords} onSignOut={() => {}} />)
 
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
 
@@ -160,7 +161,7 @@ describe('TimeRecorder', () => {
 
   it('終了ボタンで記録中の作業の終了を要求し、終了済みの記録を一覧に表示します', async () => {
     getTimeRecords.mockResolvedValue([記録])
-    render(<TimeRecorder timeRecords={timeRecords} />)
+    render(<AuthenticatedTimeRecords timeRecords={timeRecords} onSignOut={() => {}} />)
     const endButton = await screen.findByRole('button', { name: '記録を終了' })
 
     fireEvent.click(endButton)
@@ -191,7 +192,7 @@ describe('TimeRecorder', () => {
   })
 
   async function 開始失敗後に再取得できるまで待つ() {
-    render(<TimeRecorder timeRecords={timeRecords} />)
+    render(<AuthenticatedTimeRecords timeRecords={timeRecords} onSignOut={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
     const retry = await screen.findByRole('button', { name: '再取得' })
     await waitFor(() => retry.should.toBeEnabled())

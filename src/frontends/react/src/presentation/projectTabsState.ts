@@ -2,7 +2,6 @@ import { Project } from 'kizamu-domain-typescript'
 
 type ProjectTabsState = Readonly<{
   projects: readonly Project[]
-  selectedProject: Project | undefined
   projectName: string
   showProjectDialog: boolean
 }>
@@ -13,11 +12,9 @@ type ProjectTabsAction =
   | { type: 'dialogCancelled' }
   | { type: 'projectNameChanged', name: string }
   | { type: 'projectRegistered' }
-  | { type: 'projectSelected', project: Project | undefined }
 
 export const initialProjectTabsState: ProjectTabsState = {
   projects: [],
-  selectedProject: undefined,
   projectName: '',
   showProjectDialog: false,
 }
@@ -39,7 +36,5 @@ export function projectTabsReducer(state: ProjectTabsState, action: ProjectTabsA
         projectName: '',
         showProjectDialog: false,
       }
-    case 'projectSelected':
-      return { ...state, selectedProject: action.project }
   }
 }

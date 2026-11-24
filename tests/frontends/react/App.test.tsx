@@ -5,6 +5,7 @@ import App from '../../../src/frontends/react/src/App'
 import type { HealthService } from '../../../src/frontends/react/src/presentation/healthService'
 import type { TimeRecordService } from '../../../src/frontends/react/src/presentation/timeRecordService'
 import { createTimeRecordServiceStub } from './test/createTimeRecordServiceStub'
+import { deferred } from './test/deferred'
 
 let health: HealthService
 
@@ -57,6 +58,26 @@ describe('未ログインのApp', () => {
 
       screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
       should.not.exist(screen.queryByRole('list', { name: '作業記録一覧' }))
+    })
+
+    it('ログアウト前の開始応答が再ログイン後に届いても、作業記録一覧に追加しません', async () => {
+      const 記録 = await createTimeRecordServiceStub().startTimeRecord()
+      const ログアウト前の応答 = deferred<typeof 記録>()
+      const startTimeRecord = vi.fn(() => ログアウト前の応答.promise)
+      createTimeRecords.mockReturnValueOnce(createTimeRecordServiceStub({ startTimeRecord }))
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      fireEvent.click(await screen.findByRole('button', { name: '記録を開始' }))
+      startTimeRecord.should.have.callCount(1)
+
+      fireEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      const list = await screen.findByRole('list', { name: '作業記録一覧' })
+      await act(async () => {
+        ログアウト前の応答.resolve(記録)
+        await ログアウト前の応答.promise
+      })
+
+      within(list).queryAllByRole('listitem').should.have.length(0)
     })
 
     it('記録中にログアウトして再ログインすると前回の記録中状態を引き継ぎません', async () => {

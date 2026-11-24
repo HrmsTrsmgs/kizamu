@@ -57,15 +57,6 @@ describe('projectTabsReducer', () => {
     state.showProjectDialog.should.equal(false)
   })
 
-  it('一覧からプロジェクトを選ぶと、そのプロジェクトが選択中になります', () => {
-    const project = new Project('プロジェクトA')
-    const listed = { ...initialProjectTabsState, projects: [project] }
-
-    const state = projectTabsReducer(listed, { type: 'projectSelected', project })
-
-    state.should.have.property('selectedProject', project)
-  })
-
   describe('プロジェクトAを登録したとき', () => {
     let registered: typeof initialProjectTabsState
 

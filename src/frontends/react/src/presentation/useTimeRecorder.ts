@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+import { useCallback, useLayoutEffect, useReducer, useRef } from 'react'
 import type { Project } from 'kizamu-domain-typescript'
 import type { TimeRecordService } from './timeRecordService'
 import type { TimeRecordPresentation } from './timeRecordPresentation'
@@ -6,19 +6,25 @@ import { PendingTimeRecordLoads } from './pendingTimeRecordLoads'
 import { initialTimeRecorderState, timeRecorderReducer, type TimeRecorderAction } from './timeRecorderState'
 import { getTimeRecorderControls, initialTimeRecorderOperationState, timeRecorderOperationReducer } from './timeRecorderOperationState'
 
-export function useTimeRecorder(timeRecords: TimeRecordService) {
+type RecorderRequests = {
+  operationPending: boolean
+  pendingLoads: PendingTimeRecordLoads
+  loadVersion: number
+}
+
+export function useTimeRecorder(timeRecords: TimeRecordService | undefined) {
   const [state, dispatch] = useReducer(timeRecorderReducer, initialTimeRecorderState)
   const [operationState, dispatchOperation] = useReducer(timeRecorderOperationReducer, initialTimeRecorderOperationState)
-  const operationPending = useRef(false)
-  const pendingLoads = useRef(new PendingTimeRecordLoads())
-  const loadVersion = useRef(0)
+  const activeRequests = useRef<RecorderRequests | undefined>(undefined)
 
   const getTimeRecords = useCallback(async () => {
-    const version = loadVersion.current
-    const load = pendingLoads.current.start()
+    const requests = activeRequests.current
+    if (!timeRecords || !requests) return
+    const version = requests.loadVersion
+    const load = requests.pendingLoads.start()
     try {
       const records = await timeRecords.getTimeRecords()
-      if (version !== loadVersion.current) return
+      if (requests !== activeRequests.current || version !== requests.loadVersion) return
       dispatch({ type: 'recordsLoaded', records, updatedRecords: load.updatedRecords })
       dispatchOperation('recordsConfirmed')
     } finally {
@@ -26,34 +32,49 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     }
   }, [timeRecords])
 
-  useEffect(() => {
-    void getTimeRecords()
-  }, [getTimeRecords])
+  // Open the request session before the newly visible controls can be used.
+  useLayoutEffect(() => {
+    if (timeRecords) {
+      activeRequests.current ??= {
+        operationPending: false,
+        pendingLoads: new PendingTimeRecordLoads(),
+        loadVersion: 0,
+      }
+      void getTimeRecords()
+    } else if (activeRequests.current) {
+      // Keep the project selection across disconnection and discard the old requests.
+      activeRequests.current = undefined
+      dispatch({ type: 'sessionEnded' })
+      dispatchOperation('sessionEnded')
+    }
+  }, [timeRecords, getTimeRecords])
 
-  function runOperation(operation: () => Promise<void>) {
-    if (operationPending.current) return Promise.resolve()
-    operationPending.current = true
+  function runOperation(operation: (requests: RecorderRequests) => Promise<void>) {
+    const requests = activeRequests.current
+    if (!requests || requests.operationPending) return Promise.resolve()
+    requests.operationPending = true
     dispatchOperation('operationStarted')
 
-    const completion = operation()
+    const completion = operation(requests)
     // Observe failures for the view while returning the original promise to callers.
     void completion.then(
-      () => finishOperation('operationSucceeded'),
-      () => finishOperation('operationFailed'),
+      () => finishOperation(requests, 'operationSucceeded'),
+      () => finishOperation(requests, 'operationFailed'),
     )
     return completion
   }
 
-  function finishOperation(outcome: 'operationSucceeded' | 'operationFailed') {
-    operationPending.current = false
+  function finishOperation(requests: RecorderRequests, outcome: 'operationSucceeded' | 'operationFailed') {
+    if (requests !== activeRequests.current) return
+    requests.operationPending = false
     dispatchOperation(outcome)
   }
 
-  async function reloadAfterOperationFailure() {
+  async function reloadAfterOperationFailure(requests: RecorderRequests) {
     try {
       await getTimeRecords()
     } catch (error) {
-      dispatchOperation('recordsUnconfirmed')
+      if (requests === activeRequests.current) dispatchOperation('recordsUnconfirmed')
       throw error
     }
   }
@@ -63,21 +84,24 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
     toAction: (record: TimeRecordPresentation) => TimeRecorderAction,
   ) {
     if (operationState.isStateUnconfirmed) return Promise.resolve()
-    return runOperation(async () => {
+    return runOperation(async requests => {
       try {
         const record = await request()
-        pendingLoads.current.recordUpdate(record)
+        if (requests !== activeRequests.current) return
+        requests.pendingLoads.recordUpdate(record)
         dispatch(toAction(record))
       } catch (error) {
-        loadVersion.current++
-        await reloadAfterOperationFailure()
+        if (requests === activeRequests.current) {
+          requests.loadVersion++
+          await reloadAfterOperationFailure(requests)
+        }
         throw error
       }
     })
   }
 
   function startTimeRecord() {
-    if (state.timeRecordId !== null) return Promise.resolve()
+    if (!timeRecords || state.timeRecordId !== null) return Promise.resolve()
     const project = state.selectedProject
     return changeTimeRecord(
       () => timeRecords.startTimeRecord(),
@@ -87,7 +111,7 @@ export function useTimeRecorder(timeRecords: TimeRecordService) {
 
   function endTimeRecord() {
     const id = state.timeRecordId
-    if (id === null) return Promise.resolve()
+    if (!timeRecords || id === null) return Promise.resolve()
     const project = state.selectedProject
     return changeTimeRecord(
       () => timeRecords.endTimeRecord(id),
