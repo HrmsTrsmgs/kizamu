@@ -3,6 +3,7 @@
 ## 読むべき指示
 
 * 公開APIの設計・検証では [APIの契約](docs/ai-instructions/common.md#設計と依存関係)、Greenで既存コードを再利用する場合は [適用先での確認](docs/ai-instructions/tdd-context/green.md#既存コードを再利用するときの確認) に従う。
+* Refactor担当は、完了前に [変更箇所のルール確認](docs/ai-instructions/tdd-context/refactor.md#変更箇所のルール確認) を行う。
 * TypeScriptの型・分岐・テストの書き方は技術別指示に従う。 [コードとテスト](docs/ai-instructions/typescript-react.md#コードとテスト) · [Reactのテスト境界](docs/ai-instructions/typescript-react.md#reactのテスト境界)
 * テストの追加・整理・レビューでは、Kizamuの責務分担と記述方針を確認する。手元の共通版に規則が欠けている場合は該当する参照版で補う。 [テストの責務](docs/ai-instructions/kizamu.md#domain画面テストの責務) · [テストの記述方針](docs/testing-style.md) · [テストの設計と準備](docs/ai-instructions/common.md#テストの設計と準備)
 * 処理・画面部品・状態を共用するときは、既存の責務と契約を照合する。 [共通化の判断](docs/ai-instructions/common.md#共通化の判断) · [画面部品と状態の共用](docs/ai-instructions/kizamu.md#画面部品と状態の共用)
