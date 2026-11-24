@@ -2,6 +2,7 @@
 
 ## 読むべき指示
 
+* 方針の検討が必要な場合や、未確認の前提が大きな手戻りにつながる場合は [方針の検討と前提の確認](docs/ai-instructions/common.md#方針の検討と前提の確認) に従う。
 * 公開APIの設計・検証では [APIの契約](docs/ai-instructions/common.md#設計と依存関係)、Greenで既存コードを再利用する場合は [適用先での確認](docs/ai-instructions/tdd-context/green.md#既存コードを再利用するときの確認) に従う。
 * Refactor担当は、完了前に [変更箇所のルール確認](docs/ai-instructions/tdd-context/refactor.md#変更箇所のルール確認) を行う。
 * TypeScriptの型・分岐・テストの書き方は [コードとテスト](docs/ai-instructions/typescript-react.md#コードとテスト) を参照する。
