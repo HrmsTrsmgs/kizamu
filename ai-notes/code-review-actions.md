@@ -272,7 +272,7 @@ Presentationのコメントは「HTML timeに元のISO表記を使う」とす�
 
 両画面のダイアログでボタンの親はflexだが、子に `justify-self` が指定されている。Reactの狭幅用 `.records-list li` は通常幅と同じ列指定を重ねている。
 
-ダイアログの二つのボタンから通常幅と狭幅の `justify-self` だけを外し、Reactでは重複する一覧行の列指定も外す。通常幅と38rem以下で一覧の列、ボタンの並び・折り返し・フォーカス表示を変更前後で照合する。 [index.css 240行](../src/frontends/react/src/index.css#L240) · [index.css 382行](../src/frontends/react/src/index.css#L382) · [app.css 240行](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/wwwroot/app.css#L240)
+ダイアログの二つのボタンから通常幅と狭幅の `justify-self` を外した。Reactで重複していた一覧行の列指定は個別CSSの削除でなくなった。変更前後の表示と配信の検証結果は[画面部品化の項目12](view-viewmodel-componentization-plan.md#L89)に記録した。
 
 ### 30　起動確認が200以外の成功応答で再試行を使い切らないようにする
 

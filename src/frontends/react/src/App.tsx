@@ -3,7 +3,7 @@ import HealthStatus from './health/HealthStatus'
 import AuthenticatedTimeRecords from './timeRecords/AuthenticatedTimeRecords'
 import type { HealthService } from './presentation/healthService'
 import type { TimeRecordService } from './presentation/timeRecordService'
-import './index.css'
+import '../../blazor/Kizamu.Frontend.Blazor.Client/wwwroot/app.css'
 
 type AppProps = {
   isAuthenticated?: boolean

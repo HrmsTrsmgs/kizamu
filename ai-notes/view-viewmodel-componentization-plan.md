@@ -1,6 +1,6 @@
 # ViewとViewModelの部品化 作業一覧
 
-2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜10はコミット済み。11は検討済み。次は12のCSSの共用を検討する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
+2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜10はコミット済み。11は検討結果を `de48ca1` に記録済み。12は実装・検証済みでレビュー待ち。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
 
 既存の[全コードレビューの項目27](code-review-actions.md#L253)では、Reactの認証済み画面を `App` から抽出し、Blazorの認証後のViewModel生成の重複を減らした。両実装の `TimeRecordTimes` も操作欄と一覧で共用済み。ここでは、各部品が必要とする入力、引き受ける処理、単独で確認できる振る舞いを作業単位にする。
 
@@ -88,4 +88,6 @@ BlazorとReactの `TimeRecorderPanel` はプロジェクト名、表示する記
 
 ### 12　記録欄・タブ・登録ダイアログのCSS
 
-両実装の同じ表示に、同じセレクターと宣言が多い。既存の[全コードレビューの項目29](code-review-actions.md#L271)で既存CSS内の重複を整理した後、共通のCSSを双方から使えるか確認する。共用する場合は通常幅・狭幅とフォーカス表示、両方のビルドと静的ファイル配信を確かめる。Blazorの単独ビルドがNodeやnpmなしで完了することも確認する。 [BlazorのCSS](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/wwwroot/app.css#L39) · [ReactのCSS](../src/frontends/react/src/index.css#L57)
+2026-11-24、基準は `de48ca1`。Blazorの `wwwroot/app.css` を共用し、ReactはViteで同じCSSを読み込む。Blazorは既存の静的ファイル配信で `/app.css` を提供する。ダイアログのflexの子に指定していた `justify-self` を削除した。React側の狭幅用の一覧行にあった重複した列指定は、個別CSSの削除でなくなった。 [共用CSS](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/wwwroot/app.css) · [全コードレビューの項目29](code-review-actions.md#L271)
+
+Chromeの比較用ページで記録欄・タブ・一覧・登録ダイアログを表示し、1024・560・320pxで配置と見た目の計算値、7つの操作要素のフォーカス表示が変更前と等しいことを確認した。.NET 328件とTypeScript 251件のテスト、両ビルド、Lint、差分検査が成功。NodeとnpmをPATHから外した状態でBlazorを公開・起動し、`/app.css` の配信内容を原本と照合した。ReactはViteの開発サーバーとビルド後のプレビューでCSSの配信を確認した。既存のBL0016警告は1件。
