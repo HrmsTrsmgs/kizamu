@@ -1,5 +1,3 @@
-using Kizamu.Backend.AspNetCore.Application.TimeRecords;
-
 namespace Kizamu.Backend.AspNetCore.Api.Endpoints.TimeRecords;
 
 /// <summary>
@@ -11,32 +9,4 @@ namespace Kizamu.Backend.AspNetCore.Api.Endpoints.TimeRecords;
 sealed record TimeRecordResponse(
     Guid Id,
     DateTimeOffset StartedAt,
-    DateTimeOffset? EndedAt)
-{
-    /// <summary>
-    /// 記録一覧ユースケースの結果からAPIレスポンスを生成します。
-    /// </summary>
-    /// <param name="result">一覧で取得した作業記録。</param>
-    public TimeRecordResponse(GetTimeRecordResult result)
-        : this(result.Id, result.StartedAt, result.EndedAt)
-    {
-    }
-
-    /// <summary>
-    /// 記録開始ユースケースの結果からAPIレスポンスを生成します。
-    /// </summary>
-    /// <param name="result">記録開始ユースケースの結果。</param>
-    public TimeRecordResponse(StartTimeRecordResult result)
-        : this(result.Id, result.StartedAt, null)
-    {
-    }
-
-    /// <summary>
-    /// 記録終了ユースケースの結果からAPIレスポンスを生成します。
-    /// </summary>
-    /// <param name="result">記録終了ユースケースの結果。</param>
-    public TimeRecordResponse(EndTimeRecordResult result)
-        : this(result.Id, result.StartedAt, result.EndedAt)
-    {
-    }
-}
+    DateTimeOffset? EndedAt);

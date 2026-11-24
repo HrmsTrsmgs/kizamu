@@ -175,3 +175,10 @@
 * 決定：一覧取得中の更新を合成するとき、応答に含まれない記録は、各IDが更新に最初に現れた順に最新値を一件ずつ末尾へ追加する。A開始、B開始、A終了の順なら、Aの終了済み記録、Bの未終了記録の順になる。応答に含まれる記録は応答順で表示し、同じIDの取得中の更新を値に反映する。
 * 理由：記録を開始したときの並びを保ち、終了の更新後も同じ位置で記録を追えるようにする。Reactが採っていた最終更新順では、この場合に終了したAがBの後ろに移動する。
 * 根拠：開発者の順序統一の指示と、[BlazorのViewModelテスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L898)、[ReactのReducerテスト](../tests/frontends/react/presentation/timeRecorderState.test.ts#L208)。
+
+## D016：ASP.NET Coreの作業記録の応答変換にMapperlyを使う
+
+* 2026-11-24に導入を決定し、ASP.NET Core APIで開始・終了・一覧のユースケース結果をHTTP応答用のDTOへ変換する処理に適用した。
+* DTOのコンストラクターに同じ項目の転記を書く案と比較した。同名項目の対応付けをビルド時に生成し、対応が見つからない項目をビルド時の診断で追えるようにする。開始応答の終了時刻は `null` を明示する。 [変換の宣言](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Endpoints/TimeRecords/TimeRecordResponseMapper.cs)
+* `Riok.Mapperly` 4.3.1（Apache-2.0）をAPIプロジェクトのビルド時依存にする。Release公開物でMapperlyの実行時依存がゼロであることを確認した。 [パッケージ](https://www.nuget.org/packages/Riok.Mapperly/4.3.1) · [公式の導入手順](https://mapperly.riok.app/docs/getting-started/installation/)
+* 応答の値と開始応答の `endedAt: null` は既存のHTTPテストで確認した。 [作業記録APIのテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)

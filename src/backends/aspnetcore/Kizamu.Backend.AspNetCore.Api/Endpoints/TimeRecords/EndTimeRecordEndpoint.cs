@@ -23,7 +23,7 @@ static class EndTimeRecordEndpoint
                 if (!owners.TryGetValue(id, out var recordOwner) || recordOwner != owner) return Results.NotFound();
                 try
                 {
-                    return Results.Ok(new TimeRecordResponse(timeRecordEndOperation.Execute(id)));
+                    return Results.Ok(TimeRecordResponseMapper.ToResponse(timeRecordEndOperation.Execute(id)));
                 }
                 catch (TimeRecordNotFoundException)
                 {

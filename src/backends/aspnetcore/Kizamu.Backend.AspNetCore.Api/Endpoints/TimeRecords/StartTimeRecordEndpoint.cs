@@ -22,7 +22,7 @@ static class StartTimeRecordEndpoint
                 if (owner is null) return Results.Unauthorized();
                 var record = timeRecordStartOperation.Execute();
                 owners[record.Id] = owner;
-                return Results.Json(new TimeRecordResponse(record), statusCode: StatusCodes.Status201Created);
+                return Results.Json(TimeRecordResponseMapper.ToResponse(record), statusCode: StatusCodes.Status201Created);
             });
         }
     }

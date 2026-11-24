@@ -26,7 +26,7 @@ static class GetTimeRecordsEndpoint
                     var records =
                         from record in timeRecordReader.Execute()
                         where owners.GetValueOrDefault(record.Id) == owner
-                        select new TimeRecordResponse(record);
+                        select TimeRecordResponseMapper.ToResponse(record);
                     return Results.Ok(records);
                 });
         }
