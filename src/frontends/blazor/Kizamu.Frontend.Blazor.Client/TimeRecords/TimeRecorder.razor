@@ -47,6 +47,9 @@
 </div>
 
 @code {
+    // 初回取得が完了する前の再描画でも、同じViewModelの読み込みを重ねない。
+    ITimeRecorderViewModel? initialLoadRequestedFor;
+
     ITimeRecorderViewModel ViewModel => AuthenticatedViewModel ?? InjectedViewModel;
 
     [Parameter]
@@ -57,5 +60,16 @@
 
     protected override void OnParametersSet() => ViewModel.SelectProject(SelectedProject);
 
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync();
+    /// <inheritdoc />
+    protected override Task OnParametersSetAsync()
+    {
+        var viewModel = ViewModel;
+        if (initialLoadRequestedFor == viewModel)
+        {
+            return Task.CompletedTask;
+        }
+
+        initialLoadRequestedFor = viewModel;
+        return viewModel.LoadAsync();
+    }
 }

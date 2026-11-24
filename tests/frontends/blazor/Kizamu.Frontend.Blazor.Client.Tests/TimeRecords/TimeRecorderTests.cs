@@ -41,6 +41,24 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
+    public void 表示中の記録画面に別のViewModelを渡すと差し替え先の一覧を一度取得します()
+    {
+        var 差し替え先の記録サービス = new StubTimeRecordService(開始した記録, 終了した記録);
+
+        画面.Render(parameters => parameters.Add(it => it.AuthenticatedViewModel, new TimeRecorderViewModel(差し替え先の記録サービス)));
+
+        差し替え先の記録サービス.ListCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void 同じViewModelでプロジェクトを切り替えても記録一覧を再取得しません()
+    {
+        画面.Render(parameters => parameters.Add(it => it.SelectedProject, new Project("プロジェクトA")));
+
+        一覧読み込みの呼び出しを確認する(Times.Once());
+    }
+
+    [Fact]
     public void 初期表示では作業記録一覧が空です()
     {
         画面.Find("ul[aria-label='作業記録一覧']").Children.Should().BeEmpty();

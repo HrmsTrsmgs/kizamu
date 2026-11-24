@@ -1,6 +1,6 @@
 # ViewとViewModelの部品化 作業一覧
 
-2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜05・08はコミット済み。06は実装・検証済みでレビュー待ち。07・09〜12は未着手。次は07のBlazorの記録画面が使うViewModelと初期化を整理する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
+2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜06・08はコミット済み。07はViewModel差し替え時の読み込み修正が完了。次は07のViewModel受け渡しを整理する。09〜12は未着手。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
 
 既存の[全コードレビューの項目27](code-review-actions.md#L253)では、Reactの認証済み画面を `App` から抽出し、Blazorの認証後のViewModel生成の重複を減らした。両実装の `TimeRecordTimes` も操作欄と一覧で共用済み。ここでは、各部品が必要とする入力、引き受ける処理、単独で確認できる振る舞いを作業単位にする。
 
@@ -48,13 +48,15 @@ Blazorでは `TimeRecorderState` が、一覧応答と取得中の操作結果�
 
 Blazorは `ProjectRegistrationViewModel` が登録欄の下書きと操作を公開し、登録結果をタブの一覧に渡す。Reactは `useProjectTabs` が既存Reducerにつなぎ、一覧と登録欄の値・操作を分けて画面に返す。登録時はタブを追加し、現在の選択は維持する。キャンセル時は下書きを保持し、ログアウト時は初期化する。 [Blazorの登録ViewModel](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/Projects/ProjectRegistrationViewModel.cs) · [Reactのフック](../src/frontends/react/src/presentation/useProjectTabs.ts)
 
-2026-11-24、基準は `b1fb9b7`。登録・キャンセルの状態はPresentationで、ログアウト時の下書き初期化は両実装の画面テストで確認した。.NET 321件、TypeScript 247件、両ビルド、Lint、書式・差分検査が成功。.NETビルドは既存のBL0016警告1件。差分はレビュー用に未コミット。
+2026-11-24、基準は `b1fb9b7`。登録・キャンセルの状態はPresentationで、ログアウト時の下書き初期化は両実装の画面テストで確認した。.NET 321件、TypeScript 247件、両ビルド、Lint、書式・差分検査が成功。.NETビルドは既存のBL0016警告1件。`0a1502a` にコミット済み。
 
 ## Viewの部品化
 
 ### 07　Blazorの記録画面へ渡すViewModelとその初期化を揃える
 
 `App` から認証付きViewModelを渡す場合も、`TimeRecorder` は別のViewModelのDI登録を要求する。表示中に渡すViewModelを差し替えても初回一覧取得が走らない。画面を組み立てる箇所で使用するViewModelを決め、初回表示と差し替えで対象の一覧を一度だけ取得すること、同じViewModelでのタブ切替では再取得しないことを確認する。 [Appの生成処理](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L80) · [記録画面の初期化](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecorder.razor#L54)
+
+2026-11-24、基準は `0a1502a`。Redでは差し替え先への一覧取得が期待1回に対し0回となり、同じViewModelでのタブ切替は合格した。Greenでは初回またはViewModelの参照が変わったときに一覧取得を開始するようにした。.NET 323件、Blazorのビルド、書式・差分検査が成功。既存のBL0016警告は1件。次は明示指定したViewModelだけで表示できるよう受け渡しを整理する。
 
 ### 08　プロジェクトタブを認証画面から独立させる
 
