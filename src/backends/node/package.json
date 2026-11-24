@@ -11,6 +11,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@automapper/core": "9.0.2",
+    "@automapper/pojos": "9.0.2",
     "fastify": "5.12.8",
     "google-auth-library": "11.3.4",
     "kizamu-domain-typescript": "0.0.0",

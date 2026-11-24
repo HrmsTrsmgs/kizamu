@@ -183,3 +183,10 @@
 * `Riok.Mapperly` 4.3.1（Apache-2.0）をASP.NET CoreのAPI・ApplicationとBlazorのInfrastructureのビルド時依存にする。両アプリのRelease公開物でMapperlyの実行時依存がゼロであることを確認した。 [パッケージ](https://www.nuget.org/packages/Riok.Mapperly/4.3.1) · [公式の導入手順](https://mapperly.riok.app/docs/getting-started/installation/)
 * 応答の値と開始応答の `endedAt: null` は既存のHTTPテストで確認した。 [作業記録APIのテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)
 * コンストラクター呼び出しを毎回書く費用と、共通項目の変更時に見直す箇所を減らすため、同じ方針をApplicationの開始・終了・一覧の結果と、BlazorでのHTTP応答からの記録復元にも適用した。開始結果は識別子と開始時刻を持ち、終了結果は操作で確定した終了時刻を受け取る。 [Applicationの変換](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/TimeRecordResultMapper.cs) · [Blazorの変換](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordResponseMapper.cs)
+
+## D017：Nodeの作業記録の応答変換にAutoMapperを使う
+
+* 2026-11-24に導入を決定した。ASP.NET Coreの[D016](#d016aspnet-coreの作業記録の応答変換にmapperlyを使う)と同じく、Nodeの開始・終了・一覧APIの応答変換に適用した。
+* 識別子の同名転記と日時の書式を一つのマッピング宣言に置く。変換元と変換先のメタデータを別々に登録する構成も試した結果、三つの対応を直接読める宣言にした。進行中の終了時刻は `null` を明示して返す。 [応答変換](../src/backends/node/api/timeRecordResponse.ts)
+* `@automapper/core` と `@automapper/pojos` の9.0.2（MIT）をNode業務APIの実行時依存とし、ルートのlockfileで解決を固定する。既存の `tsc` でビルドする。 [Nodeの依存定義](../src/backends/node/package.json) · [POJOsの公式文書](https://automapperts.netlify.app/strategies/pojos/)
+* 識別子・ミリ秒3桁の時刻・進行中の終了時刻は、作業記録APIの境界で検証する。 [作業記録APIのテスト](../tests/backends/node/api/timeRecordEndpoints.test.ts)
