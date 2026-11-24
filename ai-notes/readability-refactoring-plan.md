@@ -36,6 +36,52 @@
 
 対象一覧と完了時の作業版を照合し、すべての対象ファイルに最終行までの精査結果があることを確認する。各変更で従来の振る舞い、テスト間の独立性、非同期処理の順序、リソースの破棄が保たれ、関連する検証が通っていることを確かめる。画面から移した状態仕様は、元の条件と期待結果を内側の直接テストで保証できたことを確認してから、重複する画面テストを整理する。保留事項と既存のSkipは理由を記録する。
 
+## 2026-11-24の全行精査
+
+基準コミット `ce89de6` で `src/`、`tests/`、`scripts/` に追跡されていた221ファイル・11,647行を、対応する実装とテストを照合しながら通読した。下表の件数・行数は確認範囲を示す。変更対象は既存41ファイルと追加3ファイル。その他の180ファイルは基準版を維持した。
+
+| 対象 | ファイル | 行 | 確認と修正 |
+| --- | ---: | ---: | --- |
+| ASP.NET Core | 39 | 1,757 | テスト用クライアントIDと公開鍵の取得先を指定し、本番の認証構成と署名検証を通した。保存先の代役にも未保存IDの更新契約を適用し、取得後の一覧と列挙時のスナップショットの違いを公開コメントに記した。 |
+| Node | 25 | 1,011 | 記録APIのテストから無関係な開始要求の組み立てやJSONを包むオブジェクトを取り除いた。起動テストではURLが標準出力の最初の行に来る場合も改行まで待つ。 |
+| .NET Domain | 7 | 268 | 記録値と不変性の仕様を維持し、依存検査で参照先を調べる準備を共有した。 |
+| TypeScript Domain | 14 | 295 | 同じESLint規則を検証する入力をケース表に集めた。型import、実行時の直接通信、許可する依存の期待結果は個別に確認する。 |
+| Blazor | 68 | 4,689 | 終了応答のIDと終了時刻を終了操作で検査する。手動再取得テストは画面と同じViewModelの入口で実行し、読み込み例外そのものを扱うケースとはテスト名でも区別した。 |
+| React | 62 | 3,455 | 開始・終了要求に対するプロジェクト別の終了対象更新をReducerで共用した。フックの失敗検証、重複IDの一覧、再ログインのテスト準備を整理し、画面の依存制約をプロジェクト画面にも適用した。 |
+| 共通テスト補助 | 2 | 17 | アセンブリ名の取得とHTTP・JSON・Kizamuの分類を一か所にした。許可する参照先は各層のテスト本文で指定する。 |
+| 起動・検証スクリプト | 4 | 155 | ポート確認、ログ付きプロセスの起動、ブラウザーを開いてEnterを待つ手順を共用した。各画面のビルドと子プロセス停止は、それぞれの入口で扱う。 |
+
+終了対象を決める責務はReducer・ViewModel、記録終了の応答を検証する責務は通信境界に置いた。開始・終了の同一オリジン確認と、一覧取得を含む利用者認証は適用範囲が異なるため、順序と経路を維持した。Reactの初回一覧取得失敗時の扱いは[設計判断D012](../docs/decisions.md)の継続事項であり、今回のリファクタリングでは新たな仕様を定めていない。
+
+### 変更ファイル
+
+* **ASP.NET Core**　[ITimeRecordState.cs](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/ITimeRecordState.cs)、[TimeRecordReader.cs](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/TimeRecordReader.cs)、[ApiDependenciesTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/ApiDependenciesTests.cs)、[TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)、[Kizamu.Backend.AspNetCore.Api.Tests.csproj](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Kizamu.Backend.AspNetCore.Api.Tests.csproj)、[ApplicationDependenciesTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/ApplicationDependenciesTests.cs)、[Kizamu.Backend.AspNetCore.Application.Tests.csproj](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/Kizamu.Backend.AspNetCore.Application.Tests.csproj)、[FakeTimeRecordState.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/FakeTimeRecordState.cs)、[GoogleIdTokenVerifierTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs)、[InfrastructureDependenciesTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/InfrastructureDependenciesTests.cs)、[Kizamu.Backend.AspNetCore.Infrastructure.Tests.csproj](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Kizamu.Backend.AspNetCore.Infrastructure.Tests.csproj)、[GoogleIdTokenFixture.cs](../tests/backends/aspnetcore/TestSupport/GoogleIdTokenFixture.cs)
+* **Node**　[timeRecordEndpoints.ts](../src/backends/node/api/timeRecordEndpoints.ts)、[timeRecordEndpoints.test.ts](../tests/backends/node/api/timeRecordEndpoints.test.ts)、[timeRecords.test.ts](../tests/backends/node/application/timeRecords.test.ts)、[healthEndpoint.test.ts](../tests/backends/node/healthEndpoint.test.ts)、[serverStartup.test.ts](../tests/backends/node/serverStartup.test.ts)
+* **.NET Domain**　[DomainDependenciesTests.cs](../tests/domains/dotnet/Kizamu.Domain.Tests/DomainDependenciesTests.cs)、[Kizamu.Domain.Tests.csproj](../tests/domains/dotnet/Kizamu.Domain.Tests/Kizamu.Domain.Tests.csproj)
+* **TypeScript Domain**　[dependencyBoundaries.test.ts](../tests/domains/typescript/dependencyBoundaries.test.ts)
+* **Blazor**　[App.razor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor)、[TimeRecordApi.cs](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordApi.cs)、[AppTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/AppTests.cs)、[GoogleSignInTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/GoogleSignInTests.cs)、[InfrastructureDependenciesTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/InfrastructureDependenciesTests.cs)、[Kizamu.Frontend.Blazor.Infrastructure.Tests.csproj](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/Kizamu.Frontend.Blazor.Infrastructure.Tests.csproj)、[TimeRecordApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[HealthStatusViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/Health/HealthStatusViewModelTests.cs)、[Kizamu.Frontend.Blazor.Presentation.Tests.csproj](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/Kizamu.Frontend.Blazor.Presentation.Tests.csproj)、[PresentationDependenciesTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/PresentationDependenciesTests.cs)、[TimeRecorderViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs)、[StubTimeRecordService.cs](../tests/frontends/blazor/TestSupport/StubTimeRecordService.cs)
+* **React**　[eslint.config.js](../src/frontends/react/eslint.config.js)、[timeRecorderState.ts](../src/frontends/react/src/presentation/timeRecorderState.ts)、[App.test.tsx](../tests/frontends/react/App.test.tsx)、[eslintBoundaries.test.ts](../tests/frontends/react/architecture/eslintBoundaries.test.ts)、[timeRecorderState.test.ts](../tests/frontends/react/presentation/timeRecorderState.test.ts)、[useTimeRecorder.test.ts](../tests/frontends/react/presentation/useTimeRecorder.test.ts)、[TimeRecorder.test.tsx](../tests/frontends/react/timeRecords/TimeRecorder.test.tsx)
+* **共通テスト補助**　[AssemblyReferences.cs](../tests/TestSupport/AssemblyReferences.cs)
+* **起動・検証スクリプト**　[Check-Blazor.ps1](../scripts/Check-Blazor.ps1)、[Check-React.ps1](../scripts/Check-React.ps1)、[FrontendCheck.ps1](../scripts/FrontendCheck.ps1)、[FrontendCheck.Tests.ps1](../tests/scripts/FrontendCheck.Tests.ps1)
+
+### 未コミット差分を含む再精査
+
+前回の変更を含む `ce89de6` の作業ツリーで、製品・テスト・スクリプト224ファイル・11,677行を再読した。以下の19ファイルは更新後も通読した。コードとスクリプトに新しいファイルは追加していない。
+
+| 対象 | 再精査で反映した内容 | 変更ファイル |
+| --- | --- | --- |
+| ASP.NET Coreの記録 | APIでは未認証・期限切れの終了要求後も元の1件と終了時刻のnullを確認する。Readerと保存先では開始時刻の遅い記録を先に保存し、一覧の保存順と直近に追加した記録を区別する。具体型の一覧はインターフェースの契約を継承する。 | [InMemoryTimeRecordState.cs](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure/TimeRecords/InMemoryTimeRecordState.cs)、[TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)、[TimeRecordReaderTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordReaderTests.cs)、[InMemoryTimeRecordStateTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/TimeRecords/InMemoryTimeRecordStateTests.cs) |
+| 認証とNodeの記録API | 同じメールを持つ別の利用者を区別する条件を両言語で明示した。Nodeでは署名済みのテスト用トークンを使い、期限の1ミリ秒前・ちょうど・1ミリ秒後を確認する。記録一覧の取得とテスト用アプリの管理を共有した。 | [GoogleIdTokenVerifierTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs)、[timeRecordEndpoints.test.ts](../tests/backends/node/api/timeRecordEndpoints.test.ts)、[googleIdTokenVerifier.test.ts](../tests/backends/node/infrastructure/googleIdTokenVerifier.test.ts) |
+| Blazor | 操作失敗前に開始した一覧取得を無効化する順序を再取得処理にまとめた。通信中の逆操作には別タブに有効な対象を用意した。SDKのログアウト後の再描画と、SDKから受け取ったトークンが既定の一覧要求に渡る経路を確認する。 | [App.razor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor)、[TimeRecorderViewModel.cs](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs)、[GoogleSignInTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/GoogleSignInTests.cs)、[Kizamu.Frontend.Blazor.Client.Tests.csproj](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/Kizamu.Frontend.Blazor.Client.Tests.csproj)、[ProjectTabsViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/Projects/ProjectTabsViewModelTests.cs)、[TimeRecorderViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) |
+| React | 再ログイン後の待機中表示を直接確認する。Reducerを呼ぶ操作を各本文に戻し、二つのプロジェクトでの共通準備とHTTP 500のケース表を整理した。 | [App.test.tsx](../tests/frontends/react/App.test.tsx)、[timeRecordService.test.ts](../tests/frontends/react/infrastructure/timeRecordService.test.ts)、[timeRecorderState.test.ts](../tests/frontends/react/presentation/timeRecorderState.test.ts)、[useTimeRecorder.test.ts](../tests/frontends/react/presentation/useTimeRecorder.test.ts) |
+| Domainの依存制約と起動スクリプト | Reactへの型依存を検出するESLintの規則名を指定した。子プロセスが指定ディレクトリで起動することを、ログの出力先を分けて検証する。 | [FrontendCheck.Tests.ps1](../tests/scripts/FrontendCheck.Tests.ps1)、[dependencyBoundaries.test.ts](../tests/domains/typescript/dependencyBoundaries.test.ts) |
+
+### 検証と停止位置
+
+.NET全330件、Vitest全254件（Domain 17件、React 179件、Node 58件）、PowerShell 6件が成功した。非増分.NETビルド、npmのビルド・Lint、変更C#のformat、PowerShell構文検査も成功した。全体の.NET formatは[GoogleSignInのJavaScript呼び出し](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/GoogleSignIn.cs)の既存警告BL0016で失敗。16プロジェクトのSARIFにも同じ1件だけが残る。ログインボタンを描画できない場合の通知や再試行は、別途扱いを決める必要がある。
+
+前回の全行精査で起動スクリプトは2本とも実際にサーバーを立ち上げ、フロント経由のHTTP 200と、終了時に合計4プロセス・2ログディレクトリが片付くことを確認した。ブラウザー起動とEnter入力は代役で確認した。再精査では起動スクリプト本体に変更はなく、子プロセスの作業ディレクトリとログの検証を再実行した。作業ツリーの差分は未コミット。既存の[レビュー指摘31](code-review-actions.md#31起動失敗時にreactの確認スクリプトから原因をたどれるようにする)の失敗診断の追加は別の変更として残っている。
+
 ## 第2回の精査（2026-11-12）
 
 基準はPR #21の統合後の `main`（`23b4932`）、最終コードは `b1dee7c`。基準版の176ファイルを一行ずつ再読した。既存16ファイルを変更し、4ファイルを追加した。変更・追加した20ファイルは最終版を再読し、残る160ファイルは基準と同じ内容であることをGitで照合した。
@@ -69,10 +115,10 @@
 
 ### 第2回で変更・追加したファイル
 
-* **Blazor**　[TimeRecordTimes.razor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecordTimes.razor)、[TimeRecordRefreshTimer.cs](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecordRefreshTimer.cs)、[TimeRecordRefreshTimerTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecordRefreshTimerTests.cs)、[HealthApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/Health/HealthApiTests.cs)、[TimeRecordApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecorderViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs)、[TestHttpMessageHandler.cs](../tests/frontends/blazor/TestSupport/TestHttpMessageHandler.cs)
+* **Blazor**　[TimeRecordTimes.razor](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecordTimes.razor)、[TimeRecordRefreshTimer.cs](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecordRefreshTimer.cs)、[TimeRecordRefreshTimerTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecordRefreshTimerTests.cs)、[HealthApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/Health/HealthApiTests.cs)、[TimeRecordApiTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecorderViewModelTests.cs](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs)、[TestHttpMessageHandler.cs](../tests/frontends/blazor/TestSupport/TestHttpMessageHandler.cs)
 * **React**　[App.tsx](../src/frontends/react/src/App.tsx)、[pendingTimeRecordLoads.ts](../src/frontends/react/src/presentation/pendingTimeRecordLoads.ts)、[projectTabsState.ts](../src/frontends/react/src/presentation/projectTabsState.ts)、[useTimeRecorder.ts](../src/frontends/react/src/presentation/useTimeRecorder.ts)、[App.test.tsx](../tests/frontends/react/App.test.tsx)、[pendingTimeRecordLoads.test.ts](../tests/frontends/react/presentation/pendingTimeRecordLoads.test.ts)、[projectTabsState.test.ts](../tests/frontends/react/presentation/projectTabsState.test.ts)、[timeRecorderState.test.ts](../tests/frontends/react/presentation/timeRecorderState.test.ts)、[useTimeRecorder.test.ts](../tests/frontends/react/presentation/useTimeRecorder.test.ts)
-* **ASP.NET Core**　[TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs)、[TimeRecordEndOperationTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs)
-* **Node**　[timeRecords.test.ts](../tests/backends/node/timeRecords.test.ts)
+* **ASP.NET Core**　[TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)、[TimeRecordEndOperationTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs)
+* **Node**　[timeRecords.test.ts](../tests/backends/node/application/timeRecords.test.ts)
 * **TypeScript Domain**　[timeRecord.test.ts](../tests/domains/typescript/timeRecord.test.ts)
 
 ### 最終検証
@@ -196,9 +242,9 @@
 | ファイル | 全行精査の結果 |
 | --- | --- |
 | `Kizamu.Backend.AspNetCore.Api.Tests/ApiDependenciesTests.cs`、`Kizamu.Backend.AspNetCore.Application.Tests/ApplicationDependenciesTests.cs`、`Kizamu.Backend.AspNetCore.Infrastructure.Tests/InfrastructureDependenciesTests.cs` | 維持。参照可能なアセンブリは各層で異なる。許可する依存先をテスト本文から読める。 |
-| [Kizamu.Backend.AspNetCore.Api.Tests/BlazorHostingTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/BlazorHostingTests.cs)、[Kizamu.Backend.AspNetCore.Api.Tests/HealthEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/HealthEndpointTests.cs) | 修正。テストごとのHTTPクライアントを生成するフィクスチャと、そのクライアントを破棄する責任をクラス内で直接表す。 |
+| [Kizamu.Backend.AspNetCore.Api.Tests/BlazorHostingTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/BlazorHostingTests.cs)、[Kizamu.Backend.AspNetCore.Api.Tests/HealthEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/Health/HealthEndpointTests.cs) | 修正。テストごとのHTTPクライアントを生成するフィクスチャと、そのクライアントを破棄する責任をクラス内で直接表す。 |
 | `Kizamu.Backend.AspNetCore.Api.Tests/Kizamu.Backend.AspNetCore.Api.Tests.csproj`、`Kizamu.Backend.AspNetCore.Application.Tests/Kizamu.Backend.AspNetCore.Application.Tests.csproj`、`Kizamu.Backend.AspNetCore.Infrastructure.Tests/Kizamu.Backend.AspNetCore.Infrastructure.Tests.csproj` | 維持。各プロジェクトに必要な対象フレームワーク、参照方向、テスト依存を宣言している。 |
-| [Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs) | 修正。拒否後の一覧GET・200・JSON読取を再利用し、開始・終了を拒否した後に何が保存されているかを本文で確認する。 |
+| [Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs) | 修正。拒否後の一覧GET・200・JSON読取を再利用し、開始・終了を拒否した後に何が保存されているかを本文で確認する。 |
 | `Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/FakeTimeRecordState.cs`、`Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordEndOperationTests.cs`、`Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordReaderTests.cs`、`Kizamu.Backend.AspNetCore.Application.Tests/TimeRecords/TimeRecordStartOperationTests.cs`、`Kizamu.Backend.AspNetCore.Infrastructure.Tests/TimeRecords/InMemoryTimeRecordStateTests.cs` | 維持。ID指定の終了、保存順・列挙中の追加・同一参照、時計を内側で確認。テストの操作順と準備を保持。 |
 
 ### Nodeテスト（`tests/backends/node/`）
@@ -209,7 +255,7 @@
 | `healthEndpoint.test.ts` | 維持。正常性HTTP応答のJSONとContent-Typeの検証に限定。 |
 | `kizamu-backend-node-tests.esproj`、`package.json`、`tsconfig.json`、`vitest.config.ts` | 維持。実行入口、型検査、依存先またはテスト起動を宣言。構成の差はツールや層に対応。 |
 | [serverStartup.test.ts](../tests/backends/node/serverStartup.test.ts) | 修正。待受URLの取得・タイムアウトとプロセスの停止・close待ちを分け、テスト本文は起動したAPIへの要求と期待応答を示す。 |
-| [timeRecordEndpoints.test.ts](../tests/backends/node/timeRecordEndpoints.test.ts) | 修正。拒否後の一覧GET・200・JSON読取を再利用し、開始・終了を拒否した後に何が保存されているかを本文で確認する。 |
+| [timeRecordEndpoints.test.ts](../tests/backends/node/api/timeRecordEndpoints.test.ts) | 修正。拒否後の一覧GET・200・JSON読取を再利用し、開始・終了を拒否した後に何が保存されているかを本文で確認する。 |
 | `timeRecordInfrastructure.test.ts`、`timeRecords.test.ts` | 維持。記録源と保存順は別の公開境界。未定義の戻り値、記録のクラス、順序を含む期待を照合。 |
 
 ### Blazorテスト（`tests/frontends/blazor/`）

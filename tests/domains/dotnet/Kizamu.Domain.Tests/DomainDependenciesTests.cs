@@ -1,18 +1,27 @@
 using AwesomeAssertions;
+using Kizamu.Tests;
 
 namespace Kizamu.Domain.Tests;
 
 public sealed class DomainDependenciesTests
 {
-    [Fact]
-    public void Domainは実装固有の層やHTTPとJSONを参照しない()
-    {
-        var references = typeof(TimeRecord).Assembly.GetReferencedAssemblies();
+    readonly AssemblyReferences 参照先 = new(typeof(TimeRecord));
 
-        references.Select(it => it.Name).Should().NotContain(it =>
-            it != null && it.StartsWith("Kizamu.", StringComparison.Ordinal));
-        references.Select(it => it.Name).Should().NotContain(it =>
-            it == "System.Net.Http" || it == "System.Net.Http.Json" || it == "System.Text.Json"
-            || (it != null && it.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal)));
+    [Fact]
+    public void DomainはKizamuの他のアセンブリを参照しません()
+    {
+        参照先.Kizamu.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DomainはHTTP関連のアセンブリを参照しません()
+    {
+        参照先.Http.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DomainはJSON関連のアセンブリを参照しません()
+    {
+        参照先.Json.Should().BeEmpty();
     }
 }

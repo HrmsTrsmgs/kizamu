@@ -4,27 +4,25 @@ namespace Kizamu.Backend.AspNetCore.Application.TimeRecords;
 /// 作業記録を終了します。
 /// </summary>
 /// <param name="timeProvider">終了時刻の取得元。</param>
-/// <param name="timeRecordState">作業記録の状態取得元。</param>
+/// <param name="timeRecordState">作業記録の保存先。</param>
 public sealed class TimeRecordEndOperation(
     TimeProvider timeProvider,
     ITimeRecordState timeRecordState)
 {
     /// <summary>
-    /// 指定した作業記録の終了結果を生成します。
+    /// 指定した作業記録を終了して保存します。
     /// </summary>
     /// <param name="id">作業記録の識別子。</param>
     /// <returns>終了した作業記録。</returns>
+    /// <exception cref="TimeRecordNotFoundException">指定した作業記録が保存先に存在しない場合。</exception>
     public EndTimeRecordResult Execute(Guid id)
     {
-        var timeRecord = timeRecordState.Find(id);
         var endedAt = timeProvider.GetUtcNow();
-        if (timeRecord is null)
-        {
-            return new(id, default, endedAt);
-        }
+        var timeRecord = timeRecordState.Find(id) ?? throw new TimeRecordNotFoundException();
 
-        timeRecord.End(endedAt);
-        return new(id, timeRecord.StartedAt, endedAt);
+        var endedTimeRecord = timeRecord.End(endedAt);
+        timeRecordState.Update(endedTimeRecord);
+        return TimeRecordResultMapper.ToEndResult(endedTimeRecord, endedAt);
     }
 }
 

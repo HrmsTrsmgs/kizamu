@@ -13,7 +13,7 @@ public sealed class GoogleSignIn(IJSRuntime js, IConfiguration configuration) : 
     public async Task RenderButtonAsync(ElementReference container, Action<string> onCredential)
     {
         this.onCredential = onCredential;
-        reference = DotNetObjectReference.Create(this);
+        reference ??= DotNetObjectReference.Create(this);
         await js.InvokeVoidAsync("kizamuGoogleSignIn", container, configuration["Google:ClientId"] ?? "", reference);
     }
 
@@ -23,5 +23,9 @@ public sealed class GoogleSignIn(IJSRuntime js, IConfiguration configuration) : 
     public void ReceiveCredential(string credential) => onCredential?.Invoke(credential);
 
     /// <inheritdoc />
-    public void Dispose() => reference?.Dispose();
+    public void Dispose()
+    {
+        onCredential = null;
+        reference?.Dispose();
+    }
 }

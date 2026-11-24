@@ -17,17 +17,9 @@ public sealed class TimeRecordTimesFormatterTests
     [Theory]
     [InlineData(90, "1時間30分")]
     [InlineData(135, "2時間15分")]
-    public void 終了済みの作業時間は開始から終了までの時間分で表示します(int 経過分, string 表示)
+    [InlineData(1575, "26時間15分")]
+    public void 作業時間を通算の時間と分で表示します(int 経過分, string 表示)
     {
-        TimeRecordTimesFormatter.FormatDuration(開始時刻, 開始時刻.AddMinutes(経過分),
-            () => throw new InvalidOperationException("終了済みの記録には現在時刻を使いません。")).Should().Be(表示);
-    }
-
-    [Theory]
-    [InlineData(90, "1時間30分")]
-    [InlineData(135, "2時間15分")]
-    public void 記録中の作業時間は開始から現在までの時間分で表示します(int 経過分, string 表示)
-    {
-        TimeRecordTimesFormatter.FormatDuration(開始時刻, null, () => 開始時刻.AddMinutes(経過分)).Should().Be(表示);
+        TimeRecordTimesFormatter.FormatDuration(TimeSpan.FromMinutes(経過分)).Should().Be(表示);
     }
 }

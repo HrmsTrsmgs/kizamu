@@ -19,32 +19,15 @@ public sealed class TimeRecordStartOperation(
     {
         var timeRecord = TimeRecord.Start(timeProvider.GetUtcNow());
         timeRecordState.Add(timeRecord);
-        return new(timeRecord);
+        return TimeRecordResultMapper.ToStartResult(timeRecord);
     }
 }
 
 /// <summary>
 /// 開始した作業記録を表します。
 /// </summary>
-public sealed record StartTimeRecordResult
-{
-    /// <summary>
-    /// Domainの作業記録から開始結果を生成します。
-    /// </summary>
-    /// <param name="timeRecord">開始した作業記録。</param>
-    public StartTimeRecordResult(TimeRecord timeRecord)
-    {
-        Id = timeRecord.Id;
-        StartedAt = timeRecord.StartedAt;
-    }
-
-    /// <summary>
-    /// 作業記録の識別子を取得します。
-    /// </summary>
-    public Guid Id { get; }
-
-    /// <summary>
-    /// 作業記録を開始した時刻を取得します。
-    /// </summary>
-    public DateTimeOffset StartedAt { get; }
-}
+/// <param name="Id">作業記録の識別子。</param>
+/// <param name="StartedAt">作業記録を開始した時刻。</param>
+public sealed record StartTimeRecordResult(
+    Guid Id,
+    DateTimeOffset StartedAt);

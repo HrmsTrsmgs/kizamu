@@ -1,3 +1,5 @@
+@using Kizamu.Frontend.Blazor.Client.Projects
+@using Kizamu.Frontend.Blazor.Infrastructure.TimeRecords
 @inject ProjectTabsViewModel ViewModel
 @inject IServiceProvider Services
 
@@ -7,51 +9,31 @@
         <p class="app-description">作業時間を記録します。</p>
     </header>
     <div>
-        @if (!ShowAuthenticatedContent)
-        {
-            @if (Services.GetService(typeof(IGoogleSignIn)) is not null)
-            {
-                <div @ref="googleButton"></div>
-            }
-            else
-            {
-                <button type="button" @onclick="SignInAsync">Googleでログイン</button>
-            }
-        }
-        else
+        @if (ShowAuthenticatedContent)
         {
             <button type="button" @onclick="SignOut">ログアウト</button>
         }
-    </div>
-    @if (ShowAuthenticatedContent)
-    {
-        <section class="project-toolbar" aria-labelledby="projects-title">
-            <div class="project-toolbar-heading">
-                <h2 id="projects-title">プロジェクト</h2>
-                <button class="project-add-button" type="button" @onclick="ViewModel.OpenProjectDialog">追加</button>
-            </div>
-            <div class="project-tabs" role="tablist" aria-label="プロジェクト">
-                <span class="project-default" aria-selected="@(ViewModel.SelectedProject is null ? "true" : "false")">未指定</span>
-                @foreach (var project in ViewModel.Projects)
-                {
-                    <button class="project-tab" role="tab" aria-selected="@(ViewModel.SelectedProject == project ? "true" : "false")" type="button" @onclick="() => ViewModel.SelectProject(project)">@project.Name</button>
-                }
-            </div>
-        </section>
-        <TimeRecorder SelectedProject="ViewModel.SelectedProject" AuthenticatedViewModel="timeRecorder" />
-        @if (ViewModel.ShowProjectDialog)
+        else if (GoogleSignIn is not null)
         {
-            <div class="project-dialog-overlay">
-                <div class="project-dialog" role="dialog" aria-labelledby="project-dialog-title">
-                    <h2 id="project-dialog-title">プロジェクトを追加</h2>
-                    <label for="project-name">プロジェクト名</label>
-                    <input id="project-name" @bind="ViewModel.ProjectName" />
-                    <div class="project-dialog-actions">
-                        <button class="project-cancel-button" type="button" @onclick="ViewModel.CancelProjectDialog">キャンセル</button>
-                        <button class="project-register-button" type="button" @onclick="ViewModel.RegisterProject">登録</button>
-                    </div>
-                </div>
-            </div>
+            <div @ref="googleButton"></div>
+        }
+        else
+        {
+            <button type="button" @onclick="SignInAsync">Googleでログイン</button>
+        }
+    </div>
+    @if (ActiveTimeRecorder is { } recorder)
+    {
+        <ProjectTabs Projects="ViewModel.Projects"
+                     SelectedProject="ViewModel.SelectedProject"
+                     OnAddProject="ViewModel.Registration.Open"
+                     OnSelectProject="ViewModel.SelectProject" />
+        <TimeRecorder ViewModel="recorder" SelectedProject="ViewModel.SelectedProject" />
+        @if (ViewModel.Registration.IsOpen)
+        {
+            <ProjectRegistrationDialog @bind-ProjectName="ViewModel.Registration.ProjectName"
+                                       OnRegister="ViewModel.Registration.Register"
+                                       OnCancel="ViewModel.Registration.Cancel" />
         }
     }
     <footer class="app-footer">
@@ -63,13 +45,16 @@
     TimeRecorderViewModel? timeRecorder;
     ElementReference googleButton;
     bool renderGoogleButton = true;
+    bool hasSignedOut;
 
-    bool ShowAuthenticatedContent => IsAuthenticated || timeRecorder is not null;
+    IGoogleSignIn? GoogleSignIn => Services.GetService<IGoogleSignIn>();
+    ITimeRecorderViewModel? ActiveTimeRecorder => timeRecorder ?? (hasSignedOut ? null : InitialTimeRecorder);
+    bool ShowAuthenticatedContent => ActiveTimeRecorder is not null;
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (renderGoogleButton && !ShowAuthenticatedContent && Services.GetService(typeof(IGoogleSignIn)) is IGoogleSignIn google)
+        if (renderGoogleButton && !ShowAuthenticatedContent && GoogleSignIn is { } google)
         {
             renderGoogleButton = false;
             await google.RenderButtonAsync(googleButton, OnCredential);
@@ -78,11 +63,11 @@
 
     void OnCredential(string token)
     {
-        var create = CreateTimeRecords ?? (value => new Kizamu.Frontend.Blazor.Infrastructure.TimeRecords.TimeRecordApi(
-            (HttpClient)Services.GetService(typeof(HttpClient))!, value));
-        timeRecorder = new(create(token));
+        SetTimeRecorder(token, CreateTimeRecords ?? CreateAuthenticatedService);
         _ = InvokeAsync(StateHasChanged);
     }
+
+    ITimeRecordService CreateAuthenticatedService(string token) => new TimeRecordApi(Services.GetRequiredService<HttpClient>(), token);
 
     /// <summary>Google認証を開始する操作を取得または設定します。</summary>
     [Parameter]
@@ -94,6 +79,7 @@
 
     void SignOut()
     {
+        hasSignedOut = true;
         timeRecorder = null;
         ViewModel = new();
         renderGoogleButton = true;
@@ -104,11 +90,14 @@
         if (SignInWithGoogle is not null && CreateTimeRecords is not null)
         {
             var token = await SignInWithGoogle();
-            timeRecorder = new(CreateTimeRecords(token));
+            SetTimeRecorder(token, CreateTimeRecords);
         }
     }
 
-    /// <summary>記録画面を表示する認証済み状態を取得または設定します。</summary>
+    void SetTimeRecorder(string token, Func<string, ITimeRecordService> createTimeRecords) =>
+        timeRecorder = new(createTimeRecords(token));
+
+    /// <summary>初期表示が認証済みの場合に使用する記録ViewModelを取得または設定します。</summary>
     [Parameter]
-    public bool IsAuthenticated { get; set; }
+    public ITimeRecorderViewModel? InitialTimeRecorder { get; set; }
 }

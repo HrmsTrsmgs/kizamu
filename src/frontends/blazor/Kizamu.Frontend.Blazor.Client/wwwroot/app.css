@@ -237,11 +237,11 @@ h1 {
   font: inherit;
 }
 
-.project-cancel-button { justify-self: end; min-width: 7rem; border-color: #c8ded1; background: #fff; color: #1f6b48; }
+.project-cancel-button { min-width: 7rem; border-color: #c8ded1; background: #fff; color: #1f6b48; }
 .project-cancel-button:hover { background: #e7f2eb; }
 .project-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.65rem; margin-top: 0.5rem; }
 
-.project-register-button { justify-self: end; min-width: 7rem; border-color: #1f6b48; background: #1f6b48; color: #fff; }
+.project-register-button { min-width: 7rem; border-color: #1f6b48; background: #1f6b48; color: #fff; }
 .project-register-button:hover { background: #18583b; }
 .project-tab:focus-visible, .project-add-button:focus-visible, .project-register-button:focus-visible, .project-cancel-button:focus-visible, .project-dialog input:focus-visible {
   outline: 3px solid #378a60;
@@ -257,5 +257,4 @@ h1 {
   .record-button { width: 100%; }
   .time-record-times { grid-template-columns: 1fr; }
   .project-dialog { width: 100%; }
-  .project-register-button, .project-cancel-button { justify-self: stretch; }
 }

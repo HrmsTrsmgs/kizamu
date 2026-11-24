@@ -29,6 +29,19 @@ public sealed class InMemoryTimeRecordState : ITimeRecordState
     }
 
     /// <inheritdoc />
+    public void Update(TimeRecord timeRecord)
+    {
+        lock (sync)
+        {
+            var index = timeRecords.FindIndex(it => it.Id == timeRecord.Id);
+            if (index < 0)
+                throw new TimeRecordNotFoundException();
+
+            timeRecords[index] = timeRecord;
+        }
+    }
+
+    /// <inheritdoc />
     public TimeRecord[] CopyAll()
     {
         lock (sync)
@@ -45,9 +58,6 @@ public sealed class InMemoryTimeRecordState : ITimeRecordState
             timeRecords.Add(timeRecord);
     }
 
-    /// <summary>
-    /// 追加したすべての作業記録を取得します。
-    /// </summary>
-    /// <returns>追加した作業記録。</returns>
+    /// <inheritdoc />
     public IReadOnlyList<TimeRecord> All => timeRecords;
 }

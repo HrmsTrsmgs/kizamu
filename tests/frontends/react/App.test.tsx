@@ -1,51 +1,133 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, describe, it, vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { beforeEach, describe, it, vi, type Mock } from 'vitest'
 import { should } from '../../should.mjs'
 import App from '../../../src/frontends/react/src/App'
+import type { HealthService } from '../../../src/frontends/react/src/presentation/healthService'
+import type { TimeRecordService } from '../../../src/frontends/react/src/presentation/timeRecordService'
 import { createTimeRecordServiceStub } from './test/createTimeRecordServiceStub'
+import { deferred } from './test/deferred'
+import { presentedRecord, timestamp } from './test/timeRecords'
+
+let health: HealthService
+
+beforeEach(() => {
+  health = { checkHealth: async () => true }
+})
 
 describe('未ログインのApp', () => {
-  it('Googleログインに成功すると記録画面を表示し取得したトークンを記録通信へ渡します', async () => {
-    const signInWithGoogle = vi.fn(async () => 'google-id-token')
-    const createTimeRecords = vi.fn(() => createTimeRecordServiceStub())
-    render(<App health={{ checkHealth: async () => true }} signInWithGoogle={signInWithGoogle} createTimeRecords={createTimeRecords} />)
+  describe('Googleログインを利用できるとき', () => {
+    let createTimeRecords: Mock<() => TimeRecordService>
 
-    fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+    beforeEach(() => {
+      createTimeRecords = vi.fn(() => createTimeRecordServiceStub())
+      render(<App health={health} signInWithGoogle={async () => 'google-id-token'} createTimeRecords={createTimeRecords} />)
+    })
 
-    ;(await screen.findByRole('button', { name: '記録を開始' })).should.toBeInTheDocument()
-    should.not.exist(screen.queryByRole('button', { name: 'Googleでログイン' }))
-    createTimeRecords.should.have.been.calledWith('google-id-token')
+    it('Googleログインに成功するとログインボタンに代わって記録画面を表示します', async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+
+      ;(await screen.findByRole('button', { name: '記録を開始' })).should.toBeInTheDocument()
+      should.not.exist(screen.queryByRole('button', { name: 'Googleでログイン' }))
+    })
+
+    it('Googleログインで取得したIDトークンを記録サービスの生成処理に渡します', async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+
+      await waitFor(() => createTimeRecords.should.have.been.calledWith('google-id-token'))
+    })
+
+    it('Googleログインに成功すると、ログインボタンがあった場所にログアウトボタンが表示されます', async () => {
+      const positionInMain = (button: HTMLElement) => {
+        const children = screen.getByRole('main').children
+        return Array.from(children).findIndex(child => child.contains(button))
+      }
+      const login = screen.getByRole('button', { name: 'Googleでログイン' })
+      const loginPosition = positionInMain(login)
+      loginPosition.should.be.at.least(0)
+
+      fireEvent.click(login)
+
+      const logout = await screen.findByRole('button', { name: 'ログアウト' })
+      positionInMain(logout).should.equal(loginPosition)
+    })
+
+    it('ログイン後にログアウトすると作業記録一覧を隠してログインボタンを表示します', async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      await screen.findByRole('list', { name: '作業記録一覧' })
+
+      fireEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+
+      screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
+      should.not.exist(screen.queryByRole('list', { name: '作業記録一覧' }))
+    })
+
+    it('ログアウトして再ログインすると、プロジェクト追加の下書きが空になります', async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      fireEvent.click(await screen.findByRole('button', { name: '追加' }))
+      fireEvent.change(screen.getByRole('textbox', { name: 'プロジェクト名' }), { target: { value: 'プロジェクトA' } })
+
+      fireEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      fireEvent.click(await screen.findByRole('button', { name: '追加' }))
+
+      screen.getByRole('textbox', { name: 'プロジェクト名' }).should.toHaveValue('')
+    })
+
+    it('ログアウト前の開始応答が再ログイン後に届いても、作業記録一覧に追加しません', async () => {
+      const 記録 = presentedRecord('record', timestamp('2026-08-01T09:00:00Z'))
+      const ログアウト前の応答 = deferred<typeof 記録>()
+      const startTimeRecord = vi.fn(() => ログアウト前の応答.promise)
+      createTimeRecords.mockReturnValueOnce(createTimeRecordServiceStub({ startTimeRecord }))
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      fireEvent.click(await screen.findByRole('button', { name: '記録を開始' }))
+      startTimeRecord.should.have.callCount(1)
+
+      fireEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      const list = await screen.findByRole('list', { name: '作業記録一覧' })
+      await act(async () => {
+        ログアウト前の応答.resolve(記録)
+        await ログアウト前の応答.promise
+      })
+
+      within(list).queryAllByRole('listitem').should.have.length(0)
+    })
+
+    it('再ログイン後の一覧が空なら操作欄は待機中になり開始ボタンを表示します', async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+      fireEvent.click(await screen.findByRole('button', { name: '記録を開始' }))
+      await screen.findByRole('button', { name: '記録を終了' })
+
+      fireEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
+
+      const startButton = await screen.findByRole('button', { name: '記録を開始' })
+      startButton.should.toBeInTheDocument()
+      screen.getByText('待機中', { selector: '.status-badge' }).should.toBeInTheDocument()
+      should.not.exist(screen.queryByText('記録中', { selector: '.status-badge' }))
+    })
   })
 
-  it('ログアウトするとログイン表示に戻り再ログイン時に前の記録を表示しません', async () => {
-    render(<App health={{ checkHealth: async () => true }} signInWithGoogle={async () => 'google-id-token'} createTimeRecords={() => createTimeRecordServiceStub()} />)
-    const loginPlace = screen.getByRole('button', { name: 'Googleでログイン' }).parentElement
-    fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
-    fireEvent.click(await screen.findByRole('button', { name: '記録を開始' }))
-    await screen.findByRole('button', { name: '記録を終了' })
-
-    const logout = screen.getByRole('button', { name: 'ログアウト' })
-    logout.should.have.property('parentElement', loginPlace)
-    fireEvent.click(logout)
-
-    screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
-    should.not.exist(screen.queryByRole('list', { name: '作業記録一覧' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Googleでログイン' }))
-    ;(await screen.findByRole('button', { name: '記録を開始' })).should.toBeInTheDocument()
-    should.not.exist(screen.queryByText('記録中', { selector: '.status-badge' }))
-  })
-
-  it('Googleログインを表示し記録画面を表示しません', () => {
-    render(<App health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+  it('ログイン前の画面にはGoogleのログインボタンが表示され、記録の開始ボタンは表示されません', () => {
+    render(<App health={health} timeRecords={createTimeRecordServiceStub()} />)
 
     screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
     should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
   })
 })
 
-describe('App', () => {
+describe('ログイン済みのApp', () => {
   beforeEach(() => {
-    render(<App isAuthenticated health={{ checkHealth: async () => true }} timeRecords={createTimeRecordServiceStub()} />)
+    render(<App isAuthenticated health={health} timeRecords={createTimeRecordServiceStub()} />)
+  })
+
+  it('初期認証済みの画面でログアウトすると作業記録一覧が消えてGoogleのログインボタンが表示されます', () => {
+    screen.getByRole('list', { name: '作業記録一覧' }).should.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+
+    should.not.exist(screen.queryByRole('list', { name: '作業記録一覧' }))
+    screen.getByRole('button', { name: 'Googleでログイン' }).should.toBeInTheDocument()
   })
 
   it('追加ボタンを押すとプロジェクト追加ダイアログを表示します', () => {
@@ -54,67 +136,90 @@ describe('App', () => {
     screen.getByRole('dialog', { name: 'プロジェクトを追加' }).should.toBeInTheDocument()
   })
 
-  it('入力したプロジェクト名がタブに表示されます', () => {
-    fireEvent.click(screen.getByRole('button', { name: '追加' }))
-    const dialog = screen.getByRole('dialog', { name: 'プロジェクトを追加' })
-    const projectName = within(dialog).getByRole('textbox', { name: 'プロジェクト名' })
-    fireEvent.change(projectName, { target: { value: '入力途中' } })
-
-    act(() => {
-      fireEvent.change(projectName, { target: { value: 'プロジェクトA' } })
-      projectName.should.toHaveValue('プロジェクトA')
-      fireEvent.click(within(dialog).getByRole('button', { name: '登録' }))
+  describe('プロジェクト追加ダイアログを開いたとき', () => {
+    beforeEach(() => {
+      fireEvent.click(screen.getByRole('button', { name: '追加' }))
     })
 
-    screen.getByRole('tab', { name: 'プロジェクトA' }).should.toBeInTheDocument()
+    it('登録直前に入力したプロジェクト名がタブに表示されます', () => {
+      const dialog = screen.getByRole('dialog', { name: 'プロジェクトを追加' })
+      const projectName = within(dialog).getByRole('textbox', { name: 'プロジェクト名' })
+      fireEvent.change(projectName, { target: { value: '入力途中' } })
+
+      act(() => {
+        fireEvent.change(projectName, { target: { value: 'プロジェクトA' } })
+        projectName.should.toHaveValue('プロジェクトA')
+        fireEvent.click(within(dialog).getByRole('button', { name: '登録' }))
+      })
+
+      screen.getByRole('tab', { name: 'プロジェクトA' }).should.toBeInTheDocument()
+    })
+
+    it('キャンセルボタンを押すとプロジェクト追加ダイアログを閉じます', () => {
+      fireEvent.click(screen.getByRole('button', { name: 'キャンセル' }))
+
+      should.not.exist(screen.queryByRole('dialog', { name: 'プロジェクトを追加' }))
+    })
+  })
+
+  it('プロジェクトを登録すると追加ダイアログを閉じます', () => {
+    プロジェクトを登録する('プロジェクトA')
+
     should.not.exist(screen.queryByRole('dialog', { name: 'プロジェクトを追加' }))
   })
 
-  it('初期状態では未指定を選択中として表示します', () => {
-    within(screen.getByRole('tablist', { name: 'プロジェクト' })).getByText('未指定').should.toHaveAttribute('aria-selected', 'true')
-  })
-
-  it('登録済みプロジェクトのタブを押すとそのタブが選択中として表示されます', () => {
-    プロジェクトを登録する('プロジェクトA')
+  it('「未指定」と登録済みプロジェクトを切り替えると、タブの選択表示と記録欄の見出しが切り替わります', () => {
     const tabs = within(screen.getByRole('tablist', { name: 'プロジェクト' }))
+    const unspecified = tabs.getByRole('tab', { name: '未指定' })
+    unspecified.should.toHaveAttribute('aria-selected', 'true')
+
+    プロジェクトを登録する('プロジェクトA')
     const project = tabs.getByRole('tab', { name: 'プロジェクトA' })
+    unspecified.should.toHaveAttribute('aria-selected', 'true')
 
     fireEvent.click(project)
 
     project.should.toHaveAttribute('aria-selected', 'true')
-    tabs.getByText('未指定').should.toHaveAttribute('aria-selected', 'false')
+    unspecified.should.toHaveAttribute('aria-selected', 'false')
     screen.getByRole('heading', { name: 'プロジェクトA', level: 2 }).should.toBeInTheDocument()
+
+    fireEvent.click(unspecified)
+
+    unspecified.should.toHaveAttribute('aria-selected', 'true')
+    project.should.toHaveAttribute('aria-selected', 'false')
+    screen.getByRole('heading', { name: 'プロジェクト未指定', level: 2 }).should.toBeInTheDocument()
   })
 
-  it('タブを切り替えて戻ると記録中の対象には終了操作を表示します', async () => {
-    プロジェクトを登録する('プロジェクトA')
-    プロジェクトを登録する('プロジェクトB')
-    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
-    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
-    await screen.findByRole('button', { name: '記録を終了' })
+  it('別のプロジェクトから記録中のタブに戻ると、記録の終了ボタンが表示されます', async () => {
+    const 記録中のプロジェクト = 'プロジェクトA'
+    const 未開始のプロジェクト = 'プロジェクトB'
+    await 記録中と未開始のタブを準備する(記録中のプロジェクト, 未開始のプロジェクト)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトB' }))
+    fireEvent.click(screen.getByRole('tab', { name: 未開始のプロジェクト }))
 
     screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
+    fireEvent.click(screen.getByRole('tab', { name: 記録中のプロジェクト }))
     screen.getByRole('button', { name: '記録を終了' }).should.toBeInTheDocument()
     should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
   })
 
-  it('キャンセルボタンを押すとプロジェクト追加ダイアログを閉じます', () => {
-    fireEvent.click(screen.getByRole('button', { name: '追加' }))
-
-    fireEvent.click(screen.getByRole('button', { name: 'キャンセル' }))
-
-    should.not.exist(screen.queryByRole('dialog', { name: 'プロジェクトを追加' }))
-  })
-
-  it('準備完了画面を表示します', () => {
+  it('画面にアプリ名と用途を表示します', () => {
     screen.getByRole('heading', { name: 'Kizamu' }).should.toBeInTheDocument()
     screen.getByText('作業時間を記録します。').should.toBeInTheDocument()
+  })
+
+  it('デモ用のカウンターを表示しません', () => {
     should.not.exist(screen.queryByText(/count is/i))
   })
 })
+
+async function 記録中と未開始のタブを準備する(記録中のプロジェクト: string, 未開始のプロジェクト: string) {
+  プロジェクトを登録する(記録中のプロジェクト)
+  プロジェクトを登録する(未開始のプロジェクト)
+  fireEvent.click(screen.getByRole('tab', { name: 記録中のプロジェクト }))
+  fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+  await screen.findByRole('button', { name: '記録を終了' })
+}
 
 function プロジェクトを登録する(name: string) {
   fireEvent.click(screen.getByRole('button', { name: '追加' }))

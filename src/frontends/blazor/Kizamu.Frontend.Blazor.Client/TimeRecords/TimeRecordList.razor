@@ -1,0 +1,24 @@
+<section class="records-panel" aria-labelledby="@titleId">
+    <header class="panel-header records-header">
+        <h2 id="@titleId">作業記録</h2>
+        <span class="record-count">@(Records.Count)件</span>
+    </header>
+    <ul class="records-list" aria-label="作業記録一覧">
+        @foreach (var record in Records)
+        {
+            <li @key="record.Id">
+                <span class="record-status @(record.EndedAt is null ? "is-active" : "")" aria-hidden="true"></span>
+                <TimeRecordTimes Record="record" />
+            </li>
+        }
+    </ul>
+</section>
+
+@code {
+    // 同じページにある別の一覧とは見出しIDを共有しない。
+    readonly string titleId = $"records-title-{Guid.NewGuid():N}";
+
+    /// <summary>一覧に表示する記録を取得または設定します。渡された順序で表示します。</summary>
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<TimeRecord> Records { get; set; }
+}

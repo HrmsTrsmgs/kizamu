@@ -1,0 +1,33 @@
+<section class="project-toolbar" aria-labelledby="@titleId">
+    <div class="project-toolbar-heading">
+        <h2 id="@titleId">プロジェクト</h2>
+        <button class="project-add-button" type="button" @onclick="OnAddProject">追加</button>
+    </div>
+    <div class="project-tabs" role="tablist" aria-label="プロジェクト">
+        <button class="project-default project-tab" role="tab" aria-selected="@(SelectedProject is null ? "true" : "false")" type="button" @onclick="() => OnSelectProject.InvokeAsync(null)">未指定</button>
+        @foreach (var project in Projects)
+        {
+            <button class="project-tab" role="tab" aria-selected="@(SelectedProject == project ? "true" : "false")" type="button" @onclick="() => OnSelectProject.InvokeAsync(project)">@project.Name</button>
+        }
+    </div>
+</section>
+
+@code {
+    readonly string titleId = $"projects-{Guid.NewGuid():N}";
+
+    /// <summary>タブとして表示するプロジェクトを取得または設定します。</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Project> Projects { get; set; } = [];
+
+    /// <summary>選択中のプロジェクトを取得または設定します。未指定の場合はnullです。</summary>
+    [Parameter]
+    public Project? SelectedProject { get; set; }
+
+    /// <summary>プロジェクトの追加ボタンを押したときの操作を取得または設定します。</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnAddProject { get; set; }
+
+    /// <summary>選んだプロジェクトを通知する操作を取得または設定します。未指定の場合はnullを渡します。</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<Project?> OnSelectProject { get; set; }
+}

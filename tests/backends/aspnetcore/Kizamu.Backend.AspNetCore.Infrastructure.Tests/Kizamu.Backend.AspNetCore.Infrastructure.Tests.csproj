@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -18,9 +18,11 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Compile Include="..\TestSupport\GoogleIdTokenFixture.cs" Link="TestSupport\GoogleIdTokenFixture.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\..\TestSupport\AssemblyReferences.cs" Link="TestSupport\AssemblyReferences.cs" />
     <ProjectReference Include="..\..\..\..\src\domains\dotnet\Kizamu.Domain\Kizamu.Domain.csproj" />
     <ProjectReference Include="..\..\..\..\src\backends\aspnetcore\Kizamu.Backend.AspNetCore.Infrastructure\Kizamu.Backend.AspNetCore.Infrastructure.csproj" />
   </ItemGroup>

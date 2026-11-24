@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Kizamu.Domain;
 
 namespace Kizamu.Frontend.Blazor.Infrastructure.TimeRecords;
 
@@ -7,8 +6,4 @@ namespace Kizamu.Frontend.Blazor.Infrastructure.TimeRecords;
 /// <param name="Id">サーバーが発行した記録の識別子。</param>
 /// <param name="StartedAt">記録開始の瞬間。</param>
 /// <param name="EndedAt">記録終了の瞬間。記録中はnullです。</param>
-public readonly record struct TimeRecordResponse([property: JsonRequired] Guid Id, DateTimeOffset StartedAt, DateTimeOffset? EndedAt)
-{
-    /// <summary>通信形式から、画面が扱う作業記録へ変換します。</summary>
-    internal TimeRecord ToDomain() => new(Id, StartedAt, EndedAt);
-}
+public readonly record struct TimeRecordResponse([property: JsonRequired] Guid Id, [property: JsonRequired] DateTimeOffset StartedAt, DateTimeOffset? EndedAt);

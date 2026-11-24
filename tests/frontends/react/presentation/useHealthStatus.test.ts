@@ -13,7 +13,7 @@ describe('useHealthStatus', () => {
     health = { checkHealth }
   })
 
-  it('確認前は未確定の状態を公開します', () => {
+  it('サーバーの応答を待つ間、接続状態は未確定を表すnullです', () => {
     checkHealth.mockReturnValue(new Promise<boolean>(() => {}))
 
     const { result } = renderHook(() => useHealthStatus(health))
@@ -21,7 +21,7 @@ describe('useHealthStatus', () => {
     result.should.have.property('current', null)
   })
 
-  it.each([true, false])('確認した接続状態を公開します: %s', async isHealthy => {
+  it.each([true, false])('サーバーの接続確認が完了すると、その結果（%s）を接続状態として返します', async isHealthy => {
     checkHealth.mockResolvedValue(isHealthy)
 
     const { result } = renderHook(() => useHealthStatus(health))
@@ -29,7 +29,7 @@ describe('useHealthStatus', () => {
     await waitFor(() => result.should.have.property('current', isHealthy))
   })
 
-  it('APIに接続できない場合は失敗の状態を公開します', async () => {
+  it('接続確認で通信エラーが起きると、接続状態は失敗を表すfalseです', async () => {
     checkHealth.mockImplementation(async () => { throw new Error('offline') })
 
     const { result } = renderHook(() => useHealthStatus(health))

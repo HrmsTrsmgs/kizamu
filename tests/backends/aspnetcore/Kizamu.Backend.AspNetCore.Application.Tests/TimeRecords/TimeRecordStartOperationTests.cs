@@ -1,32 +1,37 @@
 using AwesomeAssertions;
 using Kizamu.Backend.AspNetCore.Application.TimeRecords;
+using Kizamu.Domain;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kizamu.Backend.AspNetCore.Application.Tests.TimeRecords;
 
 public sealed class TimeRecordStartOperationTests
 {
-    public static TheoryData<DateTimeOffset> 開始時刻の例 =>
-    [
-        new DateTimeOffset(2026, 8, 1, 9, 0, 0, TimeSpan.Zero),
-        new DateTimeOffset(2026, 8, 1, 10, 30, 0, TimeSpan.Zero),
-    ];
+    static readonly DateTimeOffset 最初の開始時刻 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
+    static readonly DateTimeOffset 次の開始時刻 = new(2026, 8, 1, 10, 30, 0, TimeSpan.Zero);
+    readonly FakeTimeProvider timeProvider = new();
+    readonly FakeTimeRecordState state = new();
+    readonly TimeRecordStartOperation tested;
 
-    [Theory]
-    [MemberData(nameof(開始時刻の例))]
-    public void 記録を開始すると識別子と現在の開始時刻を返し終了時刻のない記録を保存する(
-        DateTimeOffset startedAt)
+    public TimeRecordStartOperationTests() => tested = new(timeProvider, state);
+
+    [Fact]
+    public void 記録を二回開始するとそれぞれの開始時点の現在時刻が返ります()
     {
-        var state = new FakeTimeRecordState();
-        var tested = new TimeRecordStartOperation(new FakeTimeProvider(startedAt), state);
+        timeProvider.SetUtcNow(最初の開始時刻);
+        tested.Execute().StartedAt.Should().Be(最初の開始時刻);
+
+        timeProvider.SetUtcNow(次の開始時刻);
+        tested.Execute().StartedAt.Should().Be(次の開始時刻);
+    }
+
+    [Fact]
+    public void 開始結果の識別子と開始時刻を持つ終了時刻未設定の記録が保存されます()
+    {
+        timeProvider.SetUtcNow(最初の開始時刻);
 
         var result = tested.Execute();
 
-        result.Id.Should().NotBeEmpty();
-        result.StartedAt.Should().Be(startedAt);
-        state.Current.Should().NotBeNull();
-        state.Current.Id.Should().Be(result.Id);
-        state.Current.StartedAt.Should().Be(startedAt);
-        state.Current.EndedAt.Should().BeNull();
+        state.Current.Should().Be(new TimeRecord(result.Id, result.StartedAt, null));
     }
 }

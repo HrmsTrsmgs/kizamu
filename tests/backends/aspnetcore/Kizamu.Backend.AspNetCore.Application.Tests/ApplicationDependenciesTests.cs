@@ -1,19 +1,28 @@
 using AwesomeAssertions;
+using Kizamu.Tests;
 using Kizamu.Backend.AspNetCore.Application.TimeRecords;
 
 namespace Kizamu.Backend.AspNetCore.Application.Tests;
 
 public sealed class ApplicationDependenciesTests
 {
-    [Fact]
-    public void ユースケースはAPIと保存実装を参照せずDomainだけに依存する()
-    {
-        var references = typeof(TimeRecordStartOperation).Assembly.GetReferencedAssemblies();
+    readonly AssemblyReferences 参照先 = new(typeof(TimeRecordStartOperation));
 
-        references.Select(it => it.Name).Where(it => it is not null && it.StartsWith("Kizamu.", StringComparison.Ordinal))
-            .Should().Equal("Kizamu.Domain");
-        references.Select(it => it.Name).Should().NotContain(it =>
-            it == "System.Net.Http" || it == "System.Net.Http.Json" || it == "System.Text.Json"
-            || (it != null && it.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal)));
+    [Fact]
+    public void Applicationが参照するKizamuの層はDomainだけです()
+    {
+        参照先.Kizamu.Should().Equal("Kizamu.Domain");
+    }
+
+    [Fact]
+    public void ApplicationはHTTP関連のアセンブリを参照しません()
+    {
+        参照先.Http.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ApplicationはJSON関連のアセンブリを参照しません()
+    {
+        参照先.Json.Should().BeEmpty();
     }
 }

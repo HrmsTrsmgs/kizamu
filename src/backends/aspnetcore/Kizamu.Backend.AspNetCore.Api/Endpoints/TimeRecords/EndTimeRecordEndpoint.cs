@@ -21,7 +21,14 @@ static class EndTimeRecordEndpoint
                 var owner = await TimeRecordAuthentication.GetOwnerAsync(request, verifier);
                 if (owner is null) return Results.Unauthorized();
                 if (!owners.TryGetValue(id, out var recordOwner) || recordOwner != owner) return Results.NotFound();
-                return Results.Ok(new TimeRecordResponse(timeRecordEndOperation.Execute(id)));
+                try
+                {
+                    return Results.Ok(TimeRecordResponseMapper.ToResponse(timeRecordEndOperation.Execute(id)));
+                }
+                catch (TimeRecordNotFoundException)
+                {
+                    return Results.NotFound();
+                }
             });
         }
     }

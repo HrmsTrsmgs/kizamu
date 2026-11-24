@@ -23,9 +23,11 @@ static class GetTimeRecordsEndpoint
                     var owner = await TimeRecordAuthentication.GetOwnerAsync(request, verifier);
                     if (owner is null) return Results.Unauthorized();
 
-                    return Results.Ok(timeRecordReader.Execute()
-                        .Where(it => owners.TryGetValue(it.Id, out var recordOwner) && recordOwner == owner)
-                        .Select(it => new TimeRecordResponse(it)));
+                    var records =
+                        from record in timeRecordReader.Execute()
+                        where owners.GetValueOrDefault(record.Id) == owner
+                        select TimeRecordResponseMapper.ToResponse(record);
+                    return Results.Ok(records);
                 });
         }
     }

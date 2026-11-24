@@ -4,7 +4,8 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
-const viewImports = ['**/App', '**/App.tsx', '**/App.js', '**/main', '**/main.tsx', '**/timeRecords/**', '**/health/**']
+const viewDirectories = ['timeRecords', 'health', 'projects']
+const viewImports = ['**/App', '**/App.tsx', '**/App.js', '**/main', '**/main.tsx', ...viewDirectories.map(directory => `**/${directory}/**`)]
 const browserGlobals = ['fetch', 'XMLHttpRequest', 'window', 'document', 'navigator', 'self', 'globalThis']
 
 export default tseslint.config(
@@ -43,7 +44,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/App.tsx', 'src/{timeRecords,health}/**/*.{ts,tsx}'],
+    files: ['src/App.tsx', ...viewDirectories.map(directory => `src/${directory}/**/*.{ts,tsx}`)],
     rules: {
       'no-restricted-imports': ['error', { patterns: ['**/infrastructure/**'] }],
       'no-restricted-globals': ['error', ...browserGlobals],

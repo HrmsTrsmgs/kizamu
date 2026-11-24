@@ -2,7 +2,7 @@ using AwesomeAssertions;
 using Kizamu.Frontend.Blazor.Presentation.TimeRecords;
 using Microsoft.Extensions.Time.Testing;
 
-namespace Kizamu.Frontend.Blazor.Client.Tests.TimeRecords;
+namespace Kizamu.Frontend.Blazor.Presentation.Tests.TimeRecords;
 
 public sealed class TimeRecordRefreshTimerTests : IDisposable
 {
@@ -10,12 +10,15 @@ public sealed class TimeRecordRefreshTimerTests : IDisposable
     readonly TimeRecordRefreshTimer tested;
     int 更新回数;
 
-    public TimeRecordRefreshTimerTests() => tested = new(clock, () => 更新回数++);
+    public TimeRecordRefreshTimerTests()
+    {
+        tested = new(clock, () => 更新回数++);
+        tested.ScheduleRefresh(null);
+    }
 
     [Fact]
-    public void 記録中に設定し直すとその一秒後から一秒ごとに一度だけ更新する()
+    public void 記録中に更新タイマーを設定し直すと一秒後から一秒に一度だけ更新を通知します()
     {
-        tested.ScheduleRefresh(null);
         clock.Advance(TimeSpan.FromMilliseconds(500));
 
         tested.ScheduleRefresh(null);
@@ -29,10 +32,8 @@ public sealed class TimeRecordRefreshTimerTests : IDisposable
     }
 
     [Fact]
-    public void 記録を終了すると定期更新が止まる()
+    public void 記録の終了時刻を設定すると更新タイマーの定期通知が止まります()
     {
-        tested.ScheduleRefresh(null);
-
         tested.ScheduleRefresh(clock.GetUtcNow());
         clock.Advance(TimeSpan.FromSeconds(1));
 
@@ -40,10 +41,8 @@ public sealed class TimeRecordRefreshTimerTests : IDisposable
     }
 
     [Fact]
-    public void 記録中に破棄すると定期更新が止まる()
+    public void 記録中に更新タイマーを破棄すると定期通知が止まります()
     {
-        tested.ScheduleRefresh(null);
-
         tested.Dispose();
         clock.Advance(TimeSpan.FromSeconds(1));
 

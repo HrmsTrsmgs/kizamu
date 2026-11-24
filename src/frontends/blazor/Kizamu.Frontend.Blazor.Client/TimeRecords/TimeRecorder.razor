@@ -1,65 +1,39 @@
-@inject ITimeRecorderViewModel InjectedViewModel
-
 <div class="time-recorder">
-    <section class="recorder-panel" aria-labelledby="recorder-title">
-        <header class="panel-header">
-            <h2 id="recorder-title">@(SelectedProject?.Name ?? "プロジェクト未指定")</h2>
-            <span class="status-badge @(ViewModel.IsRecording ? "is-active" : "")">
-                @(ViewModel.IsRecording ? "記録中" : "待機中")
-            </span>
-        </header>
-        <div class="recorder-action">
-            @if (!ViewModel.IsRecording)
-            {
-                <button class="record-button" type="button" disabled="@(!ViewModel.CanOperate)" @onclick="() => ViewModel.RunUserOperationAsync(ViewModel.StartTimeRecordAsync)">記録を開始</button>
-            }
-            else
-            {
-                <button class="record-button is-active" type="button" disabled="@(!ViewModel.CanOperate)" @onclick="() => ViewModel.RunUserOperationAsync(ViewModel.EndTimeRecordAsync)">記録を終了</button>
-            }
-            @switch (ViewModel.Notice)
-            {
-                case TimeRecorderNotice.StateUnconfirmed:
-                    <p role="alert">最新状態を確認できません。再取得してください。</p>
-                    <button type="button" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.RunUserOperationAsync(ViewModel.LoadAsync)">再取得</button>
-                    break;
-                case TimeRecorderNotice.OperationFailed:
-                    <p role="alert">記録操作に失敗しました。</p>
-                    break;
-            }
-            @if (ViewModel.DisplayedRecord is { } displayed)
-            {
-                <TimeRecordTimes StartedAt="displayed.StartedAt" EndedAt="displayed.EndedAt" Labelled="true" />
-            }
-        </div>
-    </section>
-    <section class="records-panel" aria-labelledby="records-title">
-        <header class="panel-header records-header">
-            <h2 id="records-title">作業記録</h2>
-            <span class="record-count">@(ViewModel.Records.Count)件</span>
-        </header>
-        <ul class="records-list" aria-label="作業記録一覧">
-            @foreach (var record in ViewModel.Records)
-            {
-                <li @key="record.Id">
-                    <span class="record-status @(record.EndedAt is null ? "is-active" : "")" aria-hidden="true"></span>
-                    <TimeRecordTimes StartedAt="record.StartedAt" EndedAt="record.EndedAt" />
-                </li>
-            }
-        </ul>
-    </section>
+    <TimeRecorderPanel ProjectName="@(SelectedProject?.Name)"
+                       IsRecording="ViewModel.IsRecording"
+                       CanOperate="ViewModel.CanOperate"
+                       CanReload="ViewModel.CanReload"
+                       Notice="ViewModel.Notice"
+                       DisplayedRecord="ViewModel.DisplayedRecord"
+                       OnToggleRecording="ViewModel.ToggleRecordingAsync"
+                       OnReload="ViewModel.ReloadRecordsAsync" />
+    <TimeRecordList Records="ViewModel.Records" />
 </div>
 
 @code {
-    ITimeRecorderViewModel ViewModel => AuthenticatedViewModel ?? InjectedViewModel;
+    // 初回取得が完了する前の再描画でも、同じViewModelの読み込みを重ねない。
+    ITimeRecorderViewModel? initialLoadRequestedFor;
 
-    [Parameter]
-    public ITimeRecorderViewModel? AuthenticatedViewModel { get; set; }
+    /// <summary>記録画面が表示と操作に使うViewModelを取得または設定します。</summary>
+    [Parameter, EditorRequired]
+    public required ITimeRecorderViewModel ViewModel { get; set; }
 
+    /// <summary>記録操作の対象を取得または設定します。<see langword="null"/> はプロジェクト未指定です。</summary>
     [Parameter]
     public Project? SelectedProject { get; set; }
 
     protected override void OnParametersSet() => ViewModel.SelectProject(SelectedProject);
 
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync();
+    /// <inheritdoc />
+    protected override Task OnParametersSetAsync()
+    {
+        var viewModel = ViewModel;
+        if (initialLoadRequestedFor == viewModel)
+        {
+            return Task.CompletedTask;
+        }
+
+        initialLoadRequestedFor = viewModel;
+        return viewModel.LoadAsync();
+    }
 }

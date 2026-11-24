@@ -1,0 +1,65 @@
+<section class="recorder-panel" aria-labelledby="@titleId">
+    <header class="panel-header">
+        <h2 id="@titleId">@(ProjectName ?? "プロジェクト未指定")</h2>
+        <span class="status-badge @(IsRecording ? "is-active" : "")">
+            @(IsRecording ? "記録中" : "待機中")
+        </span>
+    </header>
+    <div class="recorder-action">
+        <button class="@(IsRecording ? "record-button is-active" : "record-button")"
+                type="button"
+                disabled="@(!CanOperate)"
+                @onclick="OnToggleRecording">@(IsRecording ? "記録を終了" : "記録を開始")</button>
+        @switch (Notice)
+        {
+            case TimeRecorderNotice.StateUnconfirmed:
+                <p role="alert">最新状態を確認できません。再取得してください。</p>
+                <button type="button" disabled="@(!CanReload)" @onclick="OnReload">再取得</button>
+                break;
+            case TimeRecorderNotice.OperationFailed:
+                <p role="alert">記録操作に失敗しました。</p>
+                break;
+        }
+        @if (DisplayedRecord is { } displayed)
+        {
+            <TimeRecordTimes Record="displayed" Labelled="true" />
+        }
+    </div>
+</section>
+
+@code {
+    // 操作欄を複数配置したときも、各欄が自分の見出しを参照する。
+    readonly string titleId = $"recorder-title-{Guid.NewGuid():N}";
+
+    /// <summary>表題に表示する選択中のプロジェクト名を取得または設定します。<see langword="null"/> は未指定です。</summary>
+    [Parameter]
+    public string? ProjectName { get; set; }
+
+    /// <summary>選択中の対象が記録中かどうかを取得または設定します。</summary>
+    [Parameter]
+    public bool IsRecording { get; set; }
+
+    /// <summary>開始・終了ボタンを押せるかどうかを取得または設定します。</summary>
+    [Parameter]
+    public bool CanOperate { get; set; }
+
+    /// <summary>案内に表示する再取得ボタンを押せるかどうかを取得または設定します。</summary>
+    [Parameter]
+    public bool CanReload { get; set; }
+
+    /// <summary>操作欄に表示する通知の種類を取得または設定します。</summary>
+    [Parameter]
+    public TimeRecorderNotice Notice { get; set; }
+
+    /// <summary>時刻を表示する直近の記録を取得または設定します。<see langword="null"/> のときは時刻欄を表示しません。</summary>
+    [Parameter]
+    public TimeRecord? DisplayedRecord { get; set; }
+
+    /// <summary>開始・終了ボタンを押したときに呼ぶ操作を取得または設定します。</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnToggleRecording { get; set; }
+
+    /// <summary>再取得ボタンを押したときに呼ぶ操作を取得または設定します。</summary>
+    [Parameter, EditorRequired]
+    public EventCallback OnReload { get; set; }
+}

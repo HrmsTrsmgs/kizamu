@@ -1,4 +1,5 @@
 import type { TimeRecord } from 'kizamu-domain-typescript'
+import { TimeRecordNotFoundError } from '../application/timeRecords.js'
 import type { TimeRecordState } from '../application/timeRecords.js'
 
 export class InMemoryTimeRecordState implements TimeRecordState {
@@ -14,7 +15,8 @@ export class InMemoryTimeRecordState implements TimeRecordState {
 
   replace(record: TimeRecord): void {
     const index = this.records.findIndex((existing) => existing.id === record.id)
-    if (index !== -1) this.records[index] = record
+    if (index === -1) throw new TimeRecordNotFoundError()
+    this.records[index] = record
   }
 
   all(): readonly TimeRecord[] {

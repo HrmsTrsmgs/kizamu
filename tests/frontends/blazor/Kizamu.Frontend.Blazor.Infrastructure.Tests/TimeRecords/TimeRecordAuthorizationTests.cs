@@ -6,34 +6,55 @@ using Kizamu.Frontend.Blazor.TestSupport;
 
 namespace Kizamu.Frontend.Blazor.Infrastructure.Tests.TimeRecords;
 
-public sealed class TimeRecordAuthorizationTests
+public sealed class TimeRecordAuthorizationTests : IDisposable
 {
-    [Theory]
-    [InlineData("list")]
-    [InlineData("start")]
-    [InlineData("end")]
-    public async Task 利用可能な認証トークンを記録APIへ送ります(string operation)
-    {
-        var handler = new TestHttpMessageHandler();
-        string? authorization = null;
-        handler.Respond = request =>
-        {
-            authorization = request.Headers.Authorization?.ToString();
-            object body = operation == "list"
-                ? Array.Empty<object>()
-                : new { id = Guid.Empty, startedAt = "2026-08-01T09:00:00Z", endedAt = (string?)null };
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(body) });
-        };
-        using var client = new HttpClient(handler) { BaseAddress = new("http://localhost/") };
-        var tested = new TimeRecordApi(client, "id-token");
+    static readonly DateTimeOffset 開始時刻 = DateTimeOffset.Parse("2026-08-01T09:00:00Z");
+    static readonly DateTimeOffset 終了時刻 = DateTimeOffset.Parse("2026-08-01T10:30:00Z");
+    readonly HttpClient client;
+    readonly TimeRecordApi tested;
+    object responseBody = Array.Empty<TimeRecordResponse>();
+    string? authorization;
 
-        switch (operation)
-        {
-            case "list": await tested.GetTimeRecordsAsync(); break;
-            case "start": await tested.StartTimeRecordAsync(); break;
-            case "end": await tested.EndTimeRecordAsync(Guid.Empty); break;
-        }
+    public TimeRecordAuthorizationTests()
+    {
+        var handler = new TestHttpMessageHandler { Respond = Respond };
+        client = new(handler) { BaseAddress = new("http://localhost/") };
+        tested = new(client, "id-token");
+    }
+
+    [Fact]
+    public async Task 記録の一覧取得では指定したIDトークンをBearer認証で送ります()
+    {
+        await tested.GetTimeRecordsAsync();
 
         authorization.Should().Be("Bearer id-token");
     }
+
+    [Fact]
+    public async Task 記録の開始では指定したIDトークンをBearer認証で送ります()
+    {
+        responseBody = new TimeRecordResponse(Guid.Empty, 開始時刻, null);
+
+        await tested.StartTimeRecordAsync();
+
+        authorization.Should().Be("Bearer id-token");
+    }
+
+    [Fact]
+    public async Task 記録の終了では指定したIDトークンをBearer認証で送ります()
+    {
+        responseBody = new TimeRecordResponse(Guid.Empty, 開始時刻, 終了時刻);
+
+        await tested.EndTimeRecordAsync(Guid.Empty);
+
+        authorization.Should().Be("Bearer id-token");
+    }
+
+    Task<HttpResponseMessage> Respond(HttpRequestMessage request)
+    {
+        authorization = request.Headers.Authorization?.ToString();
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(responseBody) });
+    }
+
+    public void Dispose() => client.Dispose();
 }

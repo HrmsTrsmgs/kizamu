@@ -16,7 +16,7 @@ MVPの第一実装はASP.NET CoreとBlazor WebAssemblyです。既存の時間�
 
 ## 技術構成
 
-- .NET 10 LTS / ASP.NET Core Minimal API / Blazor WebAssembly
+- .NET 11 / ASP.NET Core Minimal API / Blazor WebAssembly
 - YARP（Blazor配信サーバーから業務APIへのHTTP中継）
 - xUnit.net v3 / bUnit / AwesomeAssertions
 - React / TypeScript（strict）/ Vite
@@ -98,11 +98,11 @@ Domainはバックエンド専用の位置から分離し、ASP.NET CoreとBlazo
 
 ReactとNodeの製品・テストパッケージは独立させ、ルートのnpm workspacesで管理します。依存関係のインストールとlockfileの更新はリポジトリルートで行います。各 `.esproj` による個別の自動 `npm install` は無効にしており、最初にルートで `npm ci` を実行する必要があります。
 
-TypeScriptの作業記録モデルと期間計算は `src/domains/typescript/` の `kizamu-domain-typescript` に置き、NodeとReactから共用します。`TimeRecord` は公開プロパティが `readonly` の不変クラスで、`TimeRecord.start` で開始し、`end` は元を変更せず新しい記録を返します。既存記録はコンストラクターで復元します。独立した期間計算は純粋関数のままです。日時点には既存の `temporal-polyfill 1.0.2`（MIT）を使用します。共有DomainはReact、Fastify、Node固有API、HTTP、HTMLに依存せず、識別子の発行と現在時刻の取得はNode側に残します。Nodeは共有モデルをメモリに保持し、HTTP境界で従来のミリ秒3桁のISO文字列へ変換します。
+TypeScriptの作業記録モデルと期間計算は `src/domains/typescript/` の `kizamu-domain-typescript` に置き、NodeとReactから共用します。`TimeRecord` は公開プロパティが `readonly` の不変クラスで、`TimeRecord.start` で開始し、`end` は元を変更せず新しい記録を返します。既存記録はコンストラクターで復元します。`durationAt` は開始から終了までの経過時間を返し、記録中は引数に指定した時刻までを計ります。日時点には既存の `temporal-polyfill 1.0.2`（MIT）を使用します。共有DomainはReact、Fastify、Node固有API、HTTP、HTMLに依存せず、識別子の発行と現在時刻の取得はNode側に残します。Nodeは共有モデルをメモリに保持し、HTTP境界で従来のミリ秒3桁のISO文字列へ変換します。
 
 Node版は同じ製品パッケージ内の `api/`（HTTPルート・応答DTO変換）、`application/`（開始・指定IDでの終了・一覧と依存契約）、`infrastructure/`（メモリ上の記録保持・時刻とIDの取得）に分けています。`app.ts` で依存を組み立て、記録操作は共有Domainを利用します。依存方向は `api → application / domain`、`infrastructure → application / domain`、`application → domain` です。ApplicationとInfrastructureの単体テストに加え、既存のHTTP経路の接続確認を維持しています。レイヤーは同じnpmパッケージ内のモジュールとして分けており、Node側にレイヤー間の依存を禁止する自動検査はまだありません。
 
-React版は同じ製品パッケージ内の `src/presentation/`（画面状態・操作のフック、Reducer、サービス契約）と `src/infrastructure/`（HTTP通信・DTO変換）に責務を分けています。既存の `App`、`timeRecords/`、`health/` は表示とイベント接続を担当し、`main.tsx` で通信サービスを渡します。通信の時刻文字列は境界で共有Domainの日時点へ変換します。HTMLの `datetime` 属性に使う元のISO表記はReactのPresentation側の包みに保持し、共有Domainへ持ち込みません。
+React版は同じ製品パッケージ内の `src/presentation/`（画面状態・操作のフック、Reducer、サービス契約）と `src/infrastructure/`（HTTP通信・DTO変換）に責務を分けています。既存の `App`、`timeRecords/`、`health/` は表示とイベント接続を担当し、`main.tsx` で通信サービスを渡します。通信の時刻文字列は境界で共有Domainの日時点へ変換します。受信した元のISO表記はReactのPresentation側に保持します。HTMLの `datetime` 属性には、Domainの日時点から生成したUTC・ミリ秒3桁の文字列を使います。
 
 依存方向は `表示 → presentation / domain`、`infrastructure → presentation / domain`、`presentation → domain` です。状態を持つクラスやDIコンテナではなく、Reactのフックと純粋なReducerを使用します。ESLintで型専用・未使用を含む静的importと再exportの逆依存、内側からの動的import、直接の通信・DOMグローバル参照を検出します。この検査は記載したパスと構文を対象とし、パス別名や別モジュール経由の間接呼出しを完全に追跡するものではありません。
 
@@ -174,13 +174,13 @@ Pop-Location
 
 ## 必要な環境
 
-- .NET SDK 10.0.302 以降の .NET 10 SDK
+- .NET SDK 11.0.100 以降の .NET 11 SDK
 - Node.js 24.18.0（Node・React版の確認時）
 - npm 11.16.0（Node・React版の確認時）
 
 BlazorとASP.NET Coreだけを開発・起動する場合はNode.jsとnpmは不要です。
 
-標準のIDEはVisual Studio 2026（ASP.NETとWeb開発ワークロード）です。VS Codeでは `Kizamu.code-workspace` を開くとリポジトリ全体を扱えます。C#拡張向けに既定のソリューションを `Kizamu.slnx` に指定しています。IDE上の起動・テスト操作は今回のCLI検証とは別に確認が必要です。VS Code専用の起動・デバッグ設定はまだ用意していません。
+標準のIDEはVisual Studio 2026 18.12以降（ASP.NETとWeb開発ワークロード）です。VS Codeでは `Kizamu.code-workspace` を開くとリポジトリ全体を扱えます。C#拡張向けに既定のソリューションを `Kizamu.slnx` に指定しています。IDE上の起動・テスト操作は今回のCLI検証とは別に確認が必要です。VS Code専用の起動・デバッグ設定はまだ用意していません。
 
 ## Googleログインのローカル設定
 
@@ -284,7 +284,7 @@ dotnet restore Kizamu.AspNetCore.slnx
 dotnet run --project src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api --no-launch-profile --urls http://localhost:5213
 ```
 
-正常性確認は `http://localhost:5213/api/health`、記録一覧は `http://localhost:5213/api/time-records` です。
+正常性確認は `http://localhost:5213/api/health` です。記録一覧のGET、開始と終了のPOSTには、GoogleのIDトークンを `Authorization: Bearer <IDトークン>` で送ります。開始と終了のPOSTでは `Sec-Fetch-Site: same-origin` も必要です。記録一覧のURLは `http://localhost:5213/api/time-records` です。
 
 ## Node版業務APIのセットアップと起動
 
@@ -308,7 +308,7 @@ npm start --workspace=kizamu-backend-node
 
 ポートは環境変数 `PORT` で変更できます。その場合はフロント側のAPI中継先も合わせます。Nodeの起動に.NETは不要ですが、Blazor Serverと組み合わせる場合は.NETも必要です。配布用成果物の組み立てはまだ用意していません。
 
-互換性の範囲は、既存画面から行う正常性確認・開始・終了・一覧と、[NodeのHTTPテスト](tests/backends/node/)で確認しています。不明なIDの終了など未確定の異常系まで、両実装が同じ応答を保証するものではありません。
+互換性の範囲は、既存画面から行う正常性確認・開始・終了・一覧と、[NodeのHTTPテスト](tests/backends/node/)で確認しています。認証済みの利用者が、同一オリジンから存在しない記録や他の利用者の記録の終了を要求すると、両サーバーはHTTP 404を返します。
 
 ## 現行React版のセットアップと起動
 
@@ -392,7 +392,7 @@ BlazorサーバーのAPI中継には、Microsoft提供の [Yarp.ReverseProxy](ht
 
 ## 未実装
 
-プロジェクト登録・タブ切替、プロジェクト単位の複数同時記録、記録の修正、作業ツリー、時間配分、Clockify連携、ログイン、ユーザー管理、永続化、集計、公開用成果物の組み立ては未実装です。直近の作業状況は実装計画の「現在の次作業」を参照してください。
+サーバーでのプロジェクト情報と記録の関連付け、記録の修正、作業ツリー、時間配分、Clockify連携、永続化、集計、公開用成果物の組み立ては未実装です。直近の作業状況は実装計画の「現在の次作業」を参照してください。
 
 AsData連携およびWord・Excel・PDFの入出力は今後の検討対象です。今回のBlazor移行には含めず、対応形式、処理場所、依存ライブラリを決めてから別の作業単位として扱います。
 

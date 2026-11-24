@@ -4,7 +4,7 @@ type TimeRecorderOperationState = Readonly<{
   hasFailed: boolean
 }>
 
-type OperationAction = 'operationStarted' | 'operationSucceeded' | 'operationFailed' | 'recordsConfirmed' | 'recordsUnconfirmed'
+type OperationAction = 'operationStarted' | 'operationSucceeded' | 'operationFailed' | 'recordsConfirmed' | 'recordsUnconfirmed' | 'sessionEnded'
 
 export type TimeRecorderControls = Readonly<{
   canChangeRecord: boolean
@@ -20,6 +20,8 @@ export const initialTimeRecorderOperationState: TimeRecorderOperationState = {
 
 export function timeRecorderOperationReducer(state: TimeRecorderOperationState, action: OperationAction): TimeRecorderOperationState {
   switch (action) {
+    case 'sessionEnded':
+      return initialTimeRecorderOperationState
     case 'operationStarted':
       return { ...state, isBusy: true }
     case 'operationSucceeded':

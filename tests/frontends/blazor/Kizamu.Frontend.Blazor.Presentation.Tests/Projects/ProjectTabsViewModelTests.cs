@@ -9,73 +9,42 @@ public sealed class ProjectTabsViewModelTests
     readonly ProjectTabsViewModel tested = new();
 
     [Fact]
-    public void プロジェクトを選択すると選択したプロジェクトを保持する()
+    public void プロジェクトを選ぶとそのタブが選択され未指定タブを選ぶと選択対象は未指定に戻ります()
     {
         var プロジェクト = new Project("プロジェクトA");
 
         tested.SelectProject(プロジェクト);
 
         tested.SelectedProject.Should().BeSameAs(プロジェクト);
+
+        tested.SelectProject(null);
+
+        tested.SelectedProject.Should().BeNull();
     }
 
     [Fact]
-    public void 追加をキャンセルすると登録せずダイアログを閉じる()
+    public void プロジェクトの追加をキャンセルすると入力した名前のプロジェクトは登録されません()
     {
         名前を入力した追加ダイアログを開く("プロジェクトA");
 
-        tested.CancelProjectDialog();
+        tested.Registration.Cancel();
 
-        tested.ShowProjectDialog.Should().BeFalse();
         tested.Projects.Should().BeEmpty();
     }
 
     [Fact]
-    public void 追加を開くとダイアログを表示する()
+    public void プロジェクトを登録すると入力した名前のプロジェクトが一覧に加わります()
     {
-        tested.OpenProjectDialog();
+        tested.Registration.ProjectName = "プロジェクトA";
 
-        tested.ShowProjectDialog.Should().BeTrue();
-    }
-
-    [Fact]
-    public void 入力した名前を登録すると一覧に追加する()
-    {
-        tested.ProjectName = "プロジェクトA";
-
-        tested.RegisterProject();
+        tested.Registration.Register();
 
         tested.Projects.Should().ContainSingle().Which.Name.Should().Be("プロジェクトA");
     }
 
-    [Fact]
-    public void 追加画面から登録するとダイアログを閉じる()
-    {
-        名前を入力した追加ダイアログを開く("プロジェクトA");
-
-        tested.RegisterProject();
-
-        tested.ShowProjectDialog.Should().BeFalse();
-    }
-
-    [Fact]
-    public void 登録後に追加を開くとプロジェクト名は空になる()
-    {
-        プロジェクトを登録しておく("プロジェクトA");
-
-        tested.OpenProjectDialog();
-
-        tested.ProjectName.Should().BeEmpty();
-    }
-
-    void プロジェクトを登録しておく(string name)
-    {
-        名前を入力した追加ダイアログを開く(name);
-        tested.RegisterProject();
-    }
-
     void 名前を入力した追加ダイアログを開く(string name)
     {
-        tested.OpenProjectDialog();
-        tested.ProjectName = name;
+        tested.Registration.Open();
+        tested.Registration.ProjectName = name;
     }
 }

@@ -1,70 +1,124 @@
-using System.Net;
 using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using AwesomeAssertions;
+using Google.Apis.Auth;
 using Kizamu.Backend.AspNetCore.Infrastructure.Authentication;
+using Kizamu.Backend.AspNetCore.TestSupport;
 
 namespace Kizamu.Backend.AspNetCore.Infrastructure.Tests.Authentication;
 
 public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVerifierTests.SigningKey>, IDisposable
 {
-    readonly RSA googleKey;
+    readonly SigningKey googleTokens;
     readonly HttpClient publicKeyClient;
     readonly GoogleIdTokenVerifier tested;
 
     public GoogleIdTokenVerifierTests(SigningKey signingKey)
     {
-        googleKey = signingKey.Key;
-        publicKeyClient = new(new PublicKeyHandler(googleKey));
+        googleTokens = signingKey;
+        publicKeyClient = signingKey.CreatePublicKeyClient();
         tested = new("kizamu-client", publicKeyClient);
     }
 
     [Theory]
     [InlineData("https://accounts.google.com")]
     [InlineData("accounts.google.com")]
-    public async Task 有効なGoogleトークンでは更新やメール変更後も同じsubで本人を識別する(string issuer)
+    public async Task GoogleのIDトークンを更新してメールアドレスが変わっても同じsubを本人識別子として取得できます(string issuer)
     {
-        var 初回トークン = CreateToken(issuer: issuer, email: "before@example.test");
-        var 更新後トークン = CreateToken(issuer: issuer, email: "after@example.test");
+        var 初回トークン = CreateToken("google-user", issuer: issuer, email: "before@example.test");
+        var 更新後トークン = CreateToken("google-user", issuer: issuer, email: "after@example.test");
 
         (await tested.VerifyAsync(初回トークン)).Should().Be("google-user");
         (await tested.VerifyAsync(更新後トークン)).Should().Be("google-user");
     }
 
     [Fact]
-    public async Task メールが同じでもsubが異なる利用者を区別する()
+    public async Task GoogleのIDトークンのメールアドレスが同じでもsubが異なれば本人識別子も異なります()
     {
-        (await tested.VerifyAsync(CreateToken(subject: "first-user"))).Should().Be("first-user");
-        (await tested.VerifyAsync(CreateToken(subject: "second-user"))).Should().Be("second-user");
+        const string 同じメールアドレス = "user@example.test";
+        var 最初のトークン = CreateToken("first-user", email: 同じメールアドレス);
+        var 別のトークン = CreateToken("second-user", email: 同じメールアドレス);
+
+        (await tested.VerifyAsync(最初のトークン)).Should().Be("first-user");
+        (await tested.VerifyAsync(別のトークン)).Should().Be("second-user");
+    }
+
+    [Fact]
+    public async Task Googleの公開鍵で署名を検証できないIDトークンからは本人識別子を取得できません()
+    {
+        using var attackerKey = RSA.Create(2048);
+
+        (await tested.VerifyAsync(CreateToken("google-user", signingKey: attackerKey))).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task 発行者がGoogle以外のIDトークンからは本人識別子を取得できません()
+    {
+        (await tested.VerifyAsync(CreateToken("google-user", issuer: "https://attacker.example.test"))).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task 別のクライアント向けのGoogleのIDトークンからは本人識別子を取得できません()
+    {
+        (await tested.VerifyAsync(CreateToken("google-user", audience: "another-client"))).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task 有効期限を過ぎたGoogleのIDトークンからは本人識別子を取得できません()
+    {
+        (await tested.VerifyAsync(CreateToken("google-user", expired: true))).Should().BeNull();
     }
 
     [Theory]
-    [InlineData("signature")]
-    [InlineData("issuer")]
-    [InlineData("audience")]
-    [InlineData("expired")]
-    [InlineData("missing-sub")]
-    [InlineData("malformed")]
-    public async Task 不正なGoogleトークンから本人識別子を返さない(string invalidPart)
+    [InlineData(-1, "google-user")]
+    [InlineData(0, null)]
+    [InlineData(1, null)]
+    public async Task GoogleのIDトークンは有効期限に達するまで本人識別子を取得できます(
+        long ticksFromExpiration,
+        string? expectedSubject)
     {
-        using var attackerKey = RSA.Create(2048);
-        var token = invalidPart switch
-        {
-            "signature" => CreateToken(signingKey: attackerKey),
-            "issuer" => CreateToken(issuer: "https://attacker.example.test"),
-            "audience" => CreateToken(audience: "another-client"),
-            "expired" => CreateToken(expired: true),
-            "missing-sub" => CreateToken(subject: null),
-            "malformed" => "not-a-jwt",
-            _ => throw new ArgumentOutOfRangeException(nameof(invalidPart))
-        };
+        var 有効期限 = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var verifier = 有効期限と現在時刻を指定した検証器を用意する(有効期限, 有効期限.AddTicks(ticksFromExpiration));
 
-        (await tested.VerifyAsync(token)).Should().BeNull();
+        (await verifier.VerifyAsync("verified-token-placeholder")).Should().Be(expectedSubject);
     }
 
+    [Fact]
+    public async Task GoogleのIDトークンにsubがなければ本人識別子を取得できません()
+    {
+        (await tested.VerifyAsync(CreateToken(subject: null))).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(123, null)]
+    [InlineData("", null)]
+    [InlineData("00123", "00123")]
+    [InlineData("2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z")]
+    public async Task Googleのsubが空でないJSON文字列のときだけ元の値を本人識別子として取得できます(
+        object subject,
+        string? expectedSubject)
+    {
+        (await tested.VerifyAsync(CreateToken(subject))).Should().Be(expectedSubject);
+    }
+
+    [Fact]
+    public async Task JWT形式でない文字列をGoogleのIDトークンとして検証しても本人識別子を取得できません()
+    {
+        (await tested.VerifyAsync("not-a-jwt")).Should().BeNull();
+    }
+
+    static GoogleIdTokenVerifier 有効期限と現在時刻を指定した検証器を用意する(
+        DateTimeOffset expiresAt,
+        DateTimeOffset utcNow) =>
+        new(
+            verifySignedToken: _ => Task.FromResult(new JsonWebToken.Payload
+            {
+                Subject = "google-user",
+                ExpirationTimeSeconds = expiresAt.ToUnixTimeSeconds()
+            }),
+            timeProvider: new FixedTimeProvider(utcNow));
+
     string CreateToken(
-        string? subject = "google-user",
+        object? subject,
         string issuer = "https://accounts.google.com",
         string audience = "kizamu-client",
         string email = "user@example.test",
@@ -82,38 +136,15 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
         };
         if (subject is not null)
             payload["sub"] = subject;
-        var header = Encode(JsonSerializer.SerializeToUtf8Bytes(new { alg = "RS256", kid = "test-key", typ = "JWT" }));
-        var content = $"{header}.{Encode(JsonSerializer.SerializeToUtf8Bytes(payload))}";
-        var signature = (signingKey ?? googleKey).SignData(Encoding.ASCII.GetBytes(content), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        return $"{content}.{Encode(signature)}";
+        return googleTokens.CreateToken(payload, type: "JWT", signingKey: signingKey);
     }
-
-    static string Encode(ReadOnlySpan<byte> bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     public void Dispose() => publicKeyClient.Dispose();
 
-    // テスト間で同じ公開鍵を使い、検証ライブラリの公開鍵キャッシュとも両立させます。
-    public sealed class SigningKey : IDisposable
+    sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {
-        public RSA Key { get; } = RSA.Create(2048);
-
-        public void Dispose() => Key.Dispose();
+        public override DateTimeOffset GetUtcNow() => utcNow;
     }
 
-    // 外部通信だけを差し替え、JWTの検証は実際の検証器へ渡します。
-    sealed class PublicKeyHandler(RSA key) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            var parameters = key.ExportParameters(false);
-            var jwks = JsonSerializer.Serialize(new
-            {
-                keys = new[] { new { kty = "RSA", alg = "RS256", use = "sig", kid = "test-key", n = Encode(parameters.Modulus), e = Encode(parameters.Exponent) } }
-            });
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(jwks, Encoding.UTF8, "application/json")
-            });
-        }
-    }
+    public sealed class SigningKey() : GoogleIdTokenFixture("test-key") { }
 }

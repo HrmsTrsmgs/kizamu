@@ -56,9 +56,10 @@
 * 理由：画面状態を通信形式から分離し、業務モデルとして扱うためです。開発者が画面によるDTOの直接保持を設計上の問題として指摘し、修正を指示しました。
 * プロジェクト選択（2026-11-09）：登録一覧と選択APIではDomainの Project を受け渡す。先行した SelectProject(Guid?) 案は、登録された業務対象を表すモデルなしに識別子形式を利用側へ持ち込んでいたため撤回。名前を持つ最小の Project を導入し、SelectProject(Project?) へ変更した。nullは未指定を表し、選択処理自体は未実装。識別子や同名の扱いはこの変更では確定しない。根拠は開発者の設計修正指示とProjectTests、ViewModelテスト。
 * 採らなかった案：画面でDTOをそのまま状態として保持し続ける案は不採用。INPC・INCCの採用やモデルの同一性管理は、この修正で確定したことには含めません。
-* TypeScriptの共有（2026-11-06）：`src/domains/typescript/` のモデルと必要な処理をNodeとReactの両方から利用します。React内だけにDomainを置く今回の整理は、共有化まで含めるよう開発者が変更を指示しました。C#側と同じく、実行環境に依存しない業務モデルを共用するためです。HTMLの `datetime` 属性の元表記を保つ情報はReact側へ分け、HTTP DTOやHTML固有の情報を共有Domainへ持ち込みません。
+* TypeScriptの共有（2026-11-06）：`src/domains/typescript/` のモデルと必要な処理をNodeとReactの両方から利用します。React内だけにDomainを置く今回の整理は、共有化まで含めるよう開発者が変更を指示しました。C#側と同じく、実行環境に依存しない業務モデルを共用するためです。当初はHTMLの `datetime` 属性に使う元表記をReact側に保持しました。`da16155` 以降は、受信したISO表記をReact側に保持し、HTMLの `datetime` 属性はDomainの日時点から生成します。HTTP DTOやHTML固有の情報は共有Domainへ持ち込みません。
 * 共有化に伴う依存（2026-11-06承認）：既存の `temporal-polyfill 1.0.2`（MIT）を共有DomainとNodeの実行時にも利用します。日時APIを自作せず既存のライブラリを共通利用するための追加先変更です。Node配布物とlockfileの依存構成が変わりますが、新しい種類・バージョンの外部ライブラリは増やしません。
-* TypeScriptモデルの形式（2026-11-06指示）：共有 `TimeRecord` は不変クラスとし、記録のデータと開始・終了操作を一つにまとめます。終了操作は元の記録を変更せず新しいインスタンスを返します。現在すでにある業務概念をまとめ、C#側との対応を追いやすくするためです。先行した「Readonlyの型＋独立した開始・終了関数」も有効な形式ですが、今回はC#との対応を優先して変更します。Reactの関数コンポーネント推奨を、Domainのクラスまで避ける理由とはしません。DTOは型定義、画面状態はフック／Reducer、通信サービスはオブジェクト、独立した期間計算は純粋関数のまま維持します。
+* TypeScriptモデルの形式（2026-11-06指示）：共有 `TimeRecord` は不変クラスとし、記録のデータと開始・終了操作を一つにまとめます。終了操作は元の記録を変更せず新しいインスタンスを返します。現在すでにある業務概念をまとめ、C#側との対応を追いやすくするためです。先行した「Readonlyの型＋独立した開始・終了関数」も有効な形式ですが、今回はC#との対応を優先して変更します。Reactの関数コンポーネント推奨を、Domainのクラスまで避ける理由とはしません。DTOは型定義、画面状態はフック／Reducer、通信サービスはオブジェクトとし、この時点では独立した期間計算を純粋関数のまま維持しました。
+* 経過時間（2026-11-20変更）：終了済みなら終了時刻、記録中なら指定した基準時刻までを計る判断は記録自身に属するため、C#・TypeScriptとも `TimeRecord` の `DurationAt`／`durationAt` にまとめます。現在時刻の取得と画面への書式設定は表示側が担います。
 * 根拠：開発者の修正指示、`d2adae0`、[TimeRecordApiTests](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests/TimeRecords/TimeRecordApiTests.cs)、[TimeRecordTests](../tests/domains/dotnet/Kizamu.Domain.Tests/TimeRecordTests.cs)。
 
 ## D004：Clockifyへは終了済み記録だけを送る
@@ -117,7 +118,9 @@
 * 決定：Webから受け取ったIDでApplicationが保存済みの記録を取得し、Domainの記録オブジェクトを終了します。終了済み記録への再要求では終了時刻を更新し、他の記録は変更しません。
 * 理由：内部では記録オブジェクトを中心に扱い、両バックエンドの対象の取得方法を揃えるという開発者の指示によります。再終了の扱いも、開発者がNodeの現行動作へ揃える方針を選択しました。
 * 検討した別案：最初の終了時刻を保持する案も確認しました。開発者は再要求時の時刻で更新する案を選択しました。
-* 根拠：開発者のASP.NETをNodeへ揃える指示と、再終了時刻の選択回答。確定仕様は [ロードマップ](roadmap.md#ステップ1-プロジェクト単位の複数同時記録)、実装の確認は両バックエンドのApplication単体テストを参照します。存在しないIDへのHTTP応答は未確定です。
+* 根拠：開発者のASP.NETをNodeへ揃える指示と、再終了時刻の選択回答。確定仕様は [ロードマップ](roadmap.md#ステップ1-プロジェクト単位の複数同時記録)、実装の確認は両バックエンドのApplication単体テストを参照します。
+
+2026-11-20に、開発者は対象が見つからない終了要求を異常系として扱う方針を選びました。値なしを返す案も検討しました。終了操作を完了できなかったことを明示するため、両バックエンドのApplicationは専用例外で通知します。HTTPでは対象不在を既存の不明IDと同じ404に変換します。両バックエンドのApplicationとHTTPのテストで確認しました。
 
 ## D010：画面用の更新APIはFetch Metadataで同一オリジンを検証する
 
@@ -126,7 +129,7 @@
 * 理由：APIの接続先変更を中継設定へ閉じ込め、画面の公開URLをAPI側の許可リストへ同期する依存と、UIが独自ヘッダーを付ける通信契約を増やさないためです。CORSの許可設定とは独立して、HTTP境界で更新を拒否します。
 * 中継との契約：元のFetch Metadataを保持し、追加・書き換えずに転送します。情報が失われた場合も更新を拒否します。この契約を満たす必要はありますが、特定のプロキシ製品やバックエンド実装を相互参照しません。これはブラウザー経由の更新制約であり、認証を実装したことにはなりません。
 * 検討した別案：ブラウザーからAPIへ直接接続してCORSを許可する案は、画面専用APIという今回の前提に対し、APIの外向き接続先と画面の許可オリジンの対応管理が増えます。Origin照合は画面URLをAPI設定へ持たせる必要があります。独自ヘッダー方式はUIとAPIの通信契約が増え、中継側のCORS許可にも防御が依存するため、今回は採用しません。
-* 根拠：開発者の同一オリジン構成とFetch Metadata検証への実装指示。[OWASPのFetch Metadata対策](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#fetch-metadata-headers)、[MDNのSec-Fetch-Siteの説明](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-Fetch-Site)。動作仕様は [ASP.NETのAPIテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/TimeRecordEndpointTests.cs) と [NodeのAPIテスト](../tests/backends/node/timeRecordEndpoints.test.ts) で確認します。
+* 根拠：開発者の同一オリジン構成とFetch Metadata検証への実装指示。[OWASPのFetch Metadata対策](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#fetch-metadata-headers)、[MDNのSec-Fetch-Siteの説明](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-Fetch-Site)。動作仕様は [ASP.NETのAPIテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs) と [NodeのAPIテスト](../tests/backends/node/api/timeRecordEndpoints.test.ts) で確認します。
 
 ## D011：画面テストにMoqを使用する
 
@@ -141,7 +144,7 @@
 
 * 確認日・状態：2026-11-11、開発者が実装差分のコミットと次工程への進行を了承。初回一覧の遅延応答で未確認状態が解除される指摘は、2026-11-12に修正し差分レビュー待ち。
 * 方針：開始・終了の通信失敗を知らせて一覧を再取得することは、開発者が選択済みです。その再取得も失敗した場合は、最後に確認した一覧を残し、最新状態が未確認であることと再取得操作を表示します。
-* 実装での具体化：未確認の間は開始・終了をViewModel／hookで抑止します。手動の再取得に成功したら一覧と終了対象を更新して操作を戻し、再失敗したら未確認の状態を維持して再試行できるようにします。再取得中の追加操作も抑止します。BlazorとReactを組として対応します。
+* 実装での具体化：未確認の間は開始・終了をViewModel／hookで抑止します。手動の再取得に成功したら一覧と終了対象を更新して操作を戻し、再失敗したら未確認の状態を維持して再試行できるようにします。再取得中の追加操作も抑止します。再取得した一覧で既知の記録が終了済みと確認できたら、別のタブに切り替えていても元のタブの終了対象から解除します。BlazorとReactを組として対応します。
 * 理由：通信失敗だけではサーバーで操作が完了したか判断できません。古い状態のまま開始・終了を繰り返すことを避け、一覧の取得で現在の状態を確認してから操作を再開するためです。
 * 比較した案：古い一覧を表示したまま開始・終了も許可する案に対し、今回は状態を確認するまで操作を止める実装方針としました。初回読み込み失敗の扱いや自動リトライは、この変更の対象にしません。
 * 根拠：開発者による「失敗を知らせて一覧を再取得する」の選択回答と、今回の復旧対応を進める指示。振る舞いは [Blazor ViewModelのテスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) と [React hookのテスト](../tests/frontends/react/presentation/useTimeRecorder.test.ts)、表示と委譲は両画面のテストを参照します。
@@ -152,11 +155,11 @@
 * 決定：誰でも登録できるWebサービスとして公開し、ユーザー管理を残るMVP機能より先に進める。MVPの範囲は [ロードマップ](roadmap.md#優先工程u-登録認証と利用者ごとのデータ分離)、作業分割と未決事項は [実装計画](../ai-notes/mvp-implementation-plan.md#優先工程u-公開サービス向けのユーザー管理) を参照する。
 * 理由：開発者から公開に向けてユーザー管理を早める指示があり、公開形態への回答で「誰でも登録できるWebサービス」が選ばれたため。
 * 変更した旧方針：単一利用者のローカル利用をMVPとし、認証・利用者ごとのデータ分離をMVP後に置く順序を変更する。認証製品、依存パッケージ、サーバーの配備先を採用した判断ではない。
-* 根拠：開発者のユーザー管理優先・計画作成の指示と公開形態への回答。現状の記録は両業務APIの共有メモリにあり、認証と所有者は未実装。
+* 根拠：開発者のユーザー管理優先・計画作成の指示と公開形態への回答。この判断時点では記録は両業務APIの共有メモリにあり、認証と所有者は未実装だった。現在の認証境界はD014を参照。
 
 ## D014：ベータ版はGoogleのIDトークンで本人を識別する
 
-* 確認日・状態：2026-11-12、当面の認証方針とログアウトの制約、検証ライブラリの採用・追加を開発者が了承。両バックエンドのトークン検証器はGreen完了、開発者が差分のコミットを了承。記録APIと画面への認証接続は未実装。保存方式は別途検討。
+* 確認日・状態：2026-11-12、当面の認証方針とログアウトの制約、検証ライブラリの採用・追加を開発者が了承。両バックエンドのトークン検証器はGreen完了、開発者が差分のコミットを了承。その後、両画面と両記録APIへの認証接続、メモリ内の記録の所有者別分離を実装した。実機で確認した組み合わせは [README](../README.md) を参照。永続化の方式は別途検討。
 * 決定：利用者向けの範囲は [ロードマップの優先工程U](roadmap.md#優先工程u-登録認証と利用者ごとのデータ分離) を参照する。Googleで本人を識別し、各自の記録を分離する最小構成から始める。Kizamuで氏名・メールアドレス・パスワードを管理する機能は設けない。
 * 認証境界：画面で得たGoogleのIDトークンをメモリに保持し、API要求ごとに中継を通して送る。両業務APIが署名・発行元・対象アプリ・期限を検証して本人を特定する。サーバー側に利用者ごとのセッション状態は保存しない。所有者には検証済みの識別情報を使い、画面からの利用者IDだけを信用しない。識別子と業務データの保存形式は別途決める。
 * 依存（追加了承済み）：.NET Infrastructureへ `Google.Apis.Auth 1.78.0`、Nodeバックエンドへ `google-auth-library 11.3.4`（ともにApache-2.0）を実行時依存として追加する。Google公式の検証処理を使用するため。推移依存が配布物へ加わり、公開鍵の取得・更新には外部通信を使う。開発者はこの影響の提示後に追加を了承した。
@@ -165,3 +168,24 @@
 * 理由：仮機能として実装を簡単にし、独自のユーザー情報管理を避け、本人識別と利用者ごとの記録分離を優先したいという開発者の指示による。ログイン維持の利便性より実装の簡単さを優先する。
 * 検討した別案：サーバー側セッションとCookieによるログイン管理、Firebase Authentication等を介する方式も比較した。当面はトークンの失効管理や別の利用者管理サービスを増やさず、上記の制約を受け入れる方式を選んだ。将来の変更を禁止する判断ではない。
 * 根拠：開発者のGoogleのみ・初回ログインで利用開始・ユーザー情報管理を避ける指示と、画面メモリ保持／即時失効なしの提案への了承。[GoogleのIDトークン検証手順](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token) は署名・発行元・対象・期限の検証と、本人識別へのsubの利用を案内している。
+
+## D015：一覧に補う記録は開始した順に追加する
+
+* 確認日・状態：2026-11-24、開発者から両実装で揃える順序の選択を委ねられ、Blazorの既存動作を採用してReactに反映した。
+* 決定：一覧取得中の更新を合成するとき、応答に含まれない記録は、各IDが更新に最初に現れた順に最新値を一件ずつ末尾へ追加する。A開始、B開始、A終了の順なら、Aの終了済み記録、Bの未終了記録の順になる。応答に含まれる記録は応答順で表示し、同じIDの取得中の更新を値に反映する。
+* 理由：記録を開始したときの並びを保ち、終了の更新後も同じ位置で記録を追えるようにする。Reactが採っていた最終更新順では、この場合に終了したAがBの後ろに移動する。
+* 根拠：開発者の順序統一の指示と、[BlazorのViewModelテスト](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs#L898)、[ReactのReducerテスト](../tests/frontends/react/presentation/timeRecorderState.test.ts#L208)。
+
+## D016：ASP.NET Coreの作業記録の応答変換にMapperlyを使う
+
+* 2026-11-24に導入を決定し、ASP.NET Core APIで開始・終了・一覧のユースケース結果をHTTP応答用のDTOへ変換する処理に適用した。
+* DTOのコンストラクターに同じ項目の転記を書く案と比較した。同名項目の対応付けをビルド時に生成し、対応が見つからない項目をビルド時の診断で追えるようにする。開始応答の終了時刻は `null` を明示する。 [変換の宣言](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api/Endpoints/TimeRecords/TimeRecordResponseMapper.cs)
+* `Riok.Mapperly` 4.3.1（Apache-2.0）をASP.NET CoreのAPI・ApplicationとBlazorのInfrastructureのビルド時依存にする。両アプリのRelease公開物でMapperlyの実行時依存がゼロであることを確認した。 [パッケージ](https://www.nuget.org/packages/Riok.Mapperly/4.3.1) · [公式の導入手順](https://mapperly.riok.app/docs/getting-started/installation/)
+* 応答の値と開始応答の `endedAt: null` は既存のHTTPテストで確認した。 [作業記録APIのテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)
+* コンストラクター呼び出しを毎回書く費用と、共通項目の変更時に見直す箇所を減らすため、同じ方針をApplicationの開始・終了・一覧の結果と、BlazorでのHTTP応答からの記録復元にも適用した。開始結果は識別子と開始時刻を持ち、終了結果は操作で確定した終了時刻を受け取る。 [Applicationの変換](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/TimeRecordResultMapper.cs) · [Blazorの変換](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordResponseMapper.cs)
+
+## D017：Nodeの作業記録の応答変換にTypeSugarを使う
+
+* 2026-11-24、開始・終了・一覧APIの応答変換をAutoMapperからTypeSugarへ移す。返す項目は `TimeRecordResponse` で定義し、同名の `id` の転記を生成する。日時のミリ秒3桁の書式と、進行中の終了時刻を `null` にする規則は `compute` で指定する。 [応答変換](../src/backends/node/api/timeRecordResponse.ts)
+* AutoMapperを試した `c9ef993` では、モデル名と同名項目の対応を個別に登録していた。TypeSugarはコンパイラーが持つ型から対応を生成するため、応答の型と固有の変換規則を読めばよい。 `@typesugar/mapper` と `@typesugar/transformer` の0.1.1（MIT）をNodeの開発依存として固定する。 [対応付けの公式例](https://www.npmjs.com/package/@typesugar/mapper) · [Nodeの依存定義](../src/backends/node/package.json)
+* Vitestで変換を別に行う試行では応答の識別子が欠けた。HTTPテストは既存の `pretest` で生成したNodeのマッパーを読み込み、本番と同じ変換を検証する。 [Vitest設定](../tests/backends/node/vitest.config.ts) · [作業記録APIのテスト](../tests/backends/node/api/timeRecordEndpoints.test.ts)

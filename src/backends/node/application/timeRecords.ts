@@ -13,6 +13,9 @@ export interface TimeRecordSources {
   now(): Temporal.Instant
 }
 
+/** 指定した作業記録が保存先に存在しないことを示します。 */
+export class TimeRecordNotFoundError extends Error {}
+
 export class TimeRecords {
   constructor(private readonly state: TimeRecordState, private readonly sources: TimeRecordSources) {}
 
@@ -22,13 +25,13 @@ export class TimeRecords {
     return record
   }
 
-  end(id: string): TimeRecord | undefined {
+  /** 指定した記録を終了します。保存先に存在しない場合は TimeRecordNotFoundError を投げます。 */
+  end(id: string): TimeRecord {
     const record = this.state.find(id)
-    if (record !== undefined) {
-      const ended = record.end(this.sources.now())
-      this.state.replace(ended)
-      return ended
-    }
+    if (!record) throw new TimeRecordNotFoundError()
+    const ended = record.end(this.sources.now())
+    this.state.replace(ended)
+    return ended
   }
 
   list(): readonly TimeRecord[] {

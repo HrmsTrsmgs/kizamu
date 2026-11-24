@@ -15,7 +15,7 @@ public sealed class BlazorHostingTests(WebApplicationFactory<Program> factory)
     [InlineData("/")]
     [InlineData("/app.css")]
     [InlineData("/_framework/blazor.webassembly.js")]
-    public async Task 業務APIサーバーはBlazor画面を配信せず404を返します(string path)
+    public async Task 業務APIサーバーにBlazorの画面や静的ファイルを要求すると404が返ります(string path)
     {
         using var response = await client.GetAsync(path, CancellationToken);
 

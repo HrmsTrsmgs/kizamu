@@ -5,7 +5,7 @@ namespace Kizamu.Domain.Tests;
 public sealed class ProjectTests
 {
     [Fact]
-    public void 指定した名前のプロジェクトを作成できる()
+    public void プロジェクトを作成すると指定した名前が設定されます()
     {
         var tested = new Project("プロジェクトA");
 

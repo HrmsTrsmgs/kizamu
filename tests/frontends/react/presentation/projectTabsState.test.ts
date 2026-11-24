@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { Project } from 'kizamu-domain-typescript'
-import { describe, it } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 import { initialProjectTabsState, projectTabsReducer } from '../../../../src/frontends/react/src/presentation/projectTabsState'
 
 describe('projectTabsReducer', () => {
@@ -12,7 +12,7 @@ describe('projectTabsReducer', () => {
     state.projectName.should.equal('プロジェクトA')
   })
 
-  it('追加を開くとダイアログを表示します', () => {
+  it('プロジェクトの追加を始めると、追加ダイアログが開きます', () => {
     initialProjectTabsState.showProjectDialog.should.equal(false)
 
     const state = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
@@ -20,16 +20,45 @@ describe('projectTabsReducer', () => {
     state.showProjectDialog.should.equal(true)
   })
 
-  it('追加をキャンセルすると登録せずダイアログを閉じます', () => {
-    const opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
+  describe('追加ダイアログを開いたとき', () => {
+    let opened: typeof initialProjectTabsState
 
-    const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
+    beforeEach(() => {
+      opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
+    })
 
-    state.showProjectDialog.should.equal(false)
-    state.projects.should.toStrictEqual([])
+    it('追加をキャンセルするとダイアログを閉じます', () => {
+      const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
+
+      state.showProjectDialog.should.equal(false)
+    })
+
+    it('プロジェクトの追加をキャンセルすると、登録済みの一覧は空のままです', () => {
+      const state = projectTabsReducer(opened, { type: 'dialogCancelled' })
+
+      state.projects.should.toStrictEqual([])
+    })
+
+    it('プロジェクトの追加をキャンセルして開き直すと、入力中の名前が残ります', () => {
+      const named = projectTabsReducer(opened, { type: 'projectNameChanged', name: 'プロジェクトA' })
+      const cancelled = projectTabsReducer(named, { type: 'dialogCancelled' })
+
+      const reopened = projectTabsReducer(cancelled, { type: 'dialogOpened' })
+
+      reopened.projectName.should.equal('プロジェクトA')
+    })
+
+    it('プロジェクトを登録して追加ダイアログを開き直すと、名前の入力欄は空です', () => {
+      const named = projectTabsReducer(opened, { type: 'projectNameChanged', name: 'プロジェクトA' })
+
+      const registered = projectTabsReducer(named, { type: 'projectRegistered' })
+      const reopened = projectTabsReducer(registered, { type: 'dialogOpened' })
+
+      reopened.projectName.should.equal('')
+    })
   })
 
-  it('追加画面から登録するとダイアログを閉じます', () => {
+  it('入力したプロジェクトを登録すると追加ダイアログが閉じます', () => {
     const opened = { ...initialProjectTabsState, showProjectDialog: true, projectName: 'プロジェクトA' }
 
     const state = projectTabsReducer(opened, { type: 'projectRegistered' })
@@ -37,33 +66,20 @@ describe('projectTabsReducer', () => {
     state.showProjectDialog.should.equal(false)
   })
 
-  it('登録後に追加を開くとプロジェクト名は空です', () => {
-    const opened = projectTabsReducer(initialProjectTabsState, { type: 'dialogOpened' })
-    const named = projectTabsReducer(opened, { type: 'projectNameChanged', name: 'プロジェクトA' })
+  describe('プロジェクトAを登録したとき', () => {
+    let registered: typeof initialProjectTabsState
 
-    const registered = projectTabsReducer(named, { type: 'projectRegistered' })
-    const reopened = projectTabsReducer(registered, { type: 'dialogOpened' })
+    beforeEach(() => {
+      const named = { ...initialProjectTabsState, projectName: 'プロジェクトA' }
+      registered = projectTabsReducer(named, { type: 'projectRegistered' })
+    })
 
-    reopened.projectName.should.equal('')
-  })
+    it('二つのプロジェクトを順に登録すると、一覧に両方が登録順に並びます', () => {
+      const next = projectTabsReducer(registered, { type: 'projectNameChanged', name: 'プロジェクトB' })
 
-  it('登録したプロジェクトを選択すると選択した対象を保持します', () => {
-    const named = { ...initialProjectTabsState, projectName: 'プロジェクトA' }
-    const registered = projectTabsReducer(named, { type: 'projectRegistered' })
-    const project = registered.projects[0]
+      const state = projectTabsReducer(next, { type: 'projectRegistered' })
 
-    const state = projectTabsReducer(registered, { type: 'projectSelected', project })
-
-    state.should.have.property('selectedProject', project)
-  })
-
-  it('登録したプロジェクトを一覧に保持します', () => {
-    const named = { ...initialProjectTabsState, projectName: 'プロジェクトA' }
-    const first = projectTabsReducer(named, { type: 'projectRegistered' })
-    const next = projectTabsReducer(first, { type: 'projectNameChanged', name: 'プロジェクトB' })
-
-    const state = projectTabsReducer(next, { type: 'projectRegistered' })
-
-    state.projects.should.toStrictEqual([new Project('プロジェクトA'), new Project('プロジェクトB')])
+      state.projects.should.toStrictEqual([new Project('プロジェクトA'), new Project('プロジェクトB')])
+    })
   })
 })

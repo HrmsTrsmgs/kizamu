@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Riok.Mapperly" Version="4.3.1" ExcludeAssets="runtime" PrivateAssets="all" />
     <ProjectReference Include="..\..\..\domains\dotnet\Kizamu.Domain\Kizamu.Domain.csproj" />
   </ItemGroup>
 

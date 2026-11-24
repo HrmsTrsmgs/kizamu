@@ -15,45 +15,60 @@ export function createTimeRecordService(token?: string): TimeRecordService {
   const headers = token === undefined ? undefined : { Authorization: `Bearer ${token}` }
   return {
     async getTimeRecords() {
-      const response = headers === undefined
-        ? await fetch('/api/time-records')
-        : await fetch('/api/time-records', { headers })
-      if (!response.ok) {
+      const body = await requestJson('/api/time-records', headers ? { headers } : undefined)
+      if (!Array.isArray(body) || !body.every(isTimeRecordResponse)) {
         throw new Error()
       }
-      const records: TimeRecordResponse[] = await response.json()
+      const records: TimeRecordResponse[] = body
       return records.map(toTimeRecord)
     },
     startTimeRecord() {
       return postTimeRecord('/api/time-records/start', headers)
     },
-    endTimeRecord(id) {
-      return postTimeRecord(`/api/time-records/${id}/end`, headers)
+    async endTimeRecord(id) {
+      const record = await postTimeRecord(`/api/time-records/${id}/end`, headers)
+      if (record.record.id !== id || record.record.endedAt === null) {
+        throw new Error()
+      }
+      return record
     },
   }
 }
 
 async function postTimeRecord(path: string, headers: Record<string, string> | undefined): Promise<TimeRecordPresentation> {
-  const response = await fetch(path, headers === undefined ? { method: 'POST' } : { method: 'POST', headers })
+  const body = await requestJson(path, headers ? { method: 'POST', headers } : { method: 'POST' })
+  if (!isTimeRecordResponse(body)) {
+    throw new Error()
+  }
+  return toTimeRecord(body)
+}
+
+async function requestJson(path: string, options?: RequestInit): Promise<unknown> {
+  const response = options ? await fetch(path, options) : await fetch(path)
   if (!response.ok) {
     throw new Error()
   }
-  return toTimeRecord(await response.json())
+  return response.json()
 }
 
-function toTimeRecord(response: TimeRecordResponse): TimeRecordPresentation {
-  if (response.id === undefined) {
-    throw new Error()
-  }
+function isTimeRecordResponse(value: unknown): value is TimeRecordResponse {
+  return typeof value === 'object'
+    && value !== null
+    && 'id' in value
+    && typeof value.id === 'string'
+    && 'startedAt' in value
+    && typeof value.startedAt === 'string'
+    && 'endedAt' in value
+    && (typeof value.endedAt === 'string' || value.endedAt === null)
+}
+
+function toTimeRecord({ id, startedAt, endedAt }: TimeRecordResponse): TimeRecordPresentation {
   return {
     record: new TimeRecord(
-      response.id,
-      Temporal.Instant.from(response.startedAt),
-      response.endedAt === null ? null : Temporal.Instant.from(response.endedAt),
+      id,
+      Temporal.Instant.from(startedAt),
+      endedAt === null ? null : Temporal.Instant.from(endedAt),
     ),
-    isoText: {
-      startedAt: response.startedAt,
-      endedAt: response.endedAt,
-    },
+    isoText: { startedAt, endedAt },
   }
 }

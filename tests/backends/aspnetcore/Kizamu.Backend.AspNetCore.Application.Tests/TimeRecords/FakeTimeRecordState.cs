@@ -18,7 +18,22 @@ sealed class FakeTimeRecordState : ITimeRecordState
             return [.. timeRecords];
     }
 
-    public TimeRecord? Find(Guid id) => timeRecords.SingleOrDefault(it => it.Id == id);
+    public TimeRecord? Find(Guid id)
+    {
+        lock (sync)
+            return timeRecords.SingleOrDefault(it => it.Id == id);
+    }
+
+    public void Update(TimeRecord timeRecord)
+    {
+        lock (sync)
+        {
+            var index = timeRecords.FindIndex(it => it.Id == timeRecord.Id);
+            if (index < 0)
+                throw new TimeRecordNotFoundException();
+            timeRecords[index] = timeRecord;
+        }
+    }
 
     public void Add(TimeRecord timeRecord)
     {

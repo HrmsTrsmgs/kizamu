@@ -10,6 +10,7 @@ AIによる調査・作業計画・引継ぎの置き場です。Gitで管理し
 | --- | --- |
 | [MVP実装計画](mvp-implementation-plan.md) | 作業単位、着手前の質問、「現在の次作業」の引継ぎ |
 | [可読性リファクタリング実行計画](readability-refactoring-plan.md) | 製品コードと全テストの全行精査、修正の判断基準と完了条件 |
+| [ViewとViewModelの部品化 作業一覧](view-viewmodel-componentization-plan.md) | Blazor・Reactの部品化、状態不整合の修正と検証 |
 | [判断記録](../docs/decisions.md) | 確定した判断と理由 |
 | [開発候補](development-candidates.md) | 未確定事項・検討候補 |
 | [ロードマップ](../docs/roadmap.md) | 製品の開発方針 |

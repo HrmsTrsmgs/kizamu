@@ -4,12 +4,16 @@ function Wait-HealthEndpoint {
         [string]$Uri
     )
 
-    for ($attempt = 0; $attempt -lt 60; $attempt++) {
+    $maxAttempts = 60
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
         if ($Process.HasExited) { return $false }
         try {
             $response = Invoke-WebRequest -Uri $Uri -UseBasicParsing -TimeoutSec 1
             if ($response.StatusCode -eq 200) { return $true }
         } catch {
+            # The endpoint may still be starting.
+        }
+        if ($attempt -lt $maxAttempts -and -not $Process.HasExited) {
             Start-Sleep -Milliseconds 500
         }
     }

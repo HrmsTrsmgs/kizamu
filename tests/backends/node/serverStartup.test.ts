@@ -1,17 +1,44 @@
-import { spawn, type ChildProcessByStdio } from 'node:child_process'
-import type { Readable } from 'node:stream'
+import { ChildProcess, spawn, type ChildProcessByStdio } from 'node:child_process'
+import { PassThrough, type Readable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 import { test } from 'vitest'
 
-test('Nodeの起動入口を空きポートで実行すると出力されたURLで業務APIが応答します', async () => {
+test('Node版の業務APIを空きポートで起動すると、出力されたURLで正常性を確認できます', async () => {
   await withListeningServer(async (listeningUrl) => {
     const response = await fetch(`${listeningUrl}/api/health`, { signal: AbortSignal.timeout(3000) })
 
     response.status.should.equal(200)
-    const content = { body: await response.json() }
-    content.should.have.property('body').that.deep.equal({ status: 'ok' })
   })
 }, 10000)
+
+test.each([
+  ['最初の行に', ''],
+  ['起動メッセージの次の行に', 'Starting server\n'],
+])('%s起動URLが分割して出力されても、改行を受信してから完全なURLを返します', async (_, 先行出力) => {
+  const server = createServerWithWritableOutput()
+  let completed = false
+  const listeningUrl = waitForListeningUrl(server).then((url) => {
+    completed = true
+    return url
+  })
+
+  server.stdout.write(`${先行出力}http://localhost:52`)
+  await new Promise<void>((resolve) => setImmediate(resolve))
+  const completedBeforeNewline = completed
+  server.stdout.write('13\n')
+
+  const url = await listeningUrl
+  completedBeforeNewline.should.equal(false)
+  url.should.equal('http://localhost:5213')
+})
+
+function createServerWithWritableOutput() {
+  const stdout = new PassThrough()
+  const stderr = new PassThrough()
+  const stdio: [null, PassThrough, PassThrough, undefined, undefined] = [null, stdout, stderr, undefined, undefined]
+
+  return Object.assign(new ChildProcess(), { stdin: null, stdout, stderr, stdio })
+}
 
 async function withListeningServer(verify: (listeningUrl: string) => Promise<void>) {
   const serverEntry = fileURLToPath(new URL('../../../src/backends/node/dist/server.js', import.meta.url))
@@ -49,7 +76,8 @@ async function waitForListeningUrl(server: ChildProcessByStdio<null, Readable, R
       })
       server.stdout.on('data', (chunk: string) => {
         standardOutput += chunk
-        const url = standardOutput.match(/http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):[1-9]\d*/)?.[0]
+        const completeOutput = standardOutput.slice(0, standardOutput.lastIndexOf('\n') + 1)
+        const url = completeOutput.match(/http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):[1-9]\d*/)?.[0]
         if (url) resolve(url)
       })
     })

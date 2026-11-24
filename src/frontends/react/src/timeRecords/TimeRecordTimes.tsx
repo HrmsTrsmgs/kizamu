@@ -1,32 +1,30 @@
-import type { RecordTimestamp } from '../presentation/timeRecordPresentation'
+import type { TimeRecord } from 'kizamu-domain-typescript'
 import { useTimeRecordTimes } from '../presentation/useTimeRecordTimes'
 import { formatHtmlDateTime } from './htmlDateTime'
 
 type TimeRecordTimesProps = {
-  startedAt: RecordTimestamp
-  endedAt: RecordTimestamp | null
+  record: TimeRecord
   labelled?: boolean
 }
 
 export default function TimeRecordTimes({
-  startedAt,
-  endedAt,
+  record,
   labelled = false,
 }: TimeRecordTimesProps) {
-  const times = useTimeRecordTimes(startedAt, endedAt)
+  const times = useTimeRecordTimes(record)
 
   return (
     <div className="time-record-times">
       <div className="record-time">
         <span>開始</span>
-        <time aria-label={labelled ? '開始時刻' : undefined} dateTime={formatHtmlDateTime(startedAt.instant)}>
+        <time aria-label={labelled ? '開始時刻' : undefined} dateTime={formatHtmlDateTime(record.startedAt)}>
           {times.startedAtText}
         </time>
       </div>
       <div className="record-time">
         <span>終了</span>
-        {endedAt !== null ? (
-          <time aria-label={labelled ? '終了時刻' : undefined} dateTime={formatHtmlDateTime(endedAt.instant)}>
+        {record.endedAt !== null ? (
+          <time aria-label={labelled ? '終了時刻' : undefined} dateTime={formatHtmlDateTime(record.endedAt)}>
             {times.endedAtText}
           </time>
         ) : (

@@ -7,7 +7,7 @@
     "dev": "npm run build && node dist/server.js",
     "start": "node dist/server.js",
     "prebuild": "npm run build --workspace=kizamu-domain-typescript",
-    "build": "tsc",
+    "build": "typesugar build",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -19,6 +19,8 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "26.1.1",
+    "@typesugar/mapper": "0.1.1",
+    "@typesugar/transformer": "0.1.1",
     "eslint": "10.7.0",
     "globals": "17.7.0",
     "typescript": "6.0.3",

@@ -17,7 +17,7 @@ public sealed class HealthStatusTests : IDisposable
     [Theory]
     [InlineData(true, "正常")]
     [InlineData(false, "失敗")]
-    public async Task 応答待ちの表示から確認結果の日本語表示に切り替わります(bool 正常, string 表示)
+    public async Task サーバー接続の表示は応答を待つ間は確認中で応答後は正常または失敗に切り替わります(bool 正常, string 表示)
     {
         var 応答 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         service.Response = 応答.Task;

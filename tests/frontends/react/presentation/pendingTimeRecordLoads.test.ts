@@ -15,7 +15,7 @@ describe('PendingTimeRecordLoads', () => {
     tested = new PendingTimeRecordLoads()
   })
 
-  it('各取得に対して開始後に届いた更新だけを応答順に保持します', () => {
+  it('複数の記録一覧を並行して取得すると、各要求の開始後に届いた記録の更新だけが到着順に残ります', () => {
     const 先の取得 = tested.start()
     tested.recordUpdate(記録)
     const 後の取得 = tested.start()
@@ -26,7 +26,7 @@ describe('PendingTimeRecordLoads', () => {
     後の取得.updatedRecords.should.toStrictEqual([終了済み記録, 次の記録])
   })
 
-  it('取得が終わると残りの取得だけが後続の更新を受け取ります', () => {
+  it('記録一覧の取得が一件完了すると、それ以降の記録の更新は取得中の要求だけに加わります', () => {
     const 先の取得 = tested.start()
     const 後の取得 = tested.start()
     tested.recordUpdate(記録)

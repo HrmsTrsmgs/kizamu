@@ -323,6 +323,7 @@ node_modules/
 
 # React, Vite, npm, and frontend tests
 dist/
+/src/backends/node/.typesugar-cache/
 coverage/
 .vite/
 *.tsbuildinfo

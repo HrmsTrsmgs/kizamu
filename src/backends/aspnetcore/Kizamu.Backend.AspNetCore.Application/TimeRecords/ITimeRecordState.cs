@@ -13,7 +13,7 @@ public interface ITimeRecordState
     TimeRecord? Current { get; }
 
     /// <summary>
-    /// 保持しているすべての作業記録を取得します。
+    /// 保存順の一覧を取得します。取得後の追加も、この一覧の件数とインデクサーに反映されます。
     /// </summary>
     IReadOnlyList<TimeRecord> All { get; }
 
@@ -29,6 +29,13 @@ public interface ITimeRecordState
     /// <param name="id">作業記録の識別子。</param>
     /// <returns>一致する記録。存在しない場合はnull。</returns>
     TimeRecord? Find(Guid id);
+
+    /// <summary>
+    /// 同じ識別子の作業記録を、保存順を保って差し替えます。
+    /// </summary>
+    /// <param name="timeRecord">更新後の作業記録。</param>
+    /// <exception cref="TimeRecordNotFoundException">指定した作業記録が保存先に存在しない場合。</exception>
+    void Update(TimeRecord timeRecord);
 
     /// <summary>
     /// 作業記録を追加します。

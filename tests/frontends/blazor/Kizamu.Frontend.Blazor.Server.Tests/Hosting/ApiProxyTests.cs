@@ -12,36 +12,97 @@ namespace Kizamu.Frontend.Blazor.Server.Tests.Hosting;
 
 using static Kizamu.Tests.TestCancellation;
 
-public sealed class ApiProxyTests
+public sealed class ApiProxyTests : IDisposable
 {
+    readonly RecordingBackend backend = new();
+    readonly WebApplicationFactory<global::Program> factory;
+    readonly HttpClient client;
+
+    public ApiProxyTests()
+    {
+        factory = CreateFactoryWithApiBackend("http://configured-backend/", backend);
+        client = factory.CreateClient();
+    }
+
+    public static TheoryData<string, string, string?, HttpStatusCode> 中継する要求と応答 =>
+    [
+        ("GET", "/api/time-records?project=sample&limit=2", null, HttpStatusCode.OK),
+        ("POST", "/api/time-records/start?source=blazor", "{\"projectId\":\"sample\"}", HttpStatusCode.Created),
+        ("GET", "/api/does-not-exist", null, HttpStatusCode.NotFound),
+    ];
+
     [Theory]
-    [InlineData("GET", "/api/time-records?project=sample&limit=2", null, HttpStatusCode.OK)]
-    [InlineData("POST", "/api/time-records/start?source=blazor", "{\"projectId\":\"sample\"}", HttpStatusCode.Created)]
-    [InlineData("GET", "/api/does-not-exist", null, HttpStatusCode.NotFound)]
-    public async Task 設定された業務APIへ要求を中継してステータスとJSONを返します(
+    [MemberData(nameof(中継する要求と応答))]
+    public async Task 画面配信サーバーは要求のパスとクエリを保って設定先の業務APIへ中継します(
         string method, string path, string? body, HttpStatusCode statusCode)
     {
-        using var backend = new RecordingBackend(statusCode);
-        using var factory = CreateFactoryWithApiBackend("http://configured-backend/", backend);
-        using var client = factory.CreateClient();
+        using var response = await 要求を送る(method, path, body, statusCode);
+
+        backend.Uri.Should().Be(new Uri($"http://configured-backend{path}"));
+    }
+
+    [Theory]
+    [MemberData(nameof(中継する要求と応答))]
+    public async Task 画面配信サーバーは元のHTTPメソッドで業務APIへ要求を中継します(
+        string method, string path, string? body, HttpStatusCode statusCode)
+    {
+        using var response = await 要求を送る(method, path, body, statusCode);
+
+        backend.Method.Should().Be(method);
+    }
+
+    [Theory]
+    [MemberData(nameof(中継する要求と応答))]
+    public async Task 画面配信サーバーは元の要求本文とメディアタイプを保って業務APIへ中継します(
+        string method, string path, string? body, HttpStatusCode statusCode)
+    {
+        using var response = await 要求を送る(method, path, body, statusCode);
+
+        backend.Body.Should().Be(body ?? "");
+        if (body is not null)
+        {
+            backend.MediaType.Should().Be("application/json");
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(中継する要求と応答))]
+    public async Task 画面配信サーバーは業務APIの応答と同じステータスコードを返します(
+        string method, string path, string? body, HttpStatusCode statusCode)
+    {
+        using var response = await 要求を送る(method, path, body, statusCode);
+
+        response.StatusCode.Should().Be(statusCode);
+    }
+
+    [Theory]
+    [MemberData(nameof(中継する要求と応答))]
+    public async Task 画面配信サーバーは業務APIのJSON応答本文を同じメディアタイプで返します(
+        string method, string path, string? body, HttpStatusCode statusCode)
+    {
+        using var response = await 要求を送る(method, path, body, statusCode);
+
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        (await response.Content.ReadAsStringAsync(CancellationToken)).Should().Be("{\"id\":\"backend-response\"}");
+    }
+
+    async Task<HttpResponseMessage> 要求を送る(string method, string path, string? body, HttpStatusCode statusCode)
+    {
+        backend.StatusCode = statusCode;
         using var request = new HttpRequestMessage(new HttpMethod(method), path);
         if (body is not null)
         {
             request.Content = new StringContent(body, Encoding.UTF8, "application/json");
         }
 
-        using var response = await client.SendAsync(request, CancellationToken);
+        return await client.SendAsync(request, CancellationToken);
+    }
 
-        response.StatusCode.Should().Be(statusCode);
-        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
-        (await response.Content.ReadAsStringAsync(CancellationToken)).Should().Be("{\"id\":\"backend-response\"}");
-        backend.Method.Should().Be(method);
-        backend.Uri.Should().Be(new Uri($"http://configured-backend{path}"));
-        backend.Body.Should().Be(body ?? "");
-        if (body is not null)
-        {
-            backend.MediaType.Should().Be("application/json");
-        }
+    public void Dispose()
+    {
+        client.Dispose();
+        factory.Dispose();
+        backend.Dispose();
     }
 
     static WebApplicationFactory<global::Program> CreateFactoryWithApiBackend(
@@ -57,8 +118,9 @@ public sealed class ApiProxyTests
                 ServiceDescriptor.Singleton<IForwarderHttpClientFactory>(backend)));
         });
 
-    sealed class RecordingBackend(HttpStatusCode statusCode) : HttpMessageHandler, IForwarderHttpClientFactory
+    sealed class RecordingBackend : HttpMessageHandler, IForwarderHttpClientFactory
     {
+        public HttpStatusCode StatusCode { get; set; }
         public string? Method { get; set; }
         public Uri? Uri { get; set; }
         public string? Body { get; set; }
@@ -72,7 +134,7 @@ public sealed class ApiProxyTests
             Uri = request.RequestUri;
             Body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(cancellationToken);
             MediaType = request.Content?.Headers.ContentType?.MediaType;
-            return new(statusCode)
+            return new(StatusCode)
             {
                 Content = new StringContent("{\"id\":\"backend-response\"}", Encoding.UTF8, "application/json"),
             };
