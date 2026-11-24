@@ -3,6 +3,7 @@
 ## 読むべき指示
 
 * 公開APIの設計・検証では [APIの契約](docs/ai-instructions/common.md#設計と依存関係)、Greenで既存コードを再利用する場合は [適用先での確認](docs/ai-instructions/tdd-context/green.md#既存コードを再利用するときの確認) に従う。
+* Refactor担当は、完了前に [変更箇所のルール確認](docs/ai-instructions/tdd-context/refactor.md#変更箇所のルール確認) を行う。
 * TypeScriptの型・分岐・テストの書き方は [コードとテスト](docs/ai-instructions/typescript-react.md#コードとテスト) を参照する。
 * 進行役は、委任の可否・統括による代行とRGRのモデル・推論レベルを [モデル方針](docs/ai-instructions/tdd-context/models.md) で確認する。導入済み共通Skillに旧割り当てや代行禁止が残る場合も、この方針を優先する。
 * 共通方針は個人共通AGENTSを使う。未導入時は [参照版](docs/ai-instructions/common.md) を読む。
