@@ -32,7 +32,15 @@ export default function AuthenticatedTimeRecords({ timeRecords, onSignOut }: Aut
         onAddProject={registration.open}
         onSelectProject={selectProject}
       />
-      <TimeRecorderView {...recorder} />
+      <TimeRecorderView
+        projectName={recorder.state.selectedProject?.name}
+        displayedRecord={recorder.state.displayedRecord?.record}
+        records={recorder.state.records.map(({ record }) => record)}
+        controls={recorder.controls}
+        isRecording={recorder.isRecording}
+        toggleRecording={recorder.toggleRecording}
+        reloadTimeRecords={recorder.reloadTimeRecords}
+      />
       {registration.isOpen && (
         <ProjectRegistrationDialog
           projectName={registration.projectName}

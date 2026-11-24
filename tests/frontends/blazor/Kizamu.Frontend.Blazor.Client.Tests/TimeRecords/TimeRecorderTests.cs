@@ -73,17 +73,6 @@ public sealed class TimeRecorderTests : IDisposable
         画面.Find("ul[aria-label='作業記録一覧']").Children.Should().BeEmpty();
     }
 
-    [Fact]
-    public void 記録一覧には読み込んだ順に各記録の開始時刻を表示します()
-    {
-        記録一覧を用意する([開始した記録, new(別の記録ID, 終了時刻.AddMinutes(-30), 終了時刻)]);
-
-        var 開始時刻の表示 =
-            from item in 画面.FindAll("ul[aria-label='作業記録一覧'] li")
-            select item.QuerySelector("time")?.TextContent;
-        開始時刻の表示.Should().Equal("2026/08/01 18:00", "2026/08/01 19:00");
-    }
-
     [Theory]
     [InlineData(false, "記録を開始")]
     [InlineData(true, "記録を終了")]

@@ -1,128 +1,36 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import type { ComponentProps } from 'react'
 import { beforeEach, describe, it, vi, type Mock } from 'vitest'
 import type { TimeRecordService } from '../../../../src/frontends/react/src/presentation/timeRecordService'
-import type { TimeRecorderControls } from '../../../../src/frontends/react/src/presentation/timeRecorderOperationState'
 import { should } from '../../../should.mjs'
 import { createTimeRecordServiceStub } from '../test/createTimeRecordServiceStub'
 import { presentedRecord, timestamp } from '../test/timeRecords'
 import AuthenticatedTimeRecords from '../../../../src/frontends/react/src/timeRecords/AuthenticatedTimeRecords'
 import { TimeRecorderView } from '../../../../src/frontends/react/src/timeRecords/TimeRecorder'
-import { initialTimeRecorderState } from '../../../../src/frontends/react/src/presentation/timeRecorderState'
 
 const 記録ID = '019cde5b-4c00-7000-8000-000000000001'
-const 次の記録ID = '019cdeac-b600-7000-8000-000000000002'
 const 開始時刻 = timestamp('2026-08-01T09:00:00Z')
 const 終了時刻 = timestamp('2026-08-01T10:30:00Z')
 const 記録 = presentedRecord(記録ID, 開始時刻)
 const 終了済み記録 = presentedRecord(記録ID, 開始時刻, 終了時刻)
 
-describe('TimeRecorderView', () => {
-  let view: ComponentProps<typeof TimeRecorderView>
-  const 未確認時の操作: TimeRecorderControls = { canChangeRecord: false, canReload: true, notice: 'stateUnconfirmed' }
+it('終了済みの記録の作業時間を操作欄と作業記録一覧に表示します', () => {
+  render(
+    <TimeRecorderView
+      records={[終了済み記録.record]}
+      displayedRecord={終了済み記録.record}
+      controls={{ canChangeRecord: true, canReload: true, notice: null }}
+      isRecording={false}
+      toggleRecording={vi.fn()}
+      reloadTimeRecords={vi.fn()}
+    />,
+  )
 
-  beforeEach(() => {
-    view = {
-      state: initialTimeRecorderState,
-      controls: { canChangeRecord: true, canReload: true, notice: null },
-      isRecording: false,
-      toggleRecording: vi.fn(),
-      reloadTimeRecords: vi.fn(),
-    }
-  })
-
-  it('記録操作が許可されていない間は開始ボタンが無効になり、許可されると有効になります', () => {
-    const { rerender } = render(<TimeRecorderView {...view} controls={{ ...view.controls, canChangeRecord: false }} />)
-    screen.getByRole('button', { name: '記録を開始' }).should.toBeDisabled()
-
-    rerender(<TimeRecorderView {...view} />)
-
-    screen.getByRole('button', { name: '記録を開始' }).should.toBeEnabled()
-  })
-
-  describe('一覧に終了済みの記録が1件あるとき', () => {
-    beforeEach(() => {
-      render(<TimeRecorderView {...view} state={{ ...view.state, records: [終了済み記録], displayedRecord: 終了済み記録 }} />)
-    })
-
-    it('終了済みの記録が一件あると、画面に「1件」と表示されます', () => {
-      screen.getByText('1件').should.toBeInTheDocument()
-    })
-
-    it('終了済みの記録の作業時間を操作欄と作業記録一覧に表示します', () => {
-      const panel = within(screen.getByRole('region', { name: 'プロジェクト未指定' }))
-      const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
-
-      panel.getByText('作業時間').should.toBeInTheDocument()
-      panel.getByText('1時間30分').should.toBeInTheDocument()
-      list.getByText('作業時間').should.toBeInTheDocument()
-      list.getByText('1時間30分').should.toBeInTheDocument()
-    })
-
-    it('一覧の記録が終了済みで終了対象がなければ、操作欄に「待機中」と開始ボタンを表示します', () => {
-      screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
-      should.not.exist(screen.queryByRole('button', { name: '記録を終了' }))
-      screen.getByText('待機中').should.toBeInTheDocument()
-    })
-  })
-
-  describe('一覧の記録が記録中で終了対象になっているとき', () => {
-    beforeEach(() => {
-      render(<TimeRecorderView {...view} isRecording state={{ ...view.state, records: [記録] }} />)
-    })
-
-    it('記録中の操作パネルには「記録中」と終了ボタンが表示され、開始ボタンは表示されません', () => {
-      screen.getByRole('button', { name: '記録を終了' }).should.toBeInTheDocument()
-      should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
-      screen.getByText('記録中', { selector: '.status-badge' }).should.toBeInTheDocument()
-    })
-
-    it('作業記録一覧には、進行中の記録を「記録中」として表示します', () => {
-      const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
-      list.getByText('記録中').should.toBeInTheDocument()
-    })
-  })
-
-  it('操作欄の表示が終了済みの記録から新しい記録に変わると、前回の終了時刻が消えます', () => {
-    const { rerender } = render(
-      <TimeRecorderView {...view} state={{ ...view.state, records: [終了済み記録], displayedRecord: 終了済み記録 }} />,
-    )
-    const panel = within(screen.getByRole('region', { name: 'プロジェクト未指定' }))
-    panel.getByLabelText('終了時刻').should.toBeInTheDocument()
-    const 次の記録 = presentedRecord(次の記録ID, 終了時刻)
-
-    rerender(
-      <TimeRecorderView
-        {...view}
-        isRecording
-        state={{ ...view.state, records: [終了済み記録, 次の記録], displayedRecord: 次の記録 }}
-      />,
-    )
-
-    panel.getByRole('button', { name: '記録を終了' }).should.toBeInTheDocument()
-    panel.getByLabelText('開始時刻').should.toHaveTextContent('2026/08/01 19:30')
-    should.not.exist(panel.queryByLabelText('終了時刻'))
-  })
-
-  it.each([
-    { isRecording: false, operationName: '記録を開始' },
-    { isRecording: true, operationName: '記録を終了' },
-  ])('記録一覧の最新状態が未確認の間は「$operationName」ボタンを押せません', ({ isRecording, operationName }) => {
-    render(<TimeRecorderView {...view} isRecording={isRecording} controls={未確認時の操作} />)
-
-    screen.getByRole('button', { name: operationName }).should.toBeDisabled()
-  })
-
-  it('記録一覧の最新状態が未確認のときは、案内を表示し、再取得の通信中だけ再取得ボタンを無効にします', () => {
-    const { rerender } = render(<TimeRecorderView {...view} controls={未確認時の操作} />)
-
-    screen.getByRole('alert').should.toHaveTextContent('最新状態を確認できません')
-    screen.getByRole('button', { name: '再取得' }).should.toBeEnabled()
-
-    rerender(<TimeRecorderView {...view} controls={{ ...未確認時の操作, canReload: false }} />)
-
-    screen.getByRole('button', { name: '再取得' }).should.toBeDisabled()
-  })
+  const panel = within(screen.getByRole('region', { name: 'プロジェクト未指定' }))
+  const list = within(screen.getByRole('list', { name: '作業記録一覧' }))
+  panel.getByText('作業時間').should.toBeInTheDocument()
+  panel.getByText('1時間30分').should.toBeInTheDocument()
+  list.getByText('作業時間').should.toBeInTheDocument()
+  list.getByText('1時間30分').should.toBeInTheDocument()
 })
 
 describe('AuthenticatedTimeRecordsの記録操作', () => {

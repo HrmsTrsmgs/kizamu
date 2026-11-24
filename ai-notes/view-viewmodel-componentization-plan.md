@@ -1,6 +1,6 @@
 # ViewとViewModelの部品化 作業一覧
 
-2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜08はコミット済み。09は実装・検証済みでレビュー待ち。10〜12は未着手。次は10の記録操作欄と記録一覧を切り出す。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
+2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜09はコミット済み。10は実装・検証済みでレビュー待ち。11・12は未着手。次は11の時刻更新の共用を検討する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
 
 既存の[全コードレビューの項目27](code-review-actions.md#L253)では、Reactの認証済み画面を `App` から抽出し、Blazorの認証後のViewModel生成の重複を減らした。両実装の `TimeRecordTimes` も操作欄と一覧で共用済み。ここでは、各部品が必要とする入力、引き受ける処理、単独で確認できる振る舞いを作業単位にする。
 
@@ -70,11 +70,13 @@ BlazorとReactで `ProjectTabs` を切り出した。部品は一覧と選択を
 
 Blazor・Reactとも `ProjectRegistrationDialog` が下書きと変更・登録・キャンセルの操作を受け取る。親がダイアログの表示を決める。見出しと名前入力欄のIDは部品ごとに割り当てる。 [Blazorの部品](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/Projects/ProjectRegistrationDialog.razor) · [Reactの部品](../src/frontends/react/src/projects/ProjectRegistrationDialog.tsx)
 
-2026-11-24、基準は `0584e1a`。両実装の部品テストで、同じページに二つ置いたときの見出しとラベルの参照を確認した。既存の画面テストで入力・登録・キャンセルの接続を確認した。.NET 326件とTypeScript 249件のテスト、両ビルド、Lint、書式・差分検査が成功。既存のBL0016警告は1件。差分はレビュー用に未コミット。
+2026-11-24、基準は `0584e1a`。両実装の部品テストで、同じページに二つ置いたときの見出しとラベルの参照を確認した。既存の画面テストで入力・登録・キャンセルの接続を確認した。.NET 326件とTypeScript 249件のテスト、両ビルド、Lint、書式・差分検査が成功。既存のBL0016警告は1件。`7b234a6` にコミット済み。
 
 ### 10　記録操作欄と記録一覧をそれぞれ配置できるようにする
 
-Reactでは操作欄と一覧を分けているが、入力型が記録画面全体のReducerに依存する。Blazorでは同じ `TimeRecorder.razor` が両方を描画する。操作欄は表示する記録・状態と呼び出す操作、一覧は `TimeRecord` の列を受け取る。両部品を独立して描画できること、同じページに複数置いても見出しの参照が衝突しないことを確認する。時刻表示には既存の `TimeRecordTimes` を使う。 [Blazorの記録画面](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecorder.razor#L4) · [Reactの操作欄と一覧](../src/frontends/react/src/timeRecords/TimeRecorder.tsx#L49)
+BlazorとReactの `TimeRecorderPanel` はプロジェクト名、表示する記録、操作可否・通知とボタン操作を受け取る。`TimeRecordList` は `TimeRecord` の列を渡された順序で表示する。時刻の表示には既存の `TimeRecordTimes` を使う。 [Blazorの呼び出し側](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecorder.razor) · [Reactの呼び出し側](../src/frontends/react/src/timeRecords/TimeRecorder.tsx)
+
+2026-11-24、基準は `7b234a6`。操作欄と一覧をそれぞれ単独で描画し、同じページに二つ置いたときの見出し参照を確認した。操作ボタン・通知・件数・順序のテストを対応する部品へ移し、画面と記録操作の接続テストを残した。.NET 328件、TypeScript 251件、両ビルド、Lint、書式・差分検査が成功。既存のBL0016警告は1件。差分はレビュー用に未コミット。
 
 ## 表示処理の共用を検討する項目
 
