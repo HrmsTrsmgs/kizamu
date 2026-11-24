@@ -62,16 +62,13 @@ function isTimeRecordResponse(value: unknown): value is TimeRecordResponse {
     && (typeof value.endedAt === 'string' || value.endedAt === null)
 }
 
-function toTimeRecord(response: TimeRecordResponse): TimeRecordPresentation {
+function toTimeRecord({ id, startedAt, endedAt }: TimeRecordResponse): TimeRecordPresentation {
   return {
     record: new TimeRecord(
-      response.id,
-      Temporal.Instant.from(response.startedAt),
-      response.endedAt === null ? null : Temporal.Instant.from(response.endedAt),
+      id,
+      Temporal.Instant.from(startedAt),
+      endedAt === null ? null : Temporal.Instant.from(endedAt),
     ),
-    isoText: {
-      startedAt: response.startedAt,
-      endedAt: response.endedAt,
-    },
+    isoText: { startedAt, endedAt },
   }
 }
