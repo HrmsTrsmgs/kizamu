@@ -403,10 +403,10 @@ describe('useTimeRecorder', () => {
     })
   })
 
-  it('開始要求に成功すると、応答の記録を一覧に追加し、操作欄の表示対象と終了対象にします', async () => {
+  it('待機中に記録を操作すると開始を要求し、応答の記録を一覧・操作欄・終了対象に反映します', async () => {
     const { result } = renderRecorder()
 
-    await act(() => result.current.startTimeRecord())
+    await act(() => result.current.toggleRecording())
 
     startTimeRecord.should.have.callCount(1)
     result.current.state.should.toStrictEqual({
@@ -558,10 +558,10 @@ describe('useTimeRecorder', () => {
     result.current.state.should.have.property('timeRecordId', null)
   })
 
-  it('終了を要求すると記録中のIDが送られ、応答の終了済み記録で一覧と操作欄を更新します', async () => {
+  it('記録中に操作すると対象IDで終了を要求し、応答の終了済み記録を一覧と操作欄に反映します', async () => {
     const { result } = await renderStartedRecorder()
 
-    await act(() => result.current.endTimeRecord())
+    await act(() => result.current.toggleRecording())
 
     endTimeRecord.should.have.been.calledOnceWith(記録ID)
     result.current.state.should.toStrictEqual({

@@ -47,6 +47,9 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     public bool CanOperate => !IsBusy && !IsStateUnconfirmed;
 
     /// <inheritdoc />
+    public bool CanReload => !IsBusy;
+
+    /// <summary>利用者の操作で失敗が発生したかどうかを取得します。</summary>
     public bool HasOperationFailed { get; private set; }
 
     /// <inheritdoc />
@@ -58,7 +61,14 @@ public sealed class TimeRecorderViewModel(ITimeRecordService service) : ITimeRec
     };
 
     /// <inheritdoc />
-    public async Task RunUserOperationAsync(Func<Task> operation)
+    public Task ToggleRecordingAsync() =>
+        RunUserOperationAsync(IsRecording ? EndTimeRecordAsync : StartTimeRecordAsync);
+
+    /// <inheritdoc />
+    public Task ReloadRecordsAsync() =>
+        CanReload ? RunUserOperationAsync(LoadAsync) : Task.CompletedTask;
+
+    async Task RunUserOperationAsync(Func<Task> operation)
     {
         try
         {

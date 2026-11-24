@@ -28,7 +28,7 @@ public sealed class TimeRecorderViewModelTests
     {
         var 応答 = service.DelayStartResponse();
 
-        var 開始 = tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+        var 開始 = tested.ToggleRecordingAsync();
         tested.CanOperate.Should().BeFalse();
         応答.SetException(new InvalidOperationException());
         await 開始;
@@ -41,7 +41,7 @@ public sealed class TimeRecorderViewModelTests
     {
         var 応答 = service.DelayStartResponse();
 
-        var 開始 = tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+        var 開始 = tested.ToggleRecordingAsync();
         tested.HasOperationFailed.Should().BeFalse();
         応答.SetException(new InvalidOperationException());
         await 開始;
@@ -53,11 +53,11 @@ public sealed class TimeRecorderViewModelTests
     public async Task 記録の開始に失敗した後で開始に成功しても以前の失敗表示は残ります()
     {
         service.StartResponse = Task.FromException<TimeRecord>(new InvalidOperationException());
-        await tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+        await tested.ToggleRecordingAsync();
         tested.HasOperationFailed.Should().BeTrue();
         service.StartResponse = null;
 
-        await tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+        await tested.ToggleRecordingAsync();
 
         tested.IsRecording.Should().BeTrue();
         tested.HasOperationFailed.Should().BeTrue();
@@ -70,11 +70,11 @@ public sealed class TimeRecorderViewModelTests
         一覧取得を失敗させる(new InvalidOperationException());
         tested.Notice.Should().Be(TimeRecorderNotice.None);
 
-        await tested.RunUserOperationAsync(tested.StartTimeRecordAsync);
+        await tested.ToggleRecordingAsync();
 
         tested.Notice.Should().Be(TimeRecorderNotice.StateUnconfirmed);
         service.DelayListResponse().SetResult([]);
-        await tested.RunUserOperationAsync(tested.LoadAsync);
+        await tested.ReloadRecordsAsync();
         tested.Notice.Should().Be(TimeRecorderNotice.OperationFailed);
     }
 
@@ -83,7 +83,7 @@ public sealed class TimeRecorderViewModelTests
     {
         await 開始失敗後の再取得にも失敗させる();
 
-        await tested.RunUserOperationAsync(tested.LoadAsync);
+        await tested.ReloadRecordsAsync();
 
         tested.HasOperationFailed.Should().BeTrue();
     }
@@ -93,7 +93,7 @@ public sealed class TimeRecorderViewModelTests
     {
         await 開始失敗後の再取得にも失敗させる();
 
-        await tested.RunUserOperationAsync(tested.LoadAsync);
+        await tested.ReloadRecordsAsync();
 
         tested.IsStateUnconfirmed.Should().BeTrue();
     }
@@ -103,7 +103,7 @@ public sealed class TimeRecorderViewModelTests
     {
         await 開始失敗後の再取得にも失敗させる();
 
-        await tested.RunUserOperationAsync(tested.LoadAsync);
+        await tested.ReloadRecordsAsync();
 
         tested.CanOperate.Should().BeFalse();
     }
@@ -113,7 +113,7 @@ public sealed class TimeRecorderViewModelTests
     {
         await 開始失敗後の再取得にも失敗させる();
 
-        await tested.RunUserOperationAsync(tested.LoadAsync);
+        await tested.ReloadRecordsAsync();
 
         tested.IsBusy.Should().BeFalse();
     }
@@ -251,7 +251,7 @@ public sealed class TimeRecorderViewModelTests
         var 応答 = service.DelayEndResponse();
         tested.SelectProject(プロジェクトA);
 
-        var 終了操作 = tested.EndTimeRecordAsync();
+        var 終了操作 = tested.ToggleRecordingAsync();
         service.EndedIds.Should().Equal(記録ID);
         tested.SelectProject(プロジェクトB);
         応答.SetResult(Aの終了済み記録);
@@ -711,9 +711,10 @@ public sealed class TimeRecorderViewModelTests
     {
         var 応答 = await 開始失敗後の手動再取得の応答を保留する();
 
-        var 再取得 = tested.LoadAsync();
-        var 重複再取得 = tested.LoadAsync();
+        var 再取得 = tested.ReloadRecordsAsync();
+        var 重複再取得 = tested.ReloadRecordsAsync();
 
+        tested.CanReload.Should().BeFalse();
         service.ListCount.Should().Be(2);
 
         応答.SetResult([service.EndedRecord]);

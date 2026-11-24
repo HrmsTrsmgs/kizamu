@@ -4,10 +4,10 @@ import type { TimeRecorderState } from '../presentation/timeRecorderState'
 import TimeRecordTimes from './TimeRecordTimes'
 
 type TimeRecorderViewProps = {
-  state: TimeRecorderState
+  state: Pick<TimeRecorderState, 'selectedProject' | 'displayedRecord' | 'records'>
   controls: TimeRecorderControls
-  startTimeRecord: () => void
-  endTimeRecord: () => void
+  isRecording: boolean
+  toggleRecording: () => void
   reloadTimeRecords: () => void
 }
 
@@ -21,11 +21,10 @@ export function TimeRecorderView(props: TimeRecorderViewProps) {
 }
 
 type RecorderPanelProps = Omit<TimeRecorderViewProps, 'state'> & {
-  state: Pick<TimeRecorderState, 'selectedProject' | 'timeRecordId' | 'displayedRecord'>
+  state: Pick<TimeRecorderState, 'selectedProject' | 'displayedRecord'>
 }
 
-function RecorderPanel({ state, controls, startTimeRecord, endTimeRecord, reloadTimeRecords }: RecorderPanelProps) {
-  const isRecording = state.timeRecordId !== null
+function RecorderPanel({ state, controls, isRecording, toggleRecording, reloadTimeRecords }: RecorderPanelProps) {
   let notice: ReactNode
   switch (controls.notice) {
     case 'stateUnconfirmed':
@@ -57,7 +56,7 @@ function RecorderPanel({ state, controls, startTimeRecord, endTimeRecord, reload
           className={isRecording ? 'record-button is-active' : 'record-button'}
           type="button"
           disabled={!controls.canChangeRecord}
-          onClick={isRecording ? endTimeRecord : startTimeRecord}
+          onClick={toggleRecording}
         >
           {isRecording ? '記録を終了' : '記録を開始'}
         </button>

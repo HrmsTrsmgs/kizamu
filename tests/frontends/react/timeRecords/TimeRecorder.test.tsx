@@ -25,8 +25,8 @@ describe('TimeRecorderView', () => {
     view = {
       state: initialTimeRecorderState,
       controls: { canChangeRecord: true, canReload: true, notice: null },
-      startTimeRecord: vi.fn(),
-      endTimeRecord: vi.fn(),
+      isRecording: false,
+      toggleRecording: vi.fn(),
       reloadTimeRecords: vi.fn(),
     }
   })
@@ -68,7 +68,7 @@ describe('TimeRecorderView', () => {
 
   describe('一覧の記録が記録中で終了対象になっているとき', () => {
     beforeEach(() => {
-      render(<TimeRecorderView {...view} state={{ ...view.state, records: [記録], timeRecordId: 記録ID }} />)
+      render(<TimeRecorderView {...view} isRecording state={{ ...view.state, records: [記録] }} />)
     })
 
     it('記録中の操作パネルには「記録中」と終了ボタンが表示され、開始ボタンは表示されません', () => {
@@ -94,7 +94,8 @@ describe('TimeRecorderView', () => {
     rerender(
       <TimeRecorderView
         {...view}
-        state={{ ...view.state, records: [終了済み記録, 次の記録], timeRecordId: 次の記録ID, displayedRecord: 次の記録 }}
+        isRecording
+        state={{ ...view.state, records: [終了済み記録, 次の記録], displayedRecord: 次の記録 }}
       />,
     )
 
@@ -104,10 +105,10 @@ describe('TimeRecorderView', () => {
   })
 
   it.each([
-    { timeRecordId: null, operationName: '記録を開始' },
-    { timeRecordId: 記録ID, operationName: '記録を終了' },
-  ])('記録一覧の最新状態が未確認の間は「$operationName」ボタンを押せません', ({ timeRecordId, operationName }) => {
-    render(<TimeRecorderView {...view} state={{ ...view.state, timeRecordId }} controls={未確認時の操作} />)
+    { isRecording: false, operationName: '記録を開始' },
+    { isRecording: true, operationName: '記録を終了' },
+  ])('記録一覧の最新状態が未確認の間は「$operationName」ボタンを押せません', ({ isRecording, operationName }) => {
+    render(<TimeRecorderView {...view} isRecording={isRecording} controls={未確認時の操作} />)
 
     screen.getByRole('button', { name: operationName }).should.toBeDisabled()
   })

@@ -1,6 +1,6 @@
 # ViewとViewModelの部品化 作業一覧
 
-2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01・02・08はコミット済み。03は実装・検証済みでレビュー待ち。04〜07・09〜12は未着手。次は04の記録操作と失敗通知を整理する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
+2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜03・08はコミット済み。04は実装・検証済みでレビュー待ち。05〜07・09〜12は未着手。次は05の一覧の合成と終了対象の更新を整理する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
 
 既存の[全コードレビューの項目27](code-review-actions.md#L253)では、Reactの認証済み画面を `App` から抽出し、Blazorの認証後のViewModel生成の重複を減らした。両実装の `TimeRecordTimes` も操作欄と一覧で共用済み。ここでは、各部品が必要とする入力、引き受ける処理、単独で確認できる振る舞いを作業単位にする。
 
@@ -30,11 +30,13 @@ AとBで作業を開始し、Aを選択中の再取得で一覧が空になっ�
 
 Reactのタブと記録欄は、記録側のReducerが持つ選択を参照する。開始・終了は要求時のプロジェクトを保持する。画面に記録サービスを渡さなくなったときは一覧と操作状態を初期化し、ログアウト操作では選択も解除する。ログアウト前の遅延応答は再ログイン後の一覧に反映しない。 [タブと記録欄への接続](../src/frontends/react/src/timeRecords/AuthenticatedTimeRecords.tsx#L27) · [記録サービスの寿命](../src/frontends/react/src/presentation/useTimeRecorder.ts#L36)
 
-2026-11-24、基準は `72eb893`。追加テストで、ログアウト前の開始応答が再ログイン後に届いても作業記録一覧に追加されないことを確認した。既存テストでタブ切替中の遅延応答と再ログイン時の初期化も確認した。ワーカーを2つに制限してTypeScript全245件が成功し、Lint・ビルド・差分検査も成功。今回の差分はレビュー用に未コミット。
+2026-11-24、基準は `72eb893`。追加テストで、ログアウト前の開始応答が再ログイン後に届いても作業記録一覧に追加されないことを確認した。既存テストでタブ切替中の遅延応答と再ログイン時の初期化も確認した。ワーカーを2つに制限してTypeScript全245件が成功し、Lint・ビルド・差分検査も成功。`d70d9dd` にコミット済み。
 
 ### 04　記録操作の実行と失敗時の通知を画面から切り出す
 
-Blazorでは画面が毎回 `RunUserOperationAsync` で操作を包み、Reactでは画面とフックがそれぞれ終了対象IDから開始・終了を判断する。操作欄には表示する操作の種類、実行可否、呼び出す操作を渡す。操作を直接呼ぶテストで、開始・終了・再取得の可否、通知、初回取得との失敗時の扱いの違いを確認する。 [Blazorの操作ラッパー](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L61) · [Reactの操作フック](../src/frontends/react/src/presentation/useTimeRecorder.ts#L79)
+BlazorのViewModelとReactのフックが、記録ボタンで実行する開始・終了を選ぶ。操作欄は記録状態、操作可否、通知を描画し、記録操作と手動再取得を呼ぶ。Blazorでは初回取得と手動再取得を別の入口とし、手動操作の失敗はViewModelが通知に変える。 [Blazorの操作](../src/frontends/blazor/Kizamu.Frontend.Blazor.Presentation/TimeRecords/TimeRecorderViewModel.cs#L63) · [Reactの操作フック](../src/frontends/react/src/presentation/useTimeRecorder.ts#L126)
+
+2026-11-24、基準は `d70d9dd`。既存のViewModel・フックのテストで開始・終了、再取得の可否と失敗通知を、画面テストでボタンと操作の接続を確認した。Blazorソリューションの.NETテスト318件、TypeScriptテスト245件、両ビルド、TypeScriptのLint、変更C#の書式検査、差分検査が成功。.NETビルドは既存のBL0016警告1件。差分はレビュー用に未コミット。
 
 ### 05　一覧の合成と終了対象の更新を通信処理から分ける
 

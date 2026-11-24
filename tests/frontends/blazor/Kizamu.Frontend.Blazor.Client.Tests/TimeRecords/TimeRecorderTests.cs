@@ -29,7 +29,7 @@ public sealed class TimeRecorderTests : IDisposable
     {
         記録一覧を用意する([]);
         記録操作の可否を用意する(true);
-        利用者の操作を記録処理へつなぐ();
+        再取得の可否を用意する(true);
         context.Services.AddSingleton(recorder.Object);
         context.Services.AddSingleton<TimeProvider>(new FakeTimeProvider(終了時刻));
     }
@@ -57,12 +57,17 @@ public sealed class TimeRecorderTests : IDisposable
         開始時刻の表示.Should().Equal("2026/08/01 18:00", "2026/08/01 19:00");
     }
 
-    [Fact]
-    public void 開始ボタンを押すと記録の開始だけを一度要求します()
+    [Theory]
+    [InlineData(false, "記録を開始")]
+    [InlineData(true, "記録を終了")]
+    public void 開始または終了ボタンを押すと記録操作を一度要求します(bool 記録中, string 操作名)
     {
-        画面.Find("button").Click();
-        開始操作の呼び出しを確認する(Times.Once());
-        終了操作の呼び出しを確認する(Times.Never());
+        記録中の状態を用意する(記録中);
+
+        画面.FindAll(".recorder-action button").Single(it => it.TextContent == 操作名).Click();
+
+        記録操作の呼び出しを確認する(Times.Once());
+        再取得の呼び出しを確認する(Times.Never());
     }
 
     [Fact]
@@ -91,18 +96,6 @@ public sealed class TimeRecorderTests : IDisposable
     public void 開始した作業記録を記録一覧に表示します()
     {
         開始後の画面.FindAll("ul[aria-label='作業記録一覧'] li").Should().ContainSingle();
-    }
-
-    [Fact]
-    public void 終了ボタンを押すと記録の終了だけを一度要求します()
-    {
-        記録一覧を用意する([開始した記録]);
-        記録中の状態を用意する(true);
-
-        画面.FindAll(".recorder-action button").Single(it => it.TextContent == "記録を終了").Click();
-
-        終了操作の呼び出しを確認する(Times.Once());
-        開始操作の呼び出しを確認する(Times.Never());
     }
 
     [Fact]
@@ -172,26 +165,22 @@ public sealed class TimeRecorderTests : IDisposable
     }
 
     [Fact]
-    public async Task 再取得ボタンを押すと一覧の再取得を利用者の操作として渡します()
+    public async Task 再取得ボタンを押すと一覧の手動再取得を一度要求します()
     {
         再取得の案内を用意する();
-        List<Func<Task>> 受け取った操作 = [];
-        利用者の操作を実行せずに受け取る(受け取った操作.Add);
 
         await 画面.FindAll("button").Single(it => it.TextContent == "再取得").ClickAsync(new());
 
         一覧読み込みの呼び出しを確認する(Times.Once());
-        await 受け取った操作.Should().ContainSingle().Which();
-        一覧読み込みの呼び出しを確認する(Times.Exactly(2));
-        開始操作の呼び出しを確認する(Times.Never());
-        終了操作の呼び出しを確認する(Times.Never());
+        再取得の呼び出しを確認する(Times.Once());
+        記録操作の呼び出しを確認する(Times.Never());
     }
 
     [Fact]
-    public void 再取得の通信中は再取得ボタンを無効にします()
+    public void 一覧を再取得できない間は再取得ボタンを無効にします()
     {
         再取得の案内を用意する();
-        通信中の状態を用意する(true);
+        再取得の可否を用意する(false);
 
         画面.FindAll("button").Single(it => it.TextContent == "再取得").HasAttribute("disabled").Should().BeTrue();
     }
@@ -221,19 +210,15 @@ public sealed class TimeRecorderTests : IDisposable
                 }));
     }
 
-    void 利用者の操作を実行せずに受け取る(Action<Func<Task>> capture) =>
-        recorder.Setup(it => it.RunUserOperationAsync(It.IsAny<Func<Task>>())).Callback(capture).Returns(Task.CompletedTask);
     void 再取得の案内を用意する() => recorder.SetupGet(it => it.Notice).Returns(TimeRecorderNotice.StateUnconfirmed);
     void 一覧読み込みの呼び出しを確認する(Times times) => recorder.Verify(it => it.LoadAsync(), times);
-    void 利用者の操作を記録処理へつなぐ() =>
-        recorder.Setup(it => it.RunUserOperationAsync(It.IsAny<Func<Task>>())).Returns((Func<Task> operation) => operation());
     void 記録操作の可否を用意する(bool canOperate) => recorder.SetupGet(it => it.CanOperate).Returns(canOperate);
     void 記録一覧を用意する(IReadOnlyList<TimeRecord> records) => recorder.SetupGet(it => it.Records).Returns(records);
     void 記録中の状態を用意する(bool isRecording) => recorder.SetupGet(it => it.IsRecording).Returns(isRecording);
     void 操作欄の記録を用意する(TimeRecord record) => recorder.SetupGet(it => it.DisplayedRecord).Returns(record);
-    void 通信中の状態を用意する(bool isBusy) => recorder.SetupGet(it => it.IsBusy).Returns(isBusy);
-    void 開始操作の呼び出しを確認する(Times times) => recorder.Verify(it => it.StartTimeRecordAsync(), times);
-    void 終了操作の呼び出しを確認する(Times times) => recorder.Verify(it => it.EndTimeRecordAsync(), times);
+    void 再取得の可否を用意する(bool canReload) => recorder.SetupGet(it => it.CanReload).Returns(canReload);
+    void 記録操作の呼び出しを確認する(Times times) => recorder.Verify(it => it.ToggleRecordingAsync(), times);
+    void 再取得の呼び出しを確認する(Times times) => recorder.Verify(it => it.ReloadRecordsAsync(), times);
 
     public void Dispose() => context.Dispose();
 }

@@ -123,9 +123,12 @@ export function useTimeRecorder(timeRecords: TimeRecordService | undefined) {
     dispatch({ type: 'projectSelected', project })
   }, [])
 
+  const isRecording = state.timeRecordId !== null
   return {
     state,
     selectProject,
+    isRecording,
+    toggleRecording: isRecording ? endTimeRecord : startTimeRecord,
     isBusy: operationState.isBusy,
     isStateUnconfirmed: operationState.isStateUnconfirmed,
     controls: getTimeRecorderControls(operationState),
