@@ -184,9 +184,8 @@
 * 応答の値と開始応答の `endedAt: null` は既存のHTTPテストで確認した。 [作業記録APIのテスト](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs)
 * コンストラクター呼び出しを毎回書く費用と、共通項目の変更時に見直す箇所を減らすため、同じ方針をApplicationの開始・終了・一覧の結果と、BlazorでのHTTP応答からの記録復元にも適用した。開始結果は識別子と開始時刻を持ち、終了結果は操作で確定した終了時刻を受け取る。 [Applicationの変換](../src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Application/TimeRecords/TimeRecordResultMapper.cs) · [Blazorの変換](../src/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure/TimeRecords/TimeRecordResponseMapper.cs)
 
-## D017：Nodeの作業記録の応答変換にAutoMapperを使う
+## D017：Nodeの作業記録の応答変換にTypeSugarを使う
 
-* 2026-11-24に導入を決定した。ASP.NET Coreの[D016](#d016aspnet-coreの作業記録の応答変換にmapperlyを使う)と同じく、Nodeの開始・終了・一覧APIの応答変換に適用した。
-* 識別子の同名転記と日時の書式を一つのマッピング宣言に置く。変換元と変換先のメタデータを別々に登録する構成も試した結果、三つの対応を直接読める宣言にした。進行中の終了時刻は `null` を明示して返す。 [応答変換](../src/backends/node/api/timeRecordResponse.ts)
-* `@automapper/core` と `@automapper/pojos` の9.0.2（MIT）をNode業務APIの実行時依存とし、ルートのlockfileで解決を固定する。既存の `tsc` でビルドする。 [Nodeの依存定義](../src/backends/node/package.json) · [POJOsの公式文書](https://automapperts.netlify.app/strategies/pojos/)
-* 識別子・ミリ秒3桁の時刻・進行中の終了時刻は、作業記録APIの境界で検証する。 [作業記録APIのテスト](../tests/backends/node/api/timeRecordEndpoints.test.ts)
+* 2026-11-24、開始・終了・一覧APIの応答変換をAutoMapperからTypeSugarへ移す。返す項目は `TimeRecordResponse` で定義し、同名の `id` の転記を生成する。日時のミリ秒3桁の書式と、進行中の終了時刻を `null` にする規則は `compute` で指定する。 [応答変換](../src/backends/node/api/timeRecordResponse.ts)
+* AutoMapperを試した `c9ef993` では、モデル名と同名項目の対応を個別に登録していた。TypeSugarはコンパイラーが持つ型から対応を生成するため、応答の型と固有の変換規則を読めばよい。 `@typesugar/mapper` と `@typesugar/transformer` の0.1.1（MIT）をNodeの開発依存として固定する。 [対応付けの公式例](https://www.npmjs.com/package/@typesugar/mapper) · [Nodeの依存定義](../src/backends/node/package.json)
+* Vitestで変換を別に行う試行では応答の識別子が欠けた。HTTPテストは既存の `pretest` で生成したNodeのマッパーを読み込み、本番と同じ変換を検証する。 [Vitest設定](../tests/backends/node/vitest.config.ts) · [作業記録APIのテスト](../tests/backends/node/api/timeRecordEndpoints.test.ts)

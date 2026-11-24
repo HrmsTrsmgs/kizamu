@@ -7,12 +7,10 @@
     "dev": "npm run build && node dist/server.js",
     "start": "node dist/server.js",
     "prebuild": "npm run build --workspace=kizamu-domain-typescript",
-    "build": "tsc",
+    "build": "typesugar build",
     "lint": "eslint ."
   },
   "dependencies": {
-    "@automapper/core": "9.0.2",
-    "@automapper/pojos": "9.0.2",
     "fastify": "5.12.8",
     "google-auth-library": "11.3.4",
     "kizamu-domain-typescript": "0.0.0",
@@ -21,6 +19,8 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "26.1.1",
+    "@typesugar/mapper": "0.1.1",
+    "@typesugar/transformer": "0.1.1",
     "eslint": "10.7.0",
     "globals": "17.7.0",
     "typescript": "6.0.3",
