@@ -1,6 +1,6 @@
 # ViewとViewModelの部品化 作業一覧
 
-2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜09はコミット済み。10は実装・検証済みでレビュー待ち。11・12は未着手。次は11の時刻更新の共用を検討する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
+2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01〜10はコミット済み。11は検討済み。次は12のCSSの共用を検討する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
 
 既存の[全コードレビューの項目27](code-review-actions.md#L253)では、Reactの認証済み画面を `App` から抽出し、Blazorの認証後のViewModel生成の重複を減らした。両実装の `TimeRecordTimes` も操作欄と一覧で共用済み。ここでは、各部品が必要とする入力、引き受ける処理、単独で確認できる振る舞いを作業単位にする。
 
@@ -76,13 +76,15 @@ Blazor・Reactとも `ProjectRegistrationDialog` が下書きと変更・登録�
 
 BlazorとReactの `TimeRecorderPanel` はプロジェクト名、表示する記録、操作可否・通知とボタン操作を受け取る。`TimeRecordList` は `TimeRecord` の列を渡された順序で表示する。時刻の表示には既存の `TimeRecordTimes` を使う。 [Blazorの呼び出し側](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecorder.razor) · [Reactの呼び出し側](../src/frontends/react/src/timeRecords/TimeRecorder.tsx)
 
-2026-11-24、基準は `7b234a6`。操作欄と一覧をそれぞれ単独で描画し、同じページに二つ置いたときの見出し参照を確認した。操作ボタン・通知・件数・順序のテストを対応する部品へ移し、画面と記録操作の接続テストを残した。.NET 328件、TypeScript 251件、両ビルド、Lint、書式・差分検査が成功。既存のBL0016警告は1件。差分はレビュー用に未コミット。
+2026-11-24、基準は `7b234a6`。操作欄と一覧をそれぞれ単独で描画し、同じページに二つ置いたときの見出し参照を確認した。操作ボタン・通知・件数・順序のテストを対応する部品へ移し、画面と記録操作の接続テストを残した。.NET 328件、TypeScript 251件、両ビルド、Lint、書式・差分検査が成功。既存のBL0016警告は1件。`4bef875` にコミット済み。
 
 ## 表示処理の共用を検討する項目
 
 ### 11　同じ進行中の記録を表示する部品の時刻更新
 
-同じ記録を操作欄と一覧に表示すると各部品がタイマーを持つ。性能への影響は未測定。時刻更新を共用しても部品を独立して扱えるか確認する。変更する場合は分の境界で両方が更新され、終了後に時刻表示が固定され、表示を外すと不要なタイマーが解除されることを確認する。 [Blazorのタイマー](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecordTimes.razor#L39) · [Reactのタイマー](../src/frontends/react/src/presentation/useTimeRecordTimes.ts#L15)
+2026-11-24、基準は `4bef875`。同じ進行中の記録を操作欄と一覧に表示し、仮想時計を1秒ずつ60秒進めた。両実装ともタイマーは2本で、Blazorはタイマー通知120回・時刻欄の再描画120回、Reactは表示計算での現在時刻取得120回だった。1分に達すると両方の表示が進み、操作欄を外すと更新は1秒に1回、残った記録を終了すると0回になった。終了後の表示も固定された。実ブラウザーのCPU負荷は未測定。 [Blazorのタイマー](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/TimeRecords/TimeRecordTimes.razor#L39) · [Reactのタイマー](../src/frontends/react/src/presentation/useTimeRecordTimes.ts#L15)
+
+現在の画面で同じ記録を重ねて表示する場所は操作欄の1か所。タイマーを一つにまとめても各表示への更新通知は必要で、購読の管理が増えるため、各部品が持つタイマーを維持する。計測用ファイルは除去済み。既存の時刻表示とタイマー関連のBlazor 13件、React 17件および差分検査が成功。検討結果を記録済み。
 
 ### 12　記録欄・タブ・登録ダイアログのCSS
 
