@@ -1,6 +1,6 @@
 # ViewとViewModelの部品化 作業一覧
 
-2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01・02はコミット済み。03〜12は未着手。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
+2026-11-24に `bb4b679` のBlazorとReactを精査した結果に基づく。01・02はコミット済み。08は実装・検証済みでレビュー待ち。03〜07・09〜12は未着手。次は03の選択状態を整理する。精査時点では01・02をReactのReducerで再現し、Blazorはソースと既存テストで経路を確認した。
 
 既存の[全コードレビューの項目27](code-review-actions.md#L253)では、Reactの認証済み画面を `App` から抽出し、Blazorの認証後のViewModel生成の重複を減らした。両実装の `TimeRecordTimes` も操作欄と一覧で共用済み。ここでは、各部品が必要とする入力、引き受ける処理、単独で確認できる振る舞いを作業単位にする。
 
@@ -50,7 +50,9 @@ Blazorでは画面が毎回 `RunUserOperationAsync` で操作を包み、React�
 
 ### 08　プロジェクトタブを認証画面から独立させる
 
-Blazorのタブは `App.razor` 内にあり、Reactでもタブを登録ダイアログとまとめて描画している。一覧と選択値を渡して描画し、利用者の選択を親へ返せる部品にする。「未指定」と登録済みタブの選択・見出しを、認証や記録通信の準備をせずに確認する。 [Blazorのタブ](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/App.razor#L28) · [Reactのタブ](../src/frontends/react/src/timeRecords/AuthenticatedTimeRecords.tsx#L25)
+BlazorとReactで `ProjectTabs` を切り出した。部品は一覧と選択を受け取り、追加ボタンとタブの操作を親へ通知する。見出しは部品ごとのIDで参照する。認証、記録サービス、登録ダイアログの開閉は親が扱う。 [Blazorのタブ部品](../src/frontends/blazor/Kizamu.Frontend.Blazor.Client/Projects/ProjectTabs.razor) · [Reactのタブ部品](../src/frontends/react/src/projects/ProjectTabs.tsx)
+
+2026-11-24、基準は `4a0c146`。既存の画面テストで追加とタブ選択、記録欄への反映を確認した。.NETテスト318件、TypeScriptテスト244件、両ビルド、TypeScriptのLint、書式検査と差分検査が成功。.NETビルドは既存のBL0016警告1件。差分は未コミットでレビュー待ち。03ではサービスの一時不在から復帰したときの選択保持も確認する。
 
 ### 09　プロジェクト登録ダイアログをタブの描画から独立させる
 

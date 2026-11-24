@@ -1,6 +1,7 @@
 import { useReducer } from 'react'
 import { initialProjectTabsState, projectTabsReducer } from '../presentation/projectTabsState'
 import type { TimeRecordService } from '../presentation/timeRecordService'
+import ProjectTabs from '../projects/ProjectTabs'
 import TimeRecorder from './TimeRecorder'
 
 type AuthenticatedTimeRecordsProps = {
@@ -22,31 +23,12 @@ export default function AuthenticatedTimeRecords({ timeRecords, onSignOut }: Aut
   return (
     <>
       <button type="button" onClick={signOut}>ログアウト</button>
-      <section className="project-toolbar" aria-labelledby="projects-title">
-        <div className="project-toolbar-heading">
-          <h2 id="projects-title">プロジェクト</h2>
-          <button className="project-add-button" type="button" onClick={() => dispatch({ type: 'dialogOpened' })}>追加</button>
-        </div>
-        <div className="project-tabs" role="tablist" aria-label="プロジェクト">
-          <button
-            className="project-default project-tab"
-            role="tab"
-            aria-selected={state.selectedProject === undefined}
-            type="button"
-            onClick={() => dispatch({ type: 'projectSelected', project: undefined })}
-          >未指定</button>
-          {state.projects.map((project, index) => (
-            <button
-              className="project-tab"
-              role="tab"
-              aria-selected={state.selectedProject === project}
-              type="button"
-              key={index}
-              onClick={() => dispatch({ type: 'projectSelected', project })}
-            >{project.name}</button>
-          ))}
-        </div>
-      </section>
+      <ProjectTabs
+        projects={state.projects}
+        selectedProject={state.selectedProject}
+        onAddProject={() => dispatch({ type: 'dialogOpened' })}
+        onSelectProject={project => dispatch({ type: 'projectSelected', project })}
+      />
       <TimeRecorder timeRecords={timeRecords} selectedProject={state.selectedProject} />
       {state.showProjectDialog && (
         <div className="project-dialog-overlay">

@@ -1,3 +1,4 @@
+@using Kizamu.Frontend.Blazor.Client.Projects
 @inject ProjectTabsViewModel ViewModel
 @inject IServiceProvider Services
 
@@ -25,19 +26,10 @@
     </div>
     @if (ShowAuthenticatedContent)
     {
-        <section class="project-toolbar" aria-labelledby="projects-title">
-            <div class="project-toolbar-heading">
-                <h2 id="projects-title">プロジェクト</h2>
-                <button class="project-add-button" type="button" @onclick="ViewModel.OpenProjectDialog">追加</button>
-            </div>
-            <div class="project-tabs" role="tablist" aria-label="プロジェクト">
-                <button class="project-default project-tab" role="tab" aria-selected="@(ViewModel.SelectedProject is null ? "true" : "false")" type="button" @onclick="() => ViewModel.SelectProject(null)">未指定</button>
-                @foreach (var project in ViewModel.Projects)
-                {
-                    <button class="project-tab" role="tab" aria-selected="@(ViewModel.SelectedProject == project ? "true" : "false")" type="button" @onclick="() => ViewModel.SelectProject(project)">@project.Name</button>
-                }
-            </div>
-        </section>
+        <ProjectTabs Projects="ViewModel.Projects"
+                     SelectedProject="ViewModel.SelectedProject"
+                     OnAddProject="ViewModel.OpenProjectDialog"
+                     OnSelectProject="ViewModel.SelectProject" />
         <TimeRecorder SelectedProject="ViewModel.SelectedProject" AuthenticatedViewModel="timeRecorder" />
         @if (ViewModel.ShowProjectDialog)
         {
