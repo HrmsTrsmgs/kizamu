@@ -280,13 +280,15 @@ Presentationのコメントは「HTML timeに元のISO表記を使う」とす�
 
 HTTP 200なら即成功、プロセス終了なら即失敗とし、そのどちらでもなかった試行の後に既存の待機を一度だけ行う。最後の試行後の余分な待ちは省ける。代役で204→200、例外→200、プロセス終了、規定回数まで200なしを確認する。 [Wait-HealthEndpoint.ps1 7行](../scripts/Wait-HealthEndpoint.ps1#L7) · [Check-React.ps1 34行](../scripts/Check-React.ps1#L34) · [Check-Blazor.ps1 1行](../scripts/Check-Blazor.ps1#L1)
 
-2026-11-24、基準は `2ac6616`。204を返す代役で待機なしに再試行する失敗を再現し、待機を未成功の試行の後に移した。HTTP 200、204からの回復、接続例外からの回復、終了済みのプロセス、60回の未成功を `pwsh -NoProfile -File tests/scripts/Wait-HealthEndpoint.Tests.ps1` で検証した。次の着手点は項目31。 [回帰テスト](../tests/scripts/Wait-HealthEndpoint.Tests.ps1)
+2026-11-24、基準は `2ac6616`。204を返す代役で待機なしに再試行する失敗を再現し、待機を未成功の試行の後に移した。HTTP 200、204からの回復、接続例外からの回復、終了済みのプロセス、60回の未成功を `pwsh -NoProfile -File tests/scripts/Wait-HealthEndpoint.Tests.ps1` で検証した。[回帰テスト](../tests/scripts/Wait-HealthEndpoint.Tests.ps1)
 
 ### 31　起動失敗時に、Reactの確認スクリプトから原因をたどれるようにする
 
 子プロセスの出力を一時ファイルに保存しているが、失敗時に一般的なエラーを出した直後、finallyでログディレクトリを消す。失敗したプロセスとその診断が分からない。
 
 失敗したプロセス名と終了コード（取得可能な場合）、該当プロセスの起動エラーの要点を、後始末の前に表示する。トークンや環境変数の一括出力は不要。直ちにエラー終了する代役で原因が読め、他に起動したプロセスと一時ログは従来どおり片付くことを確認する。 [Check-React.ps1 34行](../scripts/Check-React.ps1#L34) · [Check-Blazor.ps1 1行](../scripts/Check-Blazor.ps1#L1)
+
+2026-11-24、基準 `37b7ba5`。Reactの代役が標準エラーに原因を書いて終了コード37を返すケースで、診断が表示されないことを確認した。ヘルス確認失敗時に子プロセス名、取得できた終了コード、標準エラーの末尾10行を表示するよう修正した。代役のエラー表示、先に起動したAPIの停止、一時ログの削除を含め、関連するPowerShellテスト3本と構文検査が成功した。実環境での手動起動は未実施。 [回帰テスト](../tests/scripts/Check-React.Tests.ps1)
 
 ### 32　テスト名に、実際の条件・主体・観測結果を書く
 

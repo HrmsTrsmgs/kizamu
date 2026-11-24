@@ -29,7 +29,14 @@ try {
             -LogDirectory $logs -Name $item.Name
         $processes += $process
         $ready = Wait-HealthEndpoint -Process $process -Uri $item.Check
-        if (-not $ready) { throw "$($item.Name) を起動できませんでした。ポートと実行環境を確認してください。" }
+        if (-not $ready) {
+            Write-Host "$($item.Name) を起動できませんでした。"
+            if ($process.HasExited) {
+                Write-Host "終了コード: $($process.ExitCode)"
+            }
+            Get-Content -LiteralPath (Join-Path $logs "$($item.Name).err") -Tail 10 -ErrorAction SilentlyContinue | Write-Host
+            throw "$($item.Name) を起動できませんでした。ポートと実行環境を確認してください。"
+        }
     }
     Show-FrontendForManualCheck -Uri 'http://localhost:5173'
 } finally {
