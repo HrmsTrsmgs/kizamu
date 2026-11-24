@@ -5,6 +5,7 @@
 * 公開APIの設計・検証では [APIの契約](docs/ai-instructions/common.md#設計と依存関係)、Greenで既存コードを再利用する場合は [適用先での確認](docs/ai-instructions/tdd-context/green.md#既存コードを再利用するときの確認) に従う。
 * TypeScriptの型・分岐・テストの書き方は技術別指示に従う。 [コードとテスト](docs/ai-instructions/typescript-react.md#コードとテスト) · [Reactのテスト境界](docs/ai-instructions/typescript-react.md#reactのテスト境界)
 * テストの追加・整理・レビューでは、Kizamuの責務分担と記述方針を確認する。手元の共通版に規則が欠けている場合は該当する参照版で補う。 [テストの責務](docs/ai-instructions/kizamu.md#domain画面テストの責務) · [テストの記述方針](docs/testing-style.md) · [テストの設計と準備](docs/ai-instructions/common.md#テストの設計と準備)
+* 処理・画面部品・状態を共用するときは、既存の責務と契約を照合する。 [共通化の判断](docs/ai-instructions/common.md#共通化の判断) · [画面部品と状態の共用](docs/ai-instructions/kizamu.md#画面部品と状態の共用)
 * 進行役は、委任の可否・統括による代行とRGRのモデル・推論レベルを [モデル方針](docs/ai-instructions/tdd-context/models.md) で確認する。導入済み共通Skillに旧割り当てや代行禁止が残る場合も、この方針を優先する。
 * 共通方針は個人共通AGENTSを使う。未導入時は [参照版](docs/ai-instructions/common.md) を読み、手元の版に規則が欠けている場合は同参照版の該当節で補う。
 * 振る舞い追加・仕様変更・不具合修正は共通Skill `tdd-workflow`、挙動を維持するリファクタリングの進行は同Skillの `references/run.md` を入口とする。未導入時は [TDDの入口](docs/ai-instructions/tdd.md) を使う。運用文書の編集や性能調査・計測だけでは製品TDDを起動しない。
