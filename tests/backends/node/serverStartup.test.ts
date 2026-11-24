@@ -12,25 +12,30 @@ test('Node版の業務APIを空きポートで起動すると、出力されたU
 }, 10000)
 
 test('起動URLが分割して出力されると、改行を受信してから完全なURLを返します', async () => {
-  const stdout = new PassThrough()
-  const stderr = new PassThrough()
-  const stdio: [null, PassThrough, PassThrough, undefined, undefined] = [null, stdout, stderr, undefined, undefined]
-  const server = Object.assign(new ChildProcess(), { stdin: null, stdout, stderr, stdio })
+  const server = createServerWithWritableOutput()
   let completed = false
   const listeningUrl = waitForListeningUrl(server).then((url) => {
     completed = true
     return url
   })
 
-  stdout.write('Starting server\nhttp://localhost:52')
+  server.stdout.write('Starting server\nhttp://localhost:52')
   await new Promise<void>((resolve) => setImmediate(resolve))
   const completedBeforeNewline = completed
-  stdout.write('13\n')
+  server.stdout.write('13\n')
 
   const url = await listeningUrl
   completedBeforeNewline.should.equal(false)
   url.should.equal('http://localhost:5213')
 })
+
+function createServerWithWritableOutput() {
+  const stdout = new PassThrough()
+  const stderr = new PassThrough()
+  const stdio: [null, PassThrough, PassThrough, undefined, undefined] = [null, stdout, stderr, undefined, undefined]
+
+  return Object.assign(new ChildProcess(), { stdin: null, stdout, stderr, stdio })
+}
 
 async function withListeningServer(verify: (listeningUrl: string) => Promise<void>) {
   const serverEntry = fileURLToPath(new URL('../../../src/backends/node/dist/server.js', import.meta.url))

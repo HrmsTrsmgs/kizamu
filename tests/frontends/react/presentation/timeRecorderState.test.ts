@@ -24,15 +24,7 @@ describe('timeRecorderReducer', () => {
 
     it('記録中に別のプロジェクトへ切り替えて戻ると、元のプロジェクトで始めた記録が再び終了対象になります', () => {
       const プロジェクトB = new Project('プロジェクトB')
-      let tested = timeRecorderReducer(initialTimeRecorderState, {
-        type: 'projectSelected',
-        project: プロジェクトA,
-      })
-      tested = timeRecorderReducer(tested, {
-        type: 'recordStarted',
-        project: プロジェクトA,
-        record: 記録,
-      })
+      let tested = プロジェクトで記録を開始した状態(プロジェクトA)
 
       tested = timeRecorderReducer(tested, {
         type: 'projectSelected',
@@ -53,8 +45,7 @@ describe('timeRecorderReducer', () => {
     it('プロジェクトAとBで記録を開始してAに戻り終了すると、操作欄の表示対象はAの終了済み記録です', () => {
       const プロジェクトB = new Project('プロジェクトB')
       const Bの記録 = presentedRecord('Bの記録', timestamp('2026-08-01T10:00:00Z'))
-      let state = timeRecorderReducer(initialTimeRecorderState, { type: 'projectSelected', project: プロジェクトA })
-      state = timeRecorderReducer(state, { type: 'recordStarted', project: プロジェクトA, record: 記録 })
+      let state = プロジェクトで記録を開始した状態(プロジェクトA)
       state = timeRecorderReducer(state, { type: 'projectSelected', project: プロジェクトB })
       state = timeRecorderReducer(state, { type: 'recordStarted', project: プロジェクトB, record: Bの記録 })
       state = timeRecorderReducer(state, { type: 'projectSelected', project: プロジェクトA })
@@ -125,6 +116,12 @@ describe('timeRecorderReducer', () => {
         tested.records.should.deep.equal([終了済み記録, プロジェクトの記録])
       })
     })
+
+    function プロジェクトで記録を開始した状態(project: Project) {
+      const selected = timeRecorderReducer(initialTimeRecorderState, { type: 'projectSelected', project })
+
+      return timeRecorderReducer(selected, { type: 'recordStarted', project, record: 記録 })
+    }
   })
 
   it('取得した一覧に記録中の作業があると、その一覧を保持し、記録中の作業を終了対象にします', () => {

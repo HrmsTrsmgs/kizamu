@@ -156,16 +156,14 @@ describe('ログイン済みのApp', () => {
   })
 
   it('別のプロジェクトから記録中のタブに戻ると、記録の終了ボタンが表示されます', async () => {
-    プロジェクトを登録する('プロジェクトA')
-    プロジェクトを登録する('プロジェクトB')
-    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
-    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
-    await screen.findByRole('button', { name: '記録を終了' })
+    const 記録中のプロジェクト = 'プロジェクトA'
+    const 未開始のプロジェクト = 'プロジェクトB'
+    await 記録中と未開始のタブを準備する(記録中のプロジェクト, 未開始のプロジェクト)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトB' }))
+    fireEvent.click(screen.getByRole('tab', { name: 未開始のプロジェクト }))
 
     screen.getByRole('button', { name: '記録を開始' }).should.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('tab', { name: 'プロジェクトA' }))
+    fireEvent.click(screen.getByRole('tab', { name: 記録中のプロジェクト }))
     screen.getByRole('button', { name: '記録を終了' }).should.toBeInTheDocument()
     should.not.exist(screen.queryByRole('button', { name: '記録を開始' }))
   })
@@ -179,6 +177,14 @@ describe('ログイン済みのApp', () => {
     should.not.exist(screen.queryByText(/count is/i))
   })
 })
+
+async function 記録中と未開始のタブを準備する(記録中のプロジェクト: string, 未開始のプロジェクト: string) {
+  プロジェクトを登録する(記録中のプロジェクト)
+  プロジェクトを登録する(未開始のプロジェクト)
+  fireEvent.click(screen.getByRole('tab', { name: 記録中のプロジェクト }))
+  fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+  await screen.findByRole('button', { name: '記録を終了' })
+}
 
 function プロジェクトを登録する(name: string) {
   fireEvent.click(screen.getByRole('button', { name: '追加' }))

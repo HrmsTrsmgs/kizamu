@@ -97,9 +97,9 @@ public sealed class TimeRecordEndpointTests :
         using var response = await client.SendAsync(request, CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        var records = await 記録一覧を取得する();
-        records.Should().ContainSingle().Which.Should().Be(startedRecord);
-        records[0].EndedAt.Should().BeNull();
+        var record = (await 記録一覧を取得する()).Should().ContainSingle().Which;
+        record.Should().Be(startedRecord);
+        record.EndedAt.Should().BeNull();
     }
 
     [Fact]
@@ -117,9 +117,7 @@ public sealed class TimeRecordEndpointTests :
     [Fact]
     public async Task 所有者が保存先にない記録の終了を要求すると404が返ります()
     {
-        await using var factoryWithEmptyEndState = configuredFactory.WithWebHostBuilder(builder =>
-            builder.ConfigureServices(services => services.Replace(
-                ServiceDescriptor.Singleton(new TimeRecordEndOperation(timeProvider, new InMemoryTimeRecordState())))));
+        await using var factoryWithEmptyEndState = 終了処理専用の空の保存先を持つAPIを構成する();
         using var apiClient = factoryWithEmptyEndState.CreateClient();
         var startedRecord = await 開始済みの記録を用意する(apiClient, 早い時刻);
         timeProvider.SetUtcNow(遅い時刻);
@@ -223,6 +221,11 @@ public sealed class TimeRecordEndpointTests :
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         (await 記録一覧を取得する()).Should().Equal(startedRecord);
     }
+
+    WebApplicationFactory<Program> 終了処理専用の空の保存先を持つAPIを構成する() =>
+        configuredFactory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.Replace(
+                ServiceDescriptor.Singleton(new TimeRecordEndOperation(timeProvider, new InMemoryTimeRecordState())))));
 
     async Task<TimeRecordResponse[]?> 記録一覧を取得する(string user = "google-user")
     {

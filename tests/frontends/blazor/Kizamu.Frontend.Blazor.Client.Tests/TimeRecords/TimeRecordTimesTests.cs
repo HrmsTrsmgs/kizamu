@@ -14,8 +14,8 @@ public sealed class TimeRecordTimesTests : IDisposable
     readonly BunitContext context = new();
     readonly FakeTimeProvider clock = new(開始時刻);
 
-    IRenderedComponent<TimeRecordTimes> 終了済みの表示 => field ??= 表示する(終了時刻);
-    IRenderedComponent<TimeRecordTimes> 記録中の表示 => field ??= 表示する(null);
+    IRenderedComponent<TimeRecordTimes> 終了済みの表示 => field ??= 表示する(開始時刻, 終了時刻);
+    IRenderedComponent<TimeRecordTimes> 記録中の表示 => field ??= 表示する(開始時刻, null);
 
     public TimeRecordTimesTests() => context.Services.AddSingleton<TimeProvider>(clock);
 
@@ -59,8 +59,7 @@ public sealed class TimeRecordTimesTests : IDisposable
     {
         var 開始時刻 = DateTimeOffset.Parse("2026-08-01T23:59:59.9999999+09:00");
         var 終了時刻 = DateTimeOffset.Parse("2026-08-02T00:00:59.9999999+09:00");
-        var tested = context.Render<TimeRecordTimes>(it => it
-            .Add(it => it.Record, new TimeRecord(Guid.Empty, 開始時刻, 終了時刻)));
+        var tested = 表示する(開始時刻, 終了時刻);
 
         var 日時属性 =
             from time in tested.FindAll("time")
@@ -130,7 +129,7 @@ public sealed class TimeRecordTimesTests : IDisposable
             操作欄 ? "開始時刻" : null, 操作欄 ? "終了時刻" : null);
     }
 
-    IRenderedComponent<TimeRecordTimes> 表示する(DateTimeOffset? 終了時刻) =>
+    IRenderedComponent<TimeRecordTimes> 表示する(DateTimeOffset 開始時刻, DateTimeOffset? 終了時刻) =>
         context.Render<TimeRecordTimes>(it => it
             .Add(it => it.Record, new TimeRecord(Guid.Empty, 開始時刻, 終了時刻)));
 

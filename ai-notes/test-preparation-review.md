@@ -6,6 +6,26 @@
 
 初回は方針の明文化とコードの精査を行った。その後の追加精査と適用状況は次節に記載する。精査だけで製品全体の正しさを保証するものではない。
 
+## 共通セットアップを使った全件の再精査（2026-11-24）
+
+基準は `codex/readability-second-pass` の `bb86405`。`tests/` の追跡済み91ファイルを通読した。テスト本体は56ファイルで、残りは補助と構成。同じ前提を共有できる場合は、確認する仕様に直接関係しない手順を最も狭い範囲の共通準備へ移した。
+
+| 対象 | 精査ファイル | テスト本体 | 整理したテストファイル |
+| --- | ---: | ---: | ---: |
+| ASP.NET Coreと.NET Domain | 20 | 14 | 2 |
+| Blazor | 25 | 18 | 2 |
+| Node・React・TypeScript Domain | 44 | 24 | 6 |
+| 共用テスト補助 | 2 | 0 | 0 |
+
+- ASP.NET Coreは空の保存先を持つ専用APIの組み立てと、トークン検証器の生成を補助に移した。所有者登録から終了要求までの順序、401と404、一覧の完全一致、期限・JSONの境界値は本文で確認する。 [終了API](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api.Tests/Endpoints/TimeRecords/TimeRecordEndpointTests.cs) · [トークン検証](../tests/backends/aspnetcore/Kizamu.Backend.AspNetCore.Infrastructure.Tests/Authentication/GoogleIdTokenVerifierTests.cs)
+- Blazorは手動再取得前の失敗と応答保留を共用し、初回一覧と時刻表示では既存の補助を再利用した。競合する操作の順序・回数と、日時の境界値・HTML属性は本文で確認する。 [ViewModel](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests/TimeRecords/TimeRecorderViewModelTests.cs) · [時刻表示](../tests/frontends/blazor/Kizamu.Frontend.Blazor.Client.Tests/TimeRecords/TimeRecordTimesTests.cs)
+- Reactは複数プロジェクトで開始済みの状態、記録中の初回一覧、登録済みのタブ、失敗後に再取得できる画面の準備をまとめた。状態遷移はReducerで直接確認し、通信の順序・回数、表示や再取得ボタンの接続は元の境界で確認する。 [Reducer](../tests/frontends/react/presentation/timeRecorderState.test.ts) · [フック](../tests/frontends/react/presentation/useTimeRecorder.test.ts) · [App](../tests/frontends/react/App.test.tsx) · [記録画面](../tests/frontends/react/timeRecords/TimeRecorder.test.tsx)
+- Nodeは既存のアプリ生成を公開鍵の応答を差し替えるケースから再利用し、疑似プロセスの組み立てを補助に移した。アプリの生成・終了と、起動URLの分割出力から改行までの観測順を保った。 [API](../tests/backends/node/api/timeRecordEndpoints.test.ts) · [起動](../tests/backends/node/serverStartup.test.ts)
+
+基準版と最終版のテスト名・ケース宣言を全56ファイルで照合した。検証結果は変更前後とも.NET 318件・TypeScript 244件が成功し、失敗・Skipは0件。最終版は.NETの非増分ビルド、対象C#の書式検査、TypeScriptのLint・ビルド、差分検査も成功した。16プロジェクトのSARIFで、基準版にもあった `BL0016` の警告1件を確認した。手動の起動確認スクリプト3件は通読した。
+
+テスト10ファイルとこの記録は未コミットで差分確認待ち。再開時はこのリファクタリングの差分から確認する。
+
 ## C#の共通準備と個別準備の再精査（2026-11-11）
 
 基準は `codex/refactor-react-test-preparation` の `dd1785a24f2cd327f53f0692a9e72b0589d2e54b` と、作業中だったAppTests.csのキャンセル用タプル抽出。代表例1件で止まっていたため、Git追跡下のC#全25テストファイルと関連する補助コードを確認し、共通初期化と個別の準備を再精査した。Fact 73件・Theory 11件の計84定義（うちSkip 3定義）で、データ行の展開数ではない。

@@ -19,7 +19,9 @@ const 終了時刻 = new Date('2026-08-01T10:30:00.000Z')
 const 同一オリジンを示さないヘッダー値 = ['same-site', 'cross-site', 'none', 'unknown', undefined]
 const googleTokens = createGoogleIdTokenFixture('endpoint-test-key')
 const publicKeyFetch: typeof fetch = async () => googleTokens.publicKeyResponse()
-function createTestApp() { return createApp(new GoogleIdTokenVerifier('kizamu-client', publicKeyFetch)) }
+function createTestApp(fetchPublicKeys: typeof fetch = publicKeyFetch) {
+  return createApp(new GoogleIdTokenVerifier('kizamu-client', fetchPublicKeys))
+}
 function authorization(user = 'google-user', expiresInSeconds = 3600) {
   const now = Math.floor(Date.now() / 1000)
   return 'Bearer ' + googleTokens.createToken({
@@ -62,7 +64,7 @@ test('有効なBearer認証の方式名が小文字でも記録一覧を取得�
 
 test('公開鍵の配信元が401を返すと記録一覧の取得要求には500が返されます', async () => {
   const fetchPublicKeys = vi.fn(async () => new Response(null, { status: 401 }))
-  const endpointApp = createApp(new GoogleIdTokenVerifier('kizamu-client', fetchPublicKeys))
+  const endpointApp = createTestApp(fetchPublicKeys)
 
   try {
     const response = await endpointApp.inject({

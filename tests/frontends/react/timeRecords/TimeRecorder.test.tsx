@@ -177,10 +177,7 @@ describe('TimeRecorder', () => {
   it('再取得ボタンで一覧を再取得できると未確認の案内から記録操作の失敗表示に戻ります', async () => {
     getTimeRecords.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('一覧取得失敗'))
     startTimeRecord.mockRejectedValueOnce(new Error('開始失敗'))
-    render(<TimeRecorder timeRecords={timeRecords} />)
-    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
-    const retry = await screen.findByRole('button', { name: '再取得' })
-    await waitFor(() => retry.should.toBeEnabled())
+    const retry = await 開始失敗後に再取得できるまで待つ()
     screen.getByRole('alert').should.toHaveTextContent('最新状態を確認できません')
 
     fireEvent.click(retry)
@@ -192,4 +189,13 @@ describe('TimeRecorder', () => {
     startTimeRecord.should.have.callCount(1)
     endTimeRecord.should.have.callCount(0)
   })
+
+  async function 開始失敗後に再取得できるまで待つ() {
+    render(<TimeRecorder timeRecords={timeRecords} />)
+    fireEvent.click(screen.getByRole('button', { name: '記録を開始' }))
+    const retry = await screen.findByRole('button', { name: '再取得' })
+    await waitFor(() => retry.should.toBeEnabled())
+
+    return retry
+  }
 })

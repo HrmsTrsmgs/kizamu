@@ -74,13 +74,7 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
         string? expectedSubject)
     {
         var 有効期限 = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
-        var verifier = new GoogleIdTokenVerifier(
-            verifySignedToken: _ => Task.FromResult(new JsonWebToken.Payload
-            {
-                Subject = "google-user",
-                ExpirationTimeSeconds = 有効期限.ToUnixTimeSeconds()
-            }),
-            timeProvider: new FixedTimeProvider(有効期限.AddTicks(ticksFromExpiration)));
+        var verifier = 有効期限と現在時刻を指定した検証器を用意する(有効期限, 有効期限.AddTicks(ticksFromExpiration));
 
         (await verifier.VerifyAsync("verified-token-placeholder")).Should().Be(expectedSubject);
     }
@@ -100,11 +94,7 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
         string subjectJson,
         string? expectedSubject)
     {
-        var claimsJson = $$"""{"sub":{{subjectJson}},"exp":60}""";
-        var verifier = new GoogleIdTokenVerifier(
-            verifySignedToken: _ => Task.FromResult<JsonWebToken.Payload>(
-                NewtonsoftJsonSerializer.Instance.Deserialize<GoogleIdentityPayload>(claimsJson)),
-            timeProvider: new FixedTimeProvider(DateTimeOffset.UnixEpoch));
+        var verifier = 本人識別子のJSONを指定した検証器を用意する(subjectJson);
 
         (await verifier.VerifyAsync("verified-token-placeholder")).Should().Be(expectedSubject);
     }
@@ -113,6 +103,26 @@ public sealed class GoogleIdTokenVerifierTests : IClassFixture<GoogleIdTokenVeri
     public async Task JWT形式でない文字列をGoogleのIDトークンとして検証しても本人識別子を取得できません()
     {
         (await tested.VerifyAsync("not-a-jwt")).Should().BeNull();
+    }
+
+    static GoogleIdTokenVerifier 有効期限と現在時刻を指定した検証器を用意する(
+        DateTimeOffset expiresAt,
+        DateTimeOffset utcNow) =>
+        new(
+            verifySignedToken: _ => Task.FromResult(new JsonWebToken.Payload
+            {
+                Subject = "google-user",
+                ExpirationTimeSeconds = expiresAt.ToUnixTimeSeconds()
+            }),
+            timeProvider: new FixedTimeProvider(utcNow));
+
+    static GoogleIdTokenVerifier 本人識別子のJSONを指定した検証器を用意する(string subjectJson)
+    {
+        var claimsJson = $$"""{"sub":{{subjectJson}},"exp":60}""";
+        return new(
+            verifySignedToken: _ => Task.FromResult<JsonWebToken.Payload>(
+                NewtonsoftJsonSerializer.Instance.Deserialize<GoogleIdentityPayload>(claimsJson)),
+            timeProvider: new FixedTimeProvider(DateTimeOffset.UnixEpoch));
     }
 
     string CreateToken(

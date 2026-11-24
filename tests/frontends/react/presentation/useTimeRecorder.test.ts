@@ -153,8 +153,7 @@ describe('useTimeRecorder', () => {
     beforeEach(async () => {
       getTimeRecords.mockResolvedValueOnce([記録]).mockResolvedValueOnce([終了済み記録])
       endTimeRecord.mockRejectedValue(終了失敗)
-      recorder = renderRecorder()
-      await waitFor(() => recorder.result.current.state.should.have.property('timeRecordId', 記録ID))
+      recorder = await 記録中の初回一覧を読み込む()
     })
 
     it('記録の終了に失敗して一覧を再取得できた場合、呼び出し元には終了時のエラーが届きます', async () => {
@@ -323,8 +322,7 @@ describe('useTimeRecorder', () => {
 
     beforeEach(async () => {
       getTimeRecords.mockResolvedValueOnce([記録])
-      result = renderRecorder().result
-      await waitFor(() => result.current.state.should.have.property('timeRecordId', 記録ID))
+      result = (await 記録中の初回一覧を読み込む()).result
 
       endTimeRecord.mockRejectedValueOnce(new Error('終了失敗'))
       再取得失敗 = new Error('一覧取得失敗')
@@ -601,14 +599,9 @@ describe('useTimeRecorder', () => {
     const 応答 = deferred<typeof Aの終了済み記録>()
     startTimeRecord.mockResolvedValueOnce(記録).mockResolvedValueOnce(Bの記録)
     endTimeRecord.mockReturnValueOnce(応答.promise)
-    const { result } = renderRecorder()
+    const result = await 二つのプロジェクトで記録を開始する(プロジェクトA, プロジェクトB)
 
     act(() => result.current.selectProject(プロジェクトA))
-    await act(() => result.current.startTimeRecord())
-    act(() => result.current.selectProject(プロジェクトB))
-    await act(() => result.current.startTimeRecord())
-    act(() => result.current.selectProject(プロジェクトA))
-
     let 終了操作 = Promise.resolve()
     act(() => { 終了操作 = result.current.endTimeRecord() })
     endTimeRecord.should.have.been.calledOnceWith(記録ID)
@@ -640,12 +633,7 @@ describe('useTimeRecorder', () => {
     getTimeRecords.mockResolvedValueOnce([]).mockResolvedValueOnce([記録, Bの終了済み記録])
     startTimeRecord.mockResolvedValueOnce(記録).mockResolvedValueOnce(Bの記録)
     endTimeRecord.mockReturnValueOnce(応答.promise)
-    const { result } = renderRecorder()
-
-    act(() => result.current.selectProject(プロジェクトA))
-    await act(() => result.current.startTimeRecord())
-    act(() => result.current.selectProject(プロジェクトB))
-    await act(() => result.current.startTimeRecord())
+    const result = await 二つのプロジェクトで記録を開始する(プロジェクトA, プロジェクトB)
 
     let Bの終了操作 = Promise.resolve()
     act(() => { Bの終了操作 = result.current.endTimeRecord() })
@@ -684,6 +672,23 @@ describe('useTimeRecorder', () => {
   async function renderStartedRecorder() {
     const recorder = renderRecorder()
     await act(() => recorder.result.current.startTimeRecord())
+
+    return recorder
+  }
+
+  async function 二つのプロジェクトで記録を開始する(first: Project, second: Project) {
+    const { result } = renderRecorder()
+    act(() => result.current.selectProject(first))
+    await act(() => result.current.startTimeRecord())
+    act(() => result.current.selectProject(second))
+    await act(() => result.current.startTimeRecord())
+
+    return result
+  }
+
+  async function 記録中の初回一覧を読み込む() {
+    const recorder = renderRecorder()
+    await waitFor(() => recorder.result.current.state.should.have.property('timeRecordId', 記録ID))
 
     return recorder
   }

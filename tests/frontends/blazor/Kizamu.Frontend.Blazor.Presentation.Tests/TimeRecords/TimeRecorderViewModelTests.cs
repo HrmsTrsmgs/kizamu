@@ -696,9 +696,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 記録一覧の手動再取得の応答を待つ間は通信中になります()
     {
-        await 開始失敗後の再取得にも失敗させる();
-        service.StartResponse = null;
-        var 応答 = service.DelayListResponse();
+        var 応答 = await 開始失敗後の手動再取得の応答を保留する();
 
         var 再取得 = tested.LoadAsync();
 
@@ -711,9 +709,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 記録一覧の手動再取得の応答を待つ間にもう一度再取得しても一覧を重ねて要求しません()
     {
-        await 開始失敗後の再取得にも失敗させる();
-        service.StartResponse = null;
-        var 応答 = service.DelayListResponse();
+        var 応答 = await 開始失敗後の手動再取得の応答を保留する();
 
         var 再取得 = tested.LoadAsync();
         var 重複再取得 = tested.LoadAsync();
@@ -727,9 +723,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 記録一覧を手動で再取得している間は記録の開始や終了を要求しません()
     {
-        await 開始失敗後の再取得にも失敗させる();
-        service.StartResponse = null;
-        var 応答 = service.DelayListResponse();
+        var 応答 = await 開始失敗後の手動再取得の応答を保留する();
 
         var 再取得 = tested.LoadAsync();
         var 重複再取得 = tested.LoadAsync();
@@ -912,9 +906,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 一覧の取得中に開始した複数の記録が応答に含まれなくても各記録の最新状態が開始順に残ります()
     {
-        var 応答 = service.DelayListResponse();
-        var 読み込み = tested.LoadAsync();
-        await tested.StartTimeRecordAsync();
+        var (応答, 読み込み) = await 初回一覧の応答を保留して記録を開始する();
         tested.SelectProject(new("別のプロジェクト"));
         service.StartedRecord = new(別の記録ID, 開始時刻, null);
         await tested.StartTimeRecordAsync();
@@ -953,9 +945,7 @@ public sealed class TimeRecorderViewModelTests
     [Fact]
     public async Task 一覧の取得中に記録を開始すると応答の先頭に別の未終了の記録があっても新しく開始した記録から終了します()
     {
-        var 応答 = service.DelayListResponse();
-        var 読み込み = tested.LoadAsync();
-        await tested.StartTimeRecordAsync();
+        var (応答, 読み込み) = await 初回一覧の応答を保留して記録を開始する();
         応答.SetResult([new(別の記録ID, 開始時刻, null)]);
         await 読み込み;
 
@@ -1177,6 +1167,13 @@ public sealed class TimeRecorderViewModelTests
             await 終了失敗後の再取得にも失敗させる();
             service.DelayListResponse().SetResult([service.EndedRecord]);
         }
+    }
+
+    async Task<TaskCompletionSource<ImmutableArray<TimeRecord>>> 開始失敗後の手動再取得の応答を保留する()
+    {
+        await 開始失敗後の再取得にも失敗させる();
+        service.StartResponse = null;
+        return service.DelayListResponse();
     }
 
     void 読み込む記録一覧を用意する(bool 記録中の項目を含む) =>
