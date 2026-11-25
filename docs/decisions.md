@@ -189,3 +189,10 @@
 * 2026-11-24、開始・終了・一覧APIの応答変換をAutoMapperからTypeSugarへ移す。返す項目は `TimeRecordResponse` で定義し、同名の `id` の転記を生成する。日時のミリ秒3桁の書式と、進行中の終了時刻を `null` にする規則は `compute` で指定する。 [応答変換](../src/backends/node/api/timeRecordResponse.ts)
 * AutoMapperを試した `c9ef993` では、モデル名と同名項目の対応を個別に登録していた。TypeSugarはコンパイラーが持つ型から対応を生成するため、応答の型と固有の変換規則を読めばよい。 `@typesugar/mapper` と `@typesugar/transformer` の0.1.1（MIT）をNodeの開発依存として固定する。 [対応付けの公式例](https://www.npmjs.com/package/@typesugar/mapper) · [Nodeの依存定義](../src/backends/node/package.json)
 * Vitestで変換を別に行う試行では応答の識別子が欠けた。HTTPテストは既存の `pretest` で生成したNodeのマッパーを読み込み、本番と同じ変換を検証する。 [Vitest設定](../tests/backends/node/vitest.config.ts) · [作業記録APIのテスト](../tests/backends/node/api/timeRecordEndpoints.test.ts)
+
+## D018：ベータ公開とMVPの到達条件を分ける
+
+* 確認日・状態：2026-11-25、開発者が公開ベータ、Word・Excel入出力、プロジェクトの名前変更・削除、記録の手動追加をMVPの範囲として選択した。
+* 決定：MVP前の公開ベータには、Googleログインと本人のプロジェクト別の記録を含める。データ消失を明示するならメモリ保存でも公開してよい。MVPでは利用者別の永続化、Clockifyとの併用に加え、Word・Excel入出力、プロジェクトの名前変更・削除、記録の手動追加を必須とする。プロジェクトのアーカイブ、多階層のタスクツリー、タスクを選択するタブはMVP後に追加する。入力はKizamuが定める形式を対象とし、任意の文書・表の推測抽出はしない。当面の入出力はASP.NET CoreかBlazorの.NET実装を含む組合せで利用できればよい。削除時の既存記録の扱い、入力項目欠損の許容範囲と処理場所は未決である。
+* 採らなかった案：プロジェクト未指定の記録だけでベータを公開する案、Word・Excel出力をMVPとは別のポートフォリオ機能にする案は採用しなかった。任意の文書・表を入力する案は範囲が広すぎるため採用しない。前二者の選択理由は未確認であり、後付けしない。
+* 根拠：2026-11-25の開発者の回答と、[暫定ロードマップ](roadmap.md)。
