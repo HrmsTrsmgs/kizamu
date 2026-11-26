@@ -4,11 +4,6 @@ if (-not $IsWindows) {
     throw 'このテストはWindowsのPowerShell 7で実行してください。'
 }
 
-$scriptPath = Join-Path $PSScriptRoot '../../scripts/Start-Docker.ps1'
-if (-not (Test-Path $scriptPath)) {
-    throw 'Start-Docker.ps1 が存在しません。'
-}
-
 $calls = [System.Collections.Generic.List[object]]::new()
 function wsl.exe {
     $calls.Add(@($args))
@@ -19,11 +14,16 @@ function wsl.exe {
 }
 
 foreach ($case in @(
-    @{ Script = $scriptPath; Command = 'up -d' },
-    @{ Script = (Join-Path $PSScriptRoot '../../scripts/Build-Docker.ps1'); Command = 'build' }
+    @{ Script = 'Start-Docker.ps1'; Command = 'up -d' },
+    @{ Script = 'Build-Docker.ps1'; Command = 'build' },
+    @{ Script = 'Stop-Docker.ps1'; Command = 'down' }
 )) {
+    $scriptPath = Join-Path $PSScriptRoot "../../scripts/$($case.Script)"
+    if (-not (Test-Path $scriptPath)) {
+        throw "$($case.Script) が存在しません。"
+    }
     $calls.Clear()
-    & $case.Script -Distribution 'Ubuntu-Test'
+    & $scriptPath -Distribution 'Ubuntu-Test'
 
     if ($calls.Count -ne 2) {
         throw "WSLの呼び出し回数が期待と異なります: $($calls.Count)"
