@@ -153,7 +153,7 @@ Visual Studio用の共有一括起動設定は `Kizamu.slnLaunch` と `Kizamu.Bl
 
 ZIPやインストーラーなどの配布形態は未確定です。ASP.NET CoreとBlazorはDockerイメージとしてビルドできます。
 
-標準の `dotnet publish` で業務APIとBlazorサーバーを別々の出力先へ公開します。Blazorサーバーの出力にはClientの静的ファイルが含まれます。以下は動作確認用のフレームワーク依存の出力であり、利用環境にはASP.NET Core Runtime 10が必要です。
+標準の `dotnet publish` で業務APIとBlazorサーバーを別々の出力先へ公開します。Blazorサーバーの出力にはClientの静的ファイルが含まれます。以下は動作確認用のフレームワーク依存の出力であり、利用環境にはASP.NET Core Runtime 11が必要です。
 
 ```powershell
 dotnet publish src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api -c Release -o .artifacts/api-publish
