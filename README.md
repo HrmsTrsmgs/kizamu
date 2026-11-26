@@ -151,9 +151,9 @@ Visual Studio用の共有一括起動設定は `Kizamu.slnLaunch` と `Kizamu.Bl
 
 当初は製品として一つのリリースバージョンを使い、含まれる実装の機能範囲と検証済みの組み合わせを明示する方針です。全組み合わせを毎回配布する前提にはしません。HTTP APIの互換性と保存データの互換性は別に設計し、別サーバーに同じデータベース構造を強制しません。
 
-対応OS、ランタイム同梱、ZIPやインストーラーなどの配布形態と、その組み立て処理は未実装・未確定です。
+ZIPやインストーラーなどの配布形態は未確定です。ASP.NET CoreとBlazorはDockerイメージとしてビルドできます。
 
-標準の `dotnet publish` で業務APIとBlazorサーバーを別々の出力先へ公開します。Blazorサーバーの出力にはClientの静的ファイルが含まれます。以下は動作確認用のフレームワーク依存の出力であり、利用環境にはASP.NET Core Runtime 10が必要です。
+標準の `dotnet publish` で業務APIとBlazorサーバーを別々の出力先へ公開します。Blazorサーバーの出力にはClientの静的ファイルが含まれます。以下は動作確認用のフレームワーク依存の出力であり、利用環境にはASP.NET Core Runtime 11が必要です。
 
 ```powershell
 dotnet publish src/backends/aspnetcore/Kizamu.Backend.AspNetCore.Api -c Release -o .artifacts/api-publish
@@ -171,6 +171,30 @@ Pop-Location
 ```
 
 サーバーを停止してから `Pop-Location` を実行します。公開時のコード縮小に対応するため、BlazorのJSON読み取りは[.NET標準のソース生成](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/source-generation)による型情報を使います。
+
+## Dockerでビルド・起動
+
+WindowsではPowerShell 7とWSL 2を使います。UbuntuとDocker Engine・Composeのセットアップは、リポジトリルートから次を実行します。Ubuntuが未導入の場合はインストール後に初期設定を済ませ、再実行します。WSL自体が未導入の場合は先にWindowsでWSLをインストールしてください。Dockerの導入時はUbuntuのrootとしてパッケージをインストールします。
+
+```powershell
+./scripts/Setup-Wsl.ps1
+```
+
+イメージをビルドします。WindowsではWSLのUbuntu内でrootとしてDockerを実行します。Linuxでは実行ユーザーが利用できるDocker EngineとComposeを使います。
+
+```powershell
+./scripts/Build-Docker.ps1
+```
+
+起動と停止もスクリプトから実行します。Windowsでは指定したWSLディストリビューション内のComposeを、LinuxではローカルのComposeを使います。
+
+```powershell
+./scripts/Start-Docker.ps1
+# 画面の確認後
+./scripts/Stop-Docker.ps1
+```
+
+`http://localhost:5214` で画面を開きます。画面サーバーがAPIへ中継し、APIのポートはホストへ公開しません。記録はAPIのメモリに保持され、APIの再起動やコンテナの停止・削除で消えます。別名のUbuntuを使用する場合は、セットアップ、ビルド、起動、停止の各スクリプトに `-Distribution` を指定します。
 
 ## 必要な環境
 

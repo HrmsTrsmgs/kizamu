@@ -1,0 +1,15 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: src/backends/aspnetcore/Dockerfile
+  web:
+    build:
+      context: .
+      dockerfile: src/frontends/blazor/Dockerfile
+    environment:
+      ReverseProxy__Clusters__backend__Destinations__backend__Address: http://api:8080
+    ports:
+      - "127.0.0.1:5214:8080"
+    depends_on:
+      - api
