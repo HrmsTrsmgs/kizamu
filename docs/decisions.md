@@ -189,3 +189,9 @@
 * 2026-11-24、開始・終了・一覧APIの応答変換をAutoMapperからTypeSugarへ移す。返す項目は `TimeRecordResponse` で定義し、同名の `id` の転記を生成する。日時のミリ秒3桁の書式と、進行中の終了時刻を `null` にする規則は `compute` で指定する。 [応答変換](../src/backends/node/api/timeRecordResponse.ts)
 * AutoMapperを試した `c9ef993` では、モデル名と同名項目の対応を個別に登録していた。TypeSugarはコンパイラーが持つ型から対応を生成するため、応答の型と固有の変換規則を読めばよい。 `@typesugar/mapper` と `@typesugar/transformer` の0.1.1（MIT）をNodeの開発依存として固定する。 [対応付けの公式例](https://www.npmjs.com/package/@typesugar/mapper) · [Nodeの依存定義](../src/backends/node/package.json)
 * Vitestで変換を別に行う試行では応答の識別子が欠けた。HTTPテストは既存の `pretest` で生成したNodeのマッパーを読み込み、本番と同じ変換を検証する。 [Vitest設定](../tests/backends/node/vitest.config.ts) · [作業記録APIのテスト](../tests/backends/node/api/timeRecordEndpoints.test.ts)
+
+## D019：.NET テストを Microsoft.Testing.Platform で実行する
+
+* 2026-11-27、開発者が移行とテスト依存の置き換えを了承した。
+* .NET 11 SDK の `dotnet test` から MTP を直接使うため、`global.json` でランナーを指定し、同じ版の xUnit.net v3 を MTP v2 対応のパッケージへ切り替える。CLI と IDE で MTP を使う構成とし、従来の VSTest 用アダプターと SDK を削除する。 [xUnit.net の MTP 対応手順](https://xunit.net/docs/getting-started/v3/microsoft-testing-platform) · [Microsoft の移行ガイド](https://learn.microsoft.com/ja-jp/dotnet/core/testing/migrating-vstest-microsoft-testing-platform)
+* カバレッジ計測は既存の Coverlet を継続する。従来のコレクターは VSTest に依存するため、MTP 向けの拡張に置き換える。 [Coverlet の MTP 対応手順](https://github.com/coverlet-coverage/coverlet/blob/master/Documentation/Coverlet.MTP.Integration.md) · [実行手順](../README.md#ビルドと検証)

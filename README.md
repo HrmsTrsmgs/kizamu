@@ -364,25 +364,31 @@ npm run dev
 
 Blazor、バックエンド、Domainのビルドとテスト:
 
-.NETテストはxUnit.net v3を使い、既存のVSTest経由で実行します。テストプロジェクトだけを実行可能形式に変更しており、製品側のプロジェクト構成は変えていません。Microsoft Testing Platformへの切替は行っていません。
+.NETテストは .NET 11 SDK と xUnit.net v3 を使います。`global.json` で `dotnet test` のランナーに Microsoft.Testing.Platform（MTP）を指定しています。Visual Studio では MTP に対応したテスト エクスプローラーを使います。
 
 ```powershell
 dotnet build Kizamu.Blazor.slnx --no-restore
-dotnet test Kizamu.Blazor.slnx --no-build --no-restore
+dotnet test --solution Kizamu.Blazor.slnx --no-build --no-restore
 ```
 
 記録画面の状態・操作と通信境界は、Blazorの画面テストと別の通常.NETテストプロジェクトでも確認できます。Presentation.TestsはBlazor・HTTPテスト基盤を参照せず、Infrastructure.TestsはHTTP要求と応答変換を確認します。どちらもbUnitやASP.NET Coreのテストホストは使用しません。
 
 ```powershell
-dotnet test tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests --no-restore
-dotnet test tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests --no-restore
+dotnet test --project tests/frontends/blazor/Kizamu.Frontend.Blazor.Presentation.Tests --no-restore
+dotnet test --project tests/frontends/blazor/Kizamu.Frontend.Blazor.Infrastructure.Tests --no-restore
 ```
 
 バックエンドとDomainのテストだけを実行する場合（時刻例・開始/終了の状態更新・一覧投影はApplication.Tests、保存順はInfrastructure.Testsで確認し、Api.TestsにはHTTP固有の仕様と開始・終了・一覧の代表的な接続確認を残しています）:
 
 ```powershell
 dotnet build Kizamu.AspNetCore.slnx --no-restore
-dotnet test Kizamu.AspNetCore.slnx --no-build --no-restore
+dotnet test --solution Kizamu.AspNetCore.slnx --no-build --no-restore
+```
+
+.NET テストのカバレッジを Cobertura 形式で出力するには、Coverlet の `--coverlet` を使います。この例ではレポートを `TestResults` に出力します。
+
+```powershell
+dotnet test --project tests/domains/dotnet/Kizamu.Domain.Tests --coverlet --coverlet-output-format cobertura --results-directory TestResults
 ```
 
 構成整理などでReactに影響する変更を行った場合は、Reactも確認します。保留中でも既存機能を壊さないための検証は行います。
@@ -403,7 +409,7 @@ Visual Studio向けの現行ソリューションをCLIで確認する場合は�
 
 ```powershell
 dotnet build Kizamu.slnx --no-restore
-dotnet test Kizamu.slnx --no-build --no-restore
+dotnet test --solution Kizamu.slnx --no-build --no-restore
 ```
 
 ## ライセンス
