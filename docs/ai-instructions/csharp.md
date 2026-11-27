@@ -6,7 +6,7 @@
 
 * プロダクトコードの識別子は、ポートフォリオとして第三者が読みやすい標準的な英語にする。
 * コレクションから `null` を除くときは `where value is not null` または `Where(value => value is not null)` を使う。`OfType<T>()` は要素を型で絞り込む場合に限る。
-* .NETテストはxUnit.net v3を使う。採用パッケージは `xunit.v3.mtp-off` 4.0.2と `xunit.runner.visualstudio` 4.0.1。VSTestによる既存の `dotnet test` とVisual Studio Test Explorerの経路を維持し、Microsoft Testing Platformへの移行は含めない。
+* .NETテストは xUnit.net v3 を Microsoft.Testing.Platform v2 で実行する。採用パッケージは `xunit.v3.mtp-v2` 4.0.2 と、カバレッジ用の `coverlet.MTP` 10.1.1。`dotnet test` とカバレッジの実行例は [ビルドと検証](../../README.md#ビルドと検証) を参照する。Visual Studio では MTP に対応したテスト エクスプローラーを使う。
 * 取消可能な非同期APIには `Xunit.TestContext.Current.CancellationToken` を渡す。テスト本体では [TestCancellation](../../tests/TestSupport/TestCancellation.cs) の読み取り専用プロパティを `using static` で読み込み、`CancellationToken` と記述する。このstatic usingは、暗黙に読み込まれる型名との衝突を避けるため名前空間内（file-scoped namespace宣言の後）に置く。共通ソースは利用するテストプロジェクトへソースリンクし、クラスごとのgetterを重複させない。アクセス時のテストコンテキストを参照し、コンストラクターやstaticフィールドへキャッシュしない。テストのためだけに製品APIへ引数を追加せず、既存の対応APIに適用する。
 * 複数列の `TheoryData` は、型と検証する組合せを維持できる場合、v3のタプルを使ったコレクション式で記述する。単一列など既に簡潔な記述を、記法統一のためだけに冗長にしない。
 * ASP.NET Core統合テストでは、必要に応じて `WebApplicationFactory` を使い、HTTPパイプラインを通す。
